@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yourusername.github.io/matushka/config-schema.json",
+  "title": "Matushka Configuration",
+  "description": "Configuration schema for Matushka Russian language teaching materials collector",
+  "type": "object",
+  "required": ["filters", "collection", "output"],
+  "properties": {
+    "filters": {
+      "description": "Filtering criteria for content collection",
+      "type": "object",
+      "required": ["duration", "date_range", "categories", "sources"],
+      "properties": {
+        "duration": {
+          "description": "Duration filter in seconds",
+          "type": "object",
+          "required": ["min_seconds", "max_seconds"],
+          "properties": {
+            "min_seconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3600,
+              "description": "Minimum video duration in seconds",
+              "default": 30
+            },
+            "max_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3600,
+              "description": "Maximum video duration in seconds",
+              "default": 600
+            }
+          }
+        },
+        "date_range": {
+          "description": "Date range filter",
+          "type": "object",
+          "required": ["days_back"],
+          "properties": {
+            "days_back": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "description": "Number of days to look back for content",
+              "default": 7
+            }
+          }
+        },
+        "categories": {
+          "description": "Content categories to include",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "all",
+              "news",
+              "interviews",
+              "culture",
+              "sports",
+              "politics",
+              "economics",
+              "science",
+              "weather",
+              "entertainment"
+            ]
+          },
+          "default": ["all"]
+        },
+        "sources": {
+          "description": "Content sources to scrape",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "all",
+              "main_news",
+              "vremya",
+              "pozner",
+              "culture_section",
+              "sports_news"
+            ]
+          },
+          "default": ["all"]
+        }
+      }
+    },
+    "collection": {
+      "description": "Collection behavior settings",
+      "type": "object",
+      "required": ["max_items"],
+      "properties": {
+        "max_items": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "description": "Maximum number of items to collect",
+          "default": 50
+        },
+        "output_dir": {
+          "type": "string",
+          "description": "Directory for downloaded content",
+          "default": "./downloads"
+        },
+        "cache_enabled": {
+          "type": "boolean",
+          "description": "Enable caching to avoid redundant requests",
+          "default": true
+        }
+      }
+    },
+    "output": {
+      "description": "Output format settings",
+      "type": "object",
+      "required": ["citation_formats"],
+      "properties": {
+        "citation_formats": {
+          "description": "Citation output formats to generate",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "json",
+              "text",
+              "html",
+              "bibtex"
+            ]
+          },
+          "default": ["json", "text", "html"]
+        }
+      }
+    },
+    "logging": {
+      "description": "Logging configuration",
+      "type": "object",
+      "properties": {
+        "verbose": {
+          "type": "boolean",
+          "description": "Enable verbose logging output",
+          "default": false
+        },
+        "log_level": {
+          "type": "string",
+          "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+          "description": "Logging level",
+          "default": "INFO"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
