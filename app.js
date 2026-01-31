@@ -1,1502 +1,301 @@
 // ============================================================================
 // MATUSHKA - Russian Language Teaching Materials Collector
-// Professional Edition for Academic Researchers
+// Clean, Functional Rewrite
 // ============================================================================
+
+// =============================================================================
+// CONFIG
+// =============================================================================
 
 const WORKER_URL = 'https://matushka-api.arwrubel.workers.dev';
+const DEBUG = new URLSearchParams(window.location.search).has('debug');
 
-const CONFIG = {
-  debug: true,
-  enableAnimations: true
-};
-
-// ============================================================================
-// INTERNATIONALIZATION (i18n) SYSTEM
-// ============================================================================
+// =============================================================================
+// i18n - Only translations actually used in UI
+// =============================================================================
 
 const TRANSLATIONS = {
   en: {
-    // Header & Branding
-    title: "Matushka",
-    subtitle: "Russian Language Teaching Materials Collector",
-    tagline: "Find authentic Russian content for your classroom",
-
-    // Navigation
-    home: "Home",
-    search: "Search",
-    favorites: "Favorites",
-    history: "History",
-    settings: "Settings",
-    help: "Help",
-    about: "About",
-
-    // Search Panel
-    searchBtn: "Search for Content",
-    resetBtn: "Reset Filters",
-    advancedSearch: "Advanced Search",
-    quickSearch: "Quick Search",
-    searchPlaceholder: "Enter keywords...",
-
-    // Duration Filters
-    duration: "Duration",
-    minSeconds: "Minimum Seconds",
-    maxSeconds: "Maximum Seconds",
-    anyDuration: "Any Duration",
-    short: "Short (< 2 min)",
-    medium: "Medium (2-10 min)",
-    long: "Long (> 10 min)",
-
-    // Date Filters
-    dateRange: "Date Range",
-    daysBack: "Days Back",
-    today: "Today",
-    thisWeek: "This Week",
-    thisMonth: "This Month",
-    thisYear: "This Year",
-    allTime: "All Time",
-    customRange: "Custom Range",
-    startDate: "Start Date",
-    endDate: "End Date",
-
-    // Categories - News Categories
-    categories: "Categories",
-    allCategories: "All Categories",
-    catPolitics: "Politics",
-    catEconomy: "Economy",
-    catSociety: "Society",
-    catWorld: "World",
-    catSports: "Sports",
-    catCulture: "Culture",
-    catScience: "Science",
-    catTechnology: "Technology",
-
-    // Sources - Real Russian News Sources
-    sources: "Sources",
-    allSources: "All Sources",
-    selectSources: "Select Sources",
-    src1tv: "Channel One (Perviy Kanal)",
-    srcVesti: "Vesti (Russia 24)",
-    srcTass: "TASS",
-    srcRia: "RIA Novosti",
-    srcRt: "RT (Russia Today)",
-    srcRbc: "RBC",
-    srcKommersant: "Kommersant",
-    srcLenta: "Lenta",
-    srcGazeta: "Gazeta",
-    srcIzvestia: "Izvestia",
-
-    // Results
-    maxItems: "Maximum Items",
-    results: "Results",
-    noResults: "No results found",
-    resultCount: "Showing {count} results",
-    loadMore: "Load More",
-    sortBy: "Sort By",
-    sortRelevance: "Relevance",
-    sortDate: "Date",
-    sortDuration: "Duration",
-    sortPopularity: "Popularity",
-
-    // Actions
-    download: "Download Selected",
-    downloadAll: "Download All",
-    citations: "Export Citations",
-    exportCSV: "Export as CSV",
-    exportJSON: "Export as JSON",
-    copyLink: "Copy Link",
-    share: "Share",
-    addToFavorites: "Add to Favorites",
-    removeFromFavorites: "Remove from Favorites",
-    selectAll: "Select All",
-    deselectAll: "Deselect All",
-    preview: "Preview",
-    openExternal: "Open in New Tab",
-
-    // Status Messages
-    loading: "Searching...",
-    downloading: "Downloading...",
-    processing: "Processing...",
-    complete: "Complete!",
-    error: "An error occurred",
-    retry: "Retry",
-    cancel: "Cancel",
-
-    // Command Palette
-    commandPalette: "Command Palette",
-    typeCommand: "Type a command...",
-    noCommands: "No matching commands",
-
-    // Settings
-    language: "Language",
-    theme: "Theme",
-    lightTheme: "Light",
-    darkTheme: "Dark",
-    autoTheme: "Auto",
-    animations: "Animations",
-    notifications: "Notifications",
-    clearHistory: "Clear History",
-    clearFavorites: "Clear Favorites",
-    resetSettings: "Reset Settings",
-
-    // Misc
-    close: "Close",
-    save: "Save",
-    confirm: "Confirm",
-    yes: "Yes",
-    no: "No",
-    ok: "OK",
-    back: "Back",
-    forward: "Forward",
-    refresh: "Refresh",
-
-    // Time
-    justNow: "Just now",
-    minutesAgo: "{n} minutes ago",
-    hoursAgo: "{n} hours ago",
-    daysAgo: "{n} days ago",
-
-    // Tooltips
-    tooltipSearch: "Press / to focus search",
-    tooltipDownload: "Press D to download selected",
-    tooltipCitations: "Press C to export citations",
-    tooltipTheme: "Press T to toggle theme",
-    tooltipLanguage: "Press L to switch language",
-    tooltipCommandPalette: "Press Ctrl+K for command palette",
-
-    // Page & App
-    pageTitle: "Matushka - Russian Language Teaching Materials",
-    skipToMain: "Skip to main content",
-    appTitle: "Matushka",
-    appSubtitle: "Russian Language Teaching Materials Collector",
-
-    // Configuration
-    configTitle: "Search Configuration",
-    durationTitle: "Duration",
-    minDuration: "Minimum Duration",
-    maxDuration: "Maximum Duration",
-    durationHint: "Set duration range in seconds",
-
-    // Date Range
-    dateRangeTitle: "Date Range",
-    dateHint: "Select date range for content",
-
-    // Categories
-    categoriesTitle: "Categories",
-
-    // Sources
-    sourcesTitle: "Sources",
-
-    // Max Items
-    maxItemsTitle: "Results Limit",
-    maxItemsLabel: "Maximum Items",
-    maxItemsHint: "Limit the number of results",
+    // Header
+    appTitle: 'Matushka',
+    skipToMain: 'Skip to main content',
 
     // Search
-    searchHint: "Click to search the archive",
-    lastSearchLabel: "Last Search",
+    searchPlaceholder: 'Search videos...',
+    searchBtn: 'Search',
+    resetBtn: 'Reset',
+
+    // Filters
+    durationTitle: 'Duration (seconds)',
+    minDuration: 'Min',
+    maxDuration: 'Max',
+    dateRangeTitle: 'Date Range',
+    startDate: 'Start',
+    endDate: 'End',
+    categoriesTitle: 'Categories',
+    sourcesTitle: 'Sources',
+    maxResultsTitle: 'Max Results',
+    maxResultsLabel: 'Number of results',
+
+    // Categories
+    catPolitics: 'Politics',
+    catEconomy: 'Economy',
+    catSociety: 'Society',
+    catWorld: 'World',
+    catSports: 'Sports',
+    catCulture: 'Culture',
+    catScience: 'Science',
+    catTech: 'Technology',
+
+    // Sources
+    src1tv: 'Channel One',
+    srcSmotrim: 'Smotrim',
+    srcRt: 'RT',
+    srcRutube: 'Rutube',
+    srcIzvestia: 'Izvestia',
 
     // Results
-    resultsTitle: "Search Results",
-    sortLabel: "Sort by",
-    sortDateDesc: "Date (Newest)",
-    sortDateAsc: "Date (Oldest)",
-    sortDurationDesc: "Duration (Longest)",
-    sortDurationAsc: "Duration (Shortest)",
-    sortTitleAsc: "Title (A-Z)",
-    sortTitleDesc: "Title (Z-A)",
-
-    // Empty State
-    emptyStateTitle: "No Results Found",
-    emptyStateDesc: "Try adjusting your search filters",
-
-    // Loading
-    loadingText: "Searching...",
-
-    // Preview
-    previewBtn: "Preview",
+    resultsTitle: 'Results',
+    sortLabel: 'Sort by:',
+    sortRelevance: 'Relevance',
+    sortDateDesc: 'Date (newest)',
+    sortDateAsc: 'Date (oldest)',
+    sortDurationDesc: 'Duration (longest)',
+    sortDurationAsc: 'Duration (shortest)',
+    sortTitleAsc: 'Title (A-Z)',
+    sortTitleDesc: 'Title (Z-A)',
+    emptyStateDesc: 'Enter search terms and click Search to find videos.',
+    selectForCitation: 'Select',
+    watchVideo: 'Watch',
 
     // Citations
-    citationsTitle: "Export Citations",
-    citationAPA: "APA Format",
-    citationMLA: "MLA Format",
-    citationChicago: "Chicago Format",
-    citationBibTeX: "BibTeX Format",
-    citationPlaceholder: "Select items to generate citations",
+    citationsTitle: 'Citations',
+    citationPlaceholder: 'Select videos to generate citations...',
+    copyBtn: 'Copy',
+    downloadBtn: 'Download Audio',
 
-    // Actions
-    copyBtn: "Copy",
-    downloadBtn: "Download",
-
-    // Debug
-    debugTitle: "Debug Console",
-    clearDebugBtn: "Clear",
-    verboseMode: "Verbose Mode",
-
-    // Command Palette
-    commandPaletteTitle: "Command Palette",
-    cmdNavigate: "Navigate",
-    cmdSelect: "Select",
-    cmdClose: "Close",
+    // Status
+    loading: 'Loading...',
+    loadingProgress: 'Loading {current} of {total}...',
+    downloading: 'Downloading...',
+    complete: 'Complete!',
+    error: 'Error',
+    noResults: 'No results found',
+    selected: '{count} selected',
+    selectSource: 'Please select at least one source',
+    copySuccess: 'Copied to clipboard',
+    copyFailed: 'Copy failed - check permissions',
 
     // Footer
-    footerAboutTitle: "About",
-    footerAboutText: "Matushka helps language teachers find authentic Russian content for their classrooms.",
-    footerLinksTitle: "Links",
-    footerHelp: "Help",
-    footerAPI: "API Documentation",
-    footerContact: "Contact Us",
-    footerFeedback: "Send Feedback",
-    footerLegalTitle: "Legal",
-    footerPrivacy: "Privacy Policy",
-    footerTerms: "Terms of Service",
-    footerCookies: "Cookie Policy",
-    footerDisclaimer: "This service is provided for educational purposes only.",
-    footerCopyright: "All rights reserved.",
-    versionLabel: "Version"
+    footerCopyright: 'Matushka 2024',
+    versionLabel: 'Version'
   },
 
   ru: {
-    // Header & Branding
-    title: "Матушка",
-    subtitle: "Материалы для преподавания русского языка",
-    tagline: "Находите аутентичный контент для вашего класса",
-
-    // Navigation
-    home: "Главная",
-    search: "Поиск",
-    favorites: "Избранное",
-    history: "История",
-    settings: "Настройки",
-    help: "Помощь",
-    about: "О программе",
-
-    // Search Panel
-    searchBtn: "Поиск контента",
-    resetBtn: "Сбросить фильтры",
-    advancedSearch: "Расширенный поиск",
-    quickSearch: "Быстрый поиск",
-    searchPlaceholder: "Введите ключевые слова...",
-
-    // Duration Filters
-    duration: "Длительность",
-    minSeconds: "Минимум секунд",
-    maxSeconds: "Максимум секунд",
-    anyDuration: "Любая длительность",
-    short: "Короткие (< 2 мин)",
-    medium: "Средние (2-10 мин)",
-    long: "Длинные (> 10 мин)",
-
-    // Date Filters
-    dateRange: "Период",
-    daysBack: "Дней назад",
-    today: "Сегодня",
-    thisWeek: "Эта неделя",
-    thisMonth: "Этот месяц",
-    thisYear: "Этот год",
-    allTime: "Всё время",
-    customRange: "Свой период",
-    startDate: "Начальная дата",
-    endDate: "Конечная дата",
-
-    // Categories - News Categories
-    categories: "Категории",
-    allCategories: "Все категории",
-    catPolitics: "Политика",
-    catEconomy: "Экономика",
-    catSociety: "Общество",
-    catWorld: "В мире",
-    catSports: "Спорт",
-    catCulture: "Культура",
-    catScience: "Наука",
-    catTechnology: "Технологии",
-
-    // Sources - Real Russian News Sources
-    sources: "Источники",
-    allSources: "Все источники",
-    selectSources: "Выберите источники",
-    src1tv: "Первый канал",
-    srcVesti: "Вести (Россия 24)",
-    srcTass: "ТАСС",
-    srcRia: "РИА Новости",
-    srcRt: "RT (Russia Today)",
-    srcRbc: "РБК",
-    srcKommersant: "Коммерсантъ",
-    srcLenta: "Лента",
-    srcGazeta: "Газета",
-    srcIzvestia: "Известия",
-
-    // Results
-    maxItems: "Максимум материалов",
-    results: "Результаты",
-    noResults: "Ничего не найдено",
-    resultCount: "Показано {count} результатов",
-    loadMore: "Загрузить ещё",
-    sortBy: "Сортировать по",
-    sortRelevance: "Релевантности",
-    sortDate: "Дате",
-    sortDuration: "Длительности",
-    sortPopularity: "Популярности",
-
-    // Actions
-    download: "Скачать выбранное",
-    downloadAll: "Скачать всё",
-    citations: "Экспорт цитат",
-    exportCSV: "Экспорт в CSV",
-    exportJSON: "Экспорт в JSON",
-    copyLink: "Копировать ссылку",
-    share: "Поделиться",
-    addToFavorites: "Добавить в избранное",
-    removeFromFavorites: "Удалить из избранного",
-    selectAll: "Выбрать всё",
-    deselectAll: "Снять выбор",
-    preview: "Предпросмотр",
-    openExternal: "Открыть в новой вкладке",
-
-    // Status Messages
-    loading: "Поиск...",
-    downloading: "Скачивание...",
-    processing: "Обработка...",
-    complete: "Готово!",
-    error: "Произошла ошибка",
-    retry: "Повторить",
-    cancel: "Отмена",
-
-    // Command Palette
-    commandPalette: "Палитра команд",
-    typeCommand: "Введите команду...",
-    noCommands: "Команды не найдены",
-
-    // Settings
-    language: "Язык",
-    theme: "Тема",
-    lightTheme: "Светлая",
-    darkTheme: "Тёмная",
-    autoTheme: "Авто",
-    animations: "Анимации",
-    notifications: "Уведомления",
-    clearHistory: "Очистить историю",
-    clearFavorites: "Очистить избранное",
-    resetSettings: "Сбросить настройки",
-
-    // Misc
-    close: "Закрыть",
-    save: "Сохранить",
-    confirm: "Подтвердить",
-    yes: "Да",
-    no: "Нет",
-    ok: "ОК",
-    back: "Назад",
-    forward: "Вперёд",
-    refresh: "Обновить",
-
-    // Time
-    justNow: "Только что",
-    minutesAgo: "{n} минут назад",
-    hoursAgo: "{n} часов назад",
-    daysAgo: "{n} дней назад",
-
-    // Tooltips
-    tooltipSearch: "Нажмите / для поиска",
-    tooltipDownload: "Нажмите D для скачивания",
-    tooltipCitations: "Нажмите C для экспорта цитат",
-    tooltipTheme: "Нажмите T для смены темы",
-    tooltipLanguage: "Нажмите L для смены языка",
-    tooltipCommandPalette: "Нажмите Ctrl+K для палитры команд",
-
-    // Page & App
-    pageTitle: "Матушка - Материалы для преподавания русского языка",
-    skipToMain: "Перейти к основному содержанию",
-    appTitle: "Матушка",
-    appSubtitle: "Материалы для преподавания русского языка",
-
-    // Configuration
-    configTitle: "Настройки поиска",
-    durationTitle: "Длительность",
-    minDuration: "Минимальная длительность",
-    maxDuration: "Максимальная длительность",
-    durationHint: "Укажите диапазон длительности в секундах",
-
-    // Date Range
-    dateRangeTitle: "Период",
-    dateHint: "Выберите период для контента",
-
-    // Categories
-    categoriesTitle: "Категории",
-
-    // Sources
-    sourcesTitle: "Источники",
-
-    // Max Items
-    maxItemsTitle: "Лимит результатов",
-    maxItemsLabel: "Максимум материалов",
-    maxItemsHint: "Ограничить количество результатов",
+    // Header
+    appTitle: 'Матушка',
+    skipToMain: 'Перейти к содержанию',
 
     // Search
-    searchHint: "Нажмите для поиска в архиве",
-    lastSearchLabel: "Последний поиск",
+    searchPlaceholder: 'Поиск видео...',
+    searchBtn: 'Поиск',
+    resetBtn: 'Сброс',
+
+    // Filters
+    durationTitle: 'Длительность (секунд)',
+    minDuration: 'Мин',
+    maxDuration: 'Макс',
+    dateRangeTitle: 'Период',
+    startDate: 'Начало',
+    endDate: 'Конец',
+    categoriesTitle: 'Категории',
+    sourcesTitle: 'Источники',
+    maxResultsTitle: 'Лимит',
+    maxResultsLabel: 'Количество',
+
+    // Categories
+    catPolitics: 'Политика',
+    catEconomy: 'Экономика',
+    catSociety: 'Общество',
+    catWorld: 'В мире',
+    catSports: 'Спорт',
+    catCulture: 'Культура',
+    catScience: 'Наука',
+    catTech: 'Технологии',
+
+    // Sources
+    src1tv: 'Первый канал',
+    srcSmotrim: 'Смотрим',
+    srcRt: 'RT',
+    srcRutube: 'Рутуб',
+    srcIzvestia: 'Известия',
 
     // Results
-    resultsTitle: "Результаты поиска",
-    sortLabel: "Сортировать по",
-    sortDateDesc: "Дате (сначала новые)",
-    sortDateAsc: "Дате (сначала старые)",
-    sortDurationDesc: "Длительности (сначала длинные)",
-    sortDurationAsc: "Длительности (сначала короткие)",
-    sortTitleAsc: "Названию (А-Я)",
-    sortTitleDesc: "Названию (Я-А)",
-
-    // Empty State
-    emptyStateTitle: "Ничего не найдено",
-    emptyStateDesc: "Попробуйте изменить параметры поиска",
-
-    // Loading
-    loadingText: "Поиск...",
-
-    // Preview
-    previewBtn: "Предпросмотр",
+    resultsTitle: 'Результаты',
+    sortLabel: 'Сортировка:',
+    sortRelevance: 'Релевантность',
+    sortDateDesc: 'Дата (новые)',
+    sortDateAsc: 'Дата (старые)',
+    sortDurationDesc: 'Длительность (длинные)',
+    sortDurationAsc: 'Длительность (короткие)',
+    sortTitleAsc: 'Название (А-Я)',
+    sortTitleDesc: 'Название (Я-А)',
+    emptyStateDesc: 'Введите запрос и нажмите Поиск.',
+    selectForCitation: 'Выбрать',
+    watchVideo: 'Смотреть',
 
     // Citations
-    citationsTitle: "Экспорт цитат",
-    citationAPA: "Формат APA",
-    citationMLA: "Формат MLA",
-    citationChicago: "Формат Chicago",
-    citationBibTeX: "Формат BibTeX",
-    citationPlaceholder: "Выберите материалы для генерации цитат",
+    citationsTitle: 'Цитаты',
+    citationPlaceholder: 'Выберите видео для цитат...',
+    copyBtn: 'Копировать',
+    downloadBtn: 'Скачать аудио',
 
-    // Actions
-    copyBtn: "Копировать",
-    downloadBtn: "Скачать",
-
-    // Debug
-    debugTitle: "Консоль отладки",
-    clearDebugBtn: "Очистить",
-    verboseMode: "Подробный режим",
-
-    // Command Palette
-    commandPaletteTitle: "Палитра команд",
-    cmdNavigate: "Навигация",
-    cmdSelect: "Выбрать",
-    cmdClose: "Закрыть",
+    // Status
+    loading: 'Загрузка...',
+    loadingProgress: 'Загрузка {current} из {total}...',
+    downloading: 'Скачивание...',
+    complete: 'Готово!',
+    error: 'Ошибка',
+    noResults: 'Ничего не найдено',
+    selected: 'Выбрано: {count}',
+    selectSource: 'Выберите хотя бы один источник',
+    copySuccess: 'Скопировано',
+    copyFailed: 'Ошибка копирования',
 
     // Footer
-    footerAboutTitle: "О проекте",
-    footerAboutText: "Матушка помогает преподавателям находить аутентичный русскоязычный контент для занятий.",
-    footerLinksTitle: "Ссылки",
-    footerHelp: "Помощь",
-    footerAPI: "Документация API",
-    footerContact: "Связаться с нами",
-    footerFeedback: "Отправить отзыв",
-    footerLegalTitle: "Правовая информация",
-    footerPrivacy: "Политика конфиденциальности",
-    footerTerms: "Условия использования",
-    footerCookies: "Политика cookies",
-    footerDisclaimer: "Этот сервис предоставляется только в образовательных целях.",
-    footerCopyright: "Все права защищены.",
-    versionLabel: "Версия"
+    footerCopyright: 'Матушка 2024',
+    versionLabel: 'Версия'
   }
 };
 
-const i18n = {
-  currentLang: 'en',
+// =============================================================================
+// STATE
+// =============================================================================
 
-  init() {
-    const savedLang = localStorage.getItem('matushka_language');
-    if (savedLang && TRANSLATIONS[savedLang]) {
-      this.currentLang = savedLang;
-    } else {
-      const browserLang = navigator.language.split('-')[0];
-      if (TRANSLATIONS[browserLang]) {
-        this.currentLang = browserLang;
-      }
-    }
-    this.applyToPage();
-    this.updateLanguageSelector();
-    debug.log('i18n', `Initialized with language: ${this.currentLang}`);
-  },
-
-  setLanguage(lang) {
-    if (!TRANSLATIONS[lang]) {
-      debug.error('i18n', `Language not supported: ${lang}`);
-      return;
-    }
-    this.currentLang = lang;
-    localStorage.setItem('matushka_language', lang);
-    this.applyToPage();
-    this.updateLanguageSelector();
-    debug.log('i18n', `Language changed to: ${lang}`);
-  },
-
-  t(key, params = {}) {
-    const translations = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
-    let text = translations[key] || TRANSLATIONS.en[key] || key;
-
-    // Replace parameters like {count}, {n}
-    Object.keys(params).forEach(param => {
-      text = text.replace(new RegExp(`\\{${param}\\}`, 'g'), params[param]);
-    });
-
-    return text;
-  },
-
-  applyToPage() {
-    document.querySelectorAll('[data-i18n]').forEach(element => {
-      const key = element.getAttribute('data-i18n');
-      element.textContent = this.t(key);
-    });
-
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
-      const key = element.getAttribute('data-i18n-placeholder');
-      element.placeholder = this.t(key);
-    });
-
-    document.querySelectorAll('[data-i18n-title]').forEach(element => {
-      const key = element.getAttribute('data-i18n-title');
-      element.title = this.t(key);
-    });
-
-    document.documentElement.lang = this.currentLang;
-  },
-
-  updateLanguageSelector() {
-    const langButtons = document.querySelectorAll('.lang-btn');
-    langButtons.forEach(btn => {
-      if (btn.dataset.lang === this.currentLang) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
-  },
-
-  toggleLanguage() {
-    const newLang = this.currentLang === 'en' ? 'ru' : 'en';
-    this.setLanguage(newLang);
-  }
+const state = {
+  selectedItems: new Set(),
+  currentResults: [],
+  currentLanguage: localStorage.getItem('matushka_lang') || 'en',
+  currentCitationFormat: 'apa',
+  isLoading: false
 };
 
-// ============================================================================
-// ENHANCED DEBUG LOGGER
-// ============================================================================
+// =============================================================================
+// DEBUG LOGGING
+// =============================================================================
 
-const debug = {
-  logs: [],
-  maxLogs: 1000,
-
-  formatTime() {
-    const now = new Date();
-    return now.toLocaleTimeString('en-US', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
-  },
-
-  createEntry(level, category, message, data) {
-    return {
-      timestamp: this.formatTime(),
-      level,
-      category,
-      message,
-      data: data ? JSON.stringify(data, null, 2) : null
-    };
-  },
-
-  output(entry) {
-    if (!CONFIG.debug) return;
-
-    const style = {
-      log: 'color: #4a9eff',
-      info: 'color: #10b981',
-      warn: 'color: #f59e0b',
-      error: 'color: #ef4444'
-    };
-
-    const prefix = `[${entry.timestamp}] [${entry.category}]`;
-
-    if (entry.data) {
-      console[entry.level](`%c${prefix} ${entry.message}`, style[entry.level], '\n', entry.data);
-    } else {
-      console[entry.level](`%c${prefix} ${entry.message}`, style[entry.level]);
-    }
-
-    this.logs.push(entry);
-    if (this.logs.length > this.maxLogs) {
-      this.logs.shift();
-    }
-  },
-
-  log(category, message, data) {
-    this.output(this.createEntry('log', category, message, data));
-  },
-
-  info(category, message, data) {
-    this.output(this.createEntry('info', category, message, data));
-  },
-
-  warn(category, message, data) {
-    this.output(this.createEntry('warn', category, message, data));
-  },
-
-  error(category, message, data) {
-    this.output(this.createEntry('error', category, message, data));
-  },
-
-  group(label) {
-    if (CONFIG.debug) console.group(label);
-  },
-
-  groupEnd() {
-    if (CONFIG.debug) console.groupEnd();
-  },
-
-  table(data) {
-    if (CONFIG.debug) console.table(data);
-  },
-
-  exportLogs() {
-    const blob = new Blob([JSON.stringify(this.logs, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `matushka-logs-${new Date().toISOString()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  },
-
-  clearLogs() {
-    this.logs = [];
-    if (CONFIG.debug) console.clear();
+function log(...args) {
+  if (DEBUG) {
+    console.log('[Matushka]', ...args);
   }
-};
-
-// ============================================================================
-// MICRO-INTERACTIONS
-// ============================================================================
-
-function createRipple(event) {
-  if (!CONFIG.enableAnimations) return;
-
-  const button = event.currentTarget;
-  const ripple = document.createElement('span');
-  const rect = button.getBoundingClientRect();
-
-  const size = Math.max(rect.width, rect.height);
-  const x = event.clientX - rect.left - size / 2;
-  const y = event.clientY - rect.top - size / 2;
-
-  ripple.style.cssText = `
-    position: absolute;
-    width: ${size}px;
-    height: ${size}px;
-    left: ${x}px;
-    top: ${y}px;
-    background: rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    transform: scale(0);
-    animation: rippleEffect 0.6s ease-out;
-    pointer-events: none;
-  `;
-
-  button.style.position = 'relative';
-  button.style.overflow = 'hidden';
-  button.appendChild(ripple);
-
-  setTimeout(() => ripple.remove(), 600);
 }
 
-function initCardTilt() {
-  if (!CONFIG.enableAnimations) return;
+function logError(...args) {
+  console.error('[Matushka]', ...args);
+}
 
-  document.querySelectorAll('.result-card, .tilt-card').forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+// =============================================================================
+// i18n FUNCTIONS
+// =============================================================================
 
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-
-      const rotateX = (y - centerY) / 10;
-      const rotateY = (centerX - x) / 10;
-
-      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
-    });
-
-    card.addEventListener('mouseleave', () => {
-      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
-    });
+function t(key, params = {}) {
+  const translations = TRANSLATIONS[state.currentLanguage] || TRANSLATIONS.en;
+  let text = translations[key] || TRANSLATIONS.en[key] || key;
+  Object.entries(params).forEach(([k, v]) => {
+    text = text.replace(`{${k}}`, v);
   });
+  return text;
 }
 
-function initButtonFeedback() {
-  document.querySelectorAll('button, .btn').forEach(button => {
-    button.addEventListener('click', (e) => {
-      createRipple(e);
-    });
-
-    button.addEventListener('mousedown', () => {
-      if (CONFIG.enableAnimations) {
-        button.style.transform = 'scale(0.97)';
-      }
-    });
-
-    button.addEventListener('mouseup', () => {
-      if (CONFIG.enableAnimations) {
-        button.style.transform = 'scale(1)';
-      }
-    });
-  });
-}
-
-// ============================================================================
-// SCROLL ANIMATIONS
-// ============================================================================
-
-function initScrollAnimations() {
-  if (!CONFIG.enableAnimations) return;
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const el = entry.target;
-        const animation = el.dataset.animate || 'fadeInUp';
-        el.classList.add('animated', animation);
-        observer.unobserve(el);
-      }
-    });
-  }, {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
+function applyTranslations() {
+  // Text content
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (key) el.textContent = t(key);
   });
 
-  document.querySelectorAll('[data-animate]').forEach(el => {
-    el.classList.add('animate-hidden');
-    observer.observe(el);
-  });
-}
-
-function initScrollProgress() {
-  const progressBar = document.createElement('div');
-  progressBar.className = 'scroll-progress';
-  progressBar.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
-    z-index: 10000;
-    transition: width 0.1s ease-out;
-    width: 0%;
-  `;
-
-  document.body.appendChild(progressBar);
-
-  window.addEventListener('scroll', () => {
-    const windowHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const progress = (window.scrollY / windowHeight) * 100;
-    progressBar.style.width = `${progress}%`;
-  });
-}
-
-// ============================================================================
-// COMMAND PALETTE
-// ============================================================================
-
-const CommandPalette = {
-  isOpen: false,
-  element: null,
-  input: null,
-  list: null,
-  selectedIndex: 0,
-  filteredCommands: [],
-
-  commands: [
-    { id: 'search', label: 'Search', labelRu: 'Поиск', shortcut: '/', icon: 'S', action: () => document.getElementById('searchBtn')?.click() },
-    { id: 'download', label: 'Download Citations', labelRu: 'Скачать цитаты', shortcut: 'd', icon: 'D', action: () => document.getElementById('downloadCitationBtn')?.click() },
-    { id: 'citations', label: 'Copy Citations', labelRu: 'Копировать цитаты', shortcut: 'c', icon: 'C', action: () => document.getElementById('copyCitationBtn')?.click() },
-    { id: 'theme', label: 'Toggle Theme', labelRu: 'Сменить тему', shortcut: 't', icon: 'T', action: () => toggleTheme() },
-    { id: 'lang', label: 'Switch Language', labelRu: 'Сменить язык', shortcut: 'l', icon: 'L', action: () => i18n.toggleLanguage() },
-    { id: 'reset', label: 'Reset Filters', labelRu: 'Сбросить фильтры', shortcut: 'r', icon: 'R', action: () => document.getElementById('resetBtn')?.click() },
-    { id: 'selectAll', label: 'Select All Results', labelRu: 'Выбрать все результаты', shortcut: 'a', icon: 'A', action: () => selectAllResults() },
-    { id: 'favorites', label: 'View Favorites', labelRu: 'Просмотр избранного', shortcut: 'f', icon: 'F', action: () => showFavorites() },
-    { id: 'help', label: 'Show Help', labelRu: 'Показать справку', shortcut: '?', icon: '?', action: () => showHelp() },
-    { id: 'sources', label: 'List Available Sources', labelRu: 'Список источников', shortcut: 's', icon: 'S', action: () => listAvailableSources() },
-  ],
-
-  init() {
-    this.createElement();
-    this.bindEvents();
-  },
-
-  createElement() {
-    this.element = document.createElement('div');
-    this.element.className = 'command-palette';
-    this.element.style.cssText = `
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 100000;
-      align-items: flex-start;
-      justify-content: center;
-      padding-top: 100px;
-    `;
-
-    const modal = document.createElement('div');
-    modal.className = 'command-palette-modal';
-    modal.style.cssText = `
-      background: white;
-      border-radius: 16px;
-      width: 90%;
-      max-width: 600px;
-      box-shadow: 0 25px 100px rgba(0,0,0,0.3);
-      overflow: hidden;
-      animation: slideDown 0.2s ease-out;
-    `;
-
-    this.input = document.createElement('input');
-    this.input.type = 'text';
-    this.input.placeholder = i18n.t('typeCommand');
-    this.input.className = 'command-palette-input';
-    this.input.style.cssText = `
-      width: 100%;
-      padding: 20px 25px;
-      border: none;
-      font-size: 18px;
-      outline: none;
-      border-bottom: 1px solid #eee;
-      box-sizing: border-box;
-    `;
-
-    this.list = document.createElement('div');
-    this.list.className = 'command-palette-list';
-    this.list.style.cssText = `
-      max-height: 400px;
-      overflow-y: auto;
-    `;
-
-    modal.appendChild(this.input);
-    modal.appendChild(this.list);
-    this.element.appendChild(modal);
-    document.body.appendChild(this.element);
-
-    this.filteredCommands = [...this.commands];
-    this.renderList();
-  },
-
-  bindEvents() {
-    this.input.addEventListener('input', () => {
-      this.filter(this.input.value);
-    });
-
-    this.input.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        this.selectedIndex = Math.min(this.selectedIndex + 1, this.filteredCommands.length - 1);
-        this.renderList();
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
-        this.renderList();
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        const cmd = this.filteredCommands[this.selectedIndex];
-        if (cmd) this.executeCommand(cmd.id);
-      } else if (e.key === 'Escape') {
-        this.close();
-      }
-    });
-
-    this.element.addEventListener('click', (e) => {
-      if (e.target === this.element) {
-        this.close();
-      }
-    });
-  },
-
-  open() {
-    this.isOpen = true;
-    this.element.style.display = 'flex';
-    this.input.value = '';
-    this.selectedIndex = 0;
-    this.filter('');
-    this.input.focus();
-    debug.log('CommandPalette', 'Opened');
-  },
-
-  close() {
-    this.isOpen = false;
-    this.element.style.display = 'none';
-    debug.log('CommandPalette', 'Closed');
-  },
-
-  filter(query) {
-    const q = query.toLowerCase().trim();
-    const isRussian = i18n.currentLang === 'ru';
-
-    this.filteredCommands = this.commands.filter(cmd => {
-      const label = isRussian ? cmd.labelRu : cmd.label;
-      return label.toLowerCase().includes(q) || cmd.shortcut.includes(q);
-    });
-
-    this.selectedIndex = 0;
-    this.renderList();
-  },
-
-  renderList() {
-    const isRussian = i18n.currentLang === 'ru';
-
-    if (this.filteredCommands.length === 0) {
-      this.list.innerHTML = `<div style="padding: 20px; text-align: center; color: #999;">${i18n.t('noCommands')}</div>`;
-      return;
-    }
-
-    this.list.innerHTML = this.filteredCommands.map((cmd, index) => {
-      const label = isRussian ? cmd.labelRu : cmd.label;
-      const isSelected = index === this.selectedIndex;
-
-      return `
-        <div class="command-item" data-id="${cmd.id}" style="
-          padding: 15px 25px;
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          cursor: pointer;
-          background: ${isSelected ? '#f0f4ff' : 'transparent'};
-          border-left: 3px solid ${isSelected ? '#667eea' : 'transparent'};
-        ">
-          <span style="font-size: 16px; font-weight: bold; width: 24px; text-align: center;">${cmd.icon}</span>
-          <span style="flex: 1;">${label}</span>
-          <kbd style="
-            background: #eee;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-family: monospace;
-          ">${cmd.shortcut}</kbd>
-        </div>
-      `;
-    }).join('');
-
-    this.list.querySelectorAll('.command-item').forEach(item => {
-      item.addEventListener('click', () => {
-        this.executeCommand(item.dataset.id);
-      });
-
-      item.addEventListener('mouseenter', () => {
-        this.selectedIndex = this.filteredCommands.findIndex(c => c.id === item.dataset.id);
-        this.renderList();
-      });
-    });
-  },
-
-  executeCommand(id) {
-    const cmd = this.commands.find(c => c.id === id);
-    if (cmd) {
-      this.close();
-      cmd.action();
-      debug.log('CommandPalette', `Executed command: ${id}`);
-    }
-  }
-};
-
-// ============================================================================
-// API & CORE FUNCTIONALITY
-// ============================================================================
-
-let selectedItems = new Set();
-let currentResults = [];
-let favoriteItems = JSON.parse(localStorage.getItem('matushka_favorites') || '[]');
-
-// Fetch available sources from API
-async function listAvailableSources() {
-  debug.log('API', 'Fetching available sources...');
-  try {
-    const response = await fetch(`${WORKER_URL}/api/sources`);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    const data = await response.json();
-    debug.info('API', 'Available sources:', data);
-    showNotification(`Available sources: ${JSON.stringify(data)}`, 'info');
-  } catch (error) {
-    debug.error('API', 'Failed to fetch sources', error);
-    showError(error.message);
-  }
-}
-
-async function searchContent() {
-  const searchBtn = document.getElementById('searchBtn');
-  const resultsContainer = document.getElementById('resultsGrid');
-  const loadingIndicator = document.getElementById('loadingSkeletons');
-  const emptyState = document.getElementById('emptyState');
-
-  debug.group('Search Operation');
-  debug.log('Search', 'Starting search...');
-
-  // Update UI
-  if (searchBtn) {
-    searchBtn.disabled = true;
-    const btnText = searchBtn.querySelector('.btn-text');
-    if (btnText) btnText.textContent = i18n.t('loading');
-  }
-  if (loadingIndicator) loadingIndicator.hidden = false;
-  if (emptyState) emptyState.hidden = true;
-  if (resultsContainer) resultsContainer.innerHTML = '';
-
-  // Gather parameters
-  const daysBack = parseInt(document.getElementById('daysBack')?.value) || 7;
-  const maxItems = parseInt(document.getElementById('maxItems')?.value) || 20;
-  const sources = getSelectedSources();
-
-  // Build query parameters for GET request
-  const params = new URLSearchParams();
-  if (sources.length > 0) {
-    params.append('sources', sources.join(','));
-  }
-  params.append('days_back', daysBack);
-  params.append('max_items', maxItems);
-
-  debug.log('Search', 'Parameters:', { sources, daysBack, maxItems });
-
-  try {
-    // Step 1: Discover URLs using GET /api/discover
-    const discoverUrl = `${WORKER_URL}/api/discover?${params.toString()}`;
-    debug.log('Search', `Calling: ${discoverUrl}`);
-
-    const discoverResponse = await fetch(discoverUrl);
-
-    if (!discoverResponse.ok) {
-      throw new Error(`HTTP ${discoverResponse.status}: ${discoverResponse.statusText}`);
-    }
-
-    const discoverData = await discoverResponse.json();
-    const urls = discoverData.urls || [];
-
-    debug.info('Search', `Discovered ${urls.length} URLs`);
-
-    if (urls.length === 0) {
-      currentResults = [];
-      renderResults([]);
-      debug.groupEnd();
-      return;
-    }
-
-    // Step 2: Scrape metadata for each URL using GET /api/scrape
-    const results = [];
-    for (const url of urls.slice(0, maxItems)) {
-      try {
-        const scrapeUrl = `${WORKER_URL}/api/scrape?url=${encodeURIComponent(url)}`;
-        debug.log('Search', `Scraping: ${url}`);
-
-        const scrapeResponse = await fetch(scrapeUrl);
-        if (scrapeResponse.ok) {
-          const scrapeData = await scrapeResponse.json();
-          if (scrapeData.metadata) {
-            results.push({
-              id: btoa(url).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16),
-              url: url,
-              title: scrapeData.metadata.title || 'Untitled',
-              description: scrapeData.metadata.description || '',
-              source: extractSourceFromUrl(url),
-              m3u8_url: scrapeData.metadata.m3u8_url || null,
-              thumbnail: scrapeData.metadata.thumbnail || null,
-              duration: scrapeData.metadata.duration || null,
-              publishedAt: scrapeData.metadata.published_at || new Date().toISOString()
-            });
-          }
-        }
-      } catch (scrapeError) {
-        debug.warn('Search', `Failed to scrape ${url}`, scrapeError);
-      }
-    }
-
-    currentResults = results;
-    debug.info('Search', `Scraped ${currentResults.length} items with metadata`);
-
-    // Render results
-    renderResults(currentResults);
-
-  } catch (error) {
-    debug.error('Search', 'Search failed', error);
-    showError(i18n.t('error') + ': ' + error.message);
-    if (emptyState) emptyState.hidden = false;
-  } finally {
-    if (searchBtn) {
-      searchBtn.disabled = false;
-      const btnText = searchBtn.querySelector('.btn-text');
-      if (btnText) btnText.textContent = i18n.t('searchBtn');
-    }
-    if (loadingIndicator) loadingIndicator.hidden = true;
-    debug.groupEnd();
-  }
-}
-
-function extractSourceFromUrl(url) {
-  try {
-    const hostname = new URL(url).hostname.replace('www.', '');
-    const sourceMap = {
-      '1tv.ru': 'Первый канал',
-      'vesti.ru': 'Вести',
-      'tass.com': 'ТАСС',
-      'ria.ru': 'РИА Новости',
-      'rt.com': 'RT',
-      'rbc.ru': 'РБК',
-      'kommersant.ru': 'Коммерсантъ',
-      'lenta.ru': 'Лента',
-      'gazeta.ru': 'Газета',
-      'iz.ru': 'Известия'
-    };
-    return sourceMap[hostname] || hostname;
-  } catch {
-    return 'Unknown';
-  }
-}
-
-function renderResults(results) {
-  const container = document.getElementById('resultsGrid');
-  const emptyState = document.getElementById('emptyState');
-  const resultsCount = document.getElementById('resultsCount');
-
-  if (!container) return;
-
-  if (resultsCount) {
-    resultsCount.textContent = `(${results.length})`;
-  }
-
-  if (results.length === 0) {
-    container.innerHTML = '';
-    if (emptyState) emptyState.hidden = false;
-    return;
-  }
-
-  if (emptyState) emptyState.hidden = true;
-
-  container.innerHTML = results.map((item, index) => renderResultCard(item, index)).join('');
-
-  initCardTilt();
-}
-
-function renderResultCard(item, index) {
-  const isSelected = selectedItems.has(item.id);
-  const isFavorite = favoriteItems.includes(item.id);
-
-  return `
-    <div class="result-card tilt-card" data-id="${item.id}" data-animate="fadeInUp" style="
-      background: white;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-      border: 2px solid ${isSelected ? '#667eea' : 'transparent'};
-      animation-delay: ${index * 0.05}s;
-    ">
-      ${item.thumbnail ? `<img src="${item.thumbnail}" alt="" style="width: 100%; height: 160px; object-fit: cover;">` : '<div style="width: 100%; height: 160px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">No thumbnail</div>'}
-      <div style="padding: 20px;">
-        <h4 style="margin: 0 0 10px 0; font-size: 16px; line-height: 1.4;">${escapeHtml(item.title)}</h4>
-        <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">${escapeHtml(item.source)} ${item.duration ? '| ' + formatDuration(item.duration) : ''}</p>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button onclick="toggleItemSelection('${item.id}')" class="btn btn-small ${isSelected ? 'btn-primary' : 'btn-secondary'}">
-            ${isSelected ? 'Selected' : 'Select'}
-          </button>
-          <button onclick="toggleFavorite('${item.id}')" class="btn btn-small" title="${i18n.t(isFavorite ? 'removeFromFavorites' : 'addToFavorites')}">
-            ${isFavorite ? 'Unfavorite' : 'Favorite'}
-          </button>
-          <button onclick="previewItem('${item.id}')" class="btn btn-small" title="${i18n.t('preview')}">
-            Preview
-          </button>
-          ${item.m3u8_url ? `<button onclick="downloadItem('${item.id}')" class="btn btn-small btn-primary" title="Download">Download</button>` : ''}
-          <a href="${item.url}" target="_blank" class="btn btn-small" title="${i18n.t('openExternal')}">Open</a>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function toggleItemSelection(id) {
-  if (selectedItems.has(id)) {
-    selectedItems.delete(id);
-  } else {
-    selectedItems.add(id);
-  }
-
-  const card = document.querySelector(`[data-id="${id}"]`);
-  if (card) {
-    card.style.borderColor = selectedItems.has(id) ? '#667eea' : 'transparent';
-  }
-
-  updateSelectionCount();
-  renderResults(currentResults);
-}
-
-function selectAllResults() {
-  currentResults.forEach(item => selectedItems.add(item.id));
-  renderResults(currentResults);
-  updateSelectionCount();
-}
-
-function deselectAllResults() {
-  selectedItems.clear();
-  renderResults(currentResults);
-  updateSelectionCount();
-}
-
-function updateSelectionCount() {
-  debug.log('Selection', `Selected items: ${selectedItems.size}`);
-}
-
-function toggleFavorite(id) {
-  const index = favoriteItems.indexOf(id);
-  if (index > -1) {
-    favoriteItems.splice(index, 1);
-  } else {
-    favoriteItems.push(id);
-  }
-  localStorage.setItem('matushka_favorites', JSON.stringify(favoriteItems));
-  renderResults(currentResults);
-}
-
-function previewItem(id) {
-  const item = currentResults.find(r => r.id === id);
-  if (!item) return;
-
-  const modal = document.createElement('div');
-  modal.className = 'preview-modal';
-  modal.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100000;
-  `;
-
-  modal.innerHTML = `
-    <div style="max-width: 800px; width: 90%; background: white; border-radius: 16px; overflow: hidden;">
-      ${item.thumbnail ? `<img src="${item.thumbnail}" style="width: 100%; height: auto;">` : ''}
-      <div style="padding: 20px;">
-        <h3 style="margin: 0 0 10px 0;">${escapeHtml(item.title)}</h3>
-        <p style="color: #666; margin-bottom: 10px;">${escapeHtml(item.description || '')}</p>
-        <p style="color: #999; font-size: 12px;">Source: ${escapeHtml(item.source)} | URL: ${escapeHtml(item.url)}</p>
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
-          <button onclick="this.closest('.preview-modal').remove()" class="btn btn-primary">${i18n.t('close')}</button>
-          <a href="${item.url}" target="_blank" class="btn btn-secondary">Open Original</a>
-        </div>
-      </div>
-    </div>
-  `;
-
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.remove();
+  // Placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    if (key) el.placeholder = t(key);
   });
 
-  document.body.appendChild(modal);
+  // Sort select options
+  const sortSelect = document.getElementById('sortSelect');
+  if (sortSelect) {
+    sortSelect.querySelectorAll('option').forEach(opt => {
+      const key = opt.dataset.i18n;
+      if (key) opt.textContent = t(key);
+    });
+  }
+
+  document.documentElement.lang = state.currentLanguage;
+  updateCitationPreview();
 }
 
-async function downloadItem(id) {
-  const item = currentResults.find(r => r.id === id);
-  if (!item || !item.m3u8_url) {
-    showNotification('No downloadable stream found', 'warning');
-    return;
-  }
+function setLanguage(lang) {
+  if (!TRANSLATIONS[lang]) return;
+  state.currentLanguage = lang;
+  localStorage.setItem('matushka_lang', lang);
 
-  debug.log('Download', `Downloading item: ${item.title}`);
-
-  try {
-    // Use the proxy endpoint to download the m3u8 stream
-    const proxyUrl = `${WORKER_URL}/api/proxy?url=${encodeURIComponent(item.m3u8_url)}`;
-
-    showNotification(i18n.t('downloading'), 'info');
-
-    const response = await fetch(proxyUrl);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${item.title.replace(/[^a-zA-Z0-9]/g, '_')}.m3u8`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    showNotification(i18n.t('complete'), 'success');
-
-  } catch (error) {
-    debug.error('Download', 'Download failed', error);
-    showError(error.message);
-  }
-}
-
-async function downloadSelected() {
-  if (selectedItems.size === 0) {
-    showNotification(i18n.t('noResults'), 'warning');
-    return;
-  }
-
-  const downloadBtn = document.getElementById('downloadCitationBtn');
-  if (downloadBtn) {
-    downloadBtn.disabled = true;
-    const btnText = downloadBtn.querySelector('.btn-text');
-    if (btnText) btnText.textContent = i18n.t('downloading');
-  }
-
-  debug.log('Download', `Downloading ${selectedItems.size} items`);
-
-  try {
-    const items = currentResults.filter(r => selectedItems.has(r.id));
-
-    // Download items that have m3u8_url one by one
-    let downloadedCount = 0;
-    for (const item of items) {
-      if (item.m3u8_url) {
-        try {
-          const proxyUrl = `${WORKER_URL}/api/proxy?url=${encodeURIComponent(item.m3u8_url)}`;
-          const response = await fetch(proxyUrl);
-          if (response.ok) {
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${item.title.replace(/[^a-zA-Z0-9]/g, '_')}.m3u8`;
-            a.click();
-            URL.revokeObjectURL(url);
-            downloadedCount++;
-          }
-        } catch (e) {
-          debug.warn('Download', `Failed to download ${item.title}`, e);
-        }
-      }
-    }
-
-    showNotification(`Downloaded ${downloadedCount} items`, 'success');
-
-  } catch (error) {
-    debug.error('Download', 'Download failed', error);
-    showError(error.message);
-  } finally {
-    if (downloadBtn) {
-      downloadBtn.disabled = false;
-      const btnText = downloadBtn.querySelector('.btn-text');
-      if (btnText) btnText.textContent = i18n.t('downloadBtn');
-    }
-  }
-}
-
-async function exportCitations() {
-  if (selectedItems.size === 0) {
-    showNotification(i18n.t('noResults'), 'warning');
-    return;
-  }
-
-  const activeTab = document.querySelector('.citation-tab.active');
-  const format = activeTab?.dataset.format || 'apa';
-
-  debug.log('Citations', `Exporting ${selectedItems.size} citations in ${format} format`);
-
-  const items = currentResults.filter(r => selectedItems.has(r.id));
-  const citations = items.map(item => formatCitation(item, format)).join('\n\n');
-
-  try {
-    await navigator.clipboard.writeText(citations);
-    showNotification(i18n.t('complete'), 'success');
-  } catch (e) {
-    const citationText = document.getElementById('citationText');
-    if (citationText) {
-      citationText.innerHTML = `<code>${escapeHtml(citations)}</code>`;
-    }
-    showNotification('Citations copied to preview', 'info');
-  }
-}
-
-function formatCitation(item, format = 'apa') {
-  const date = new Date(item.publishedAt || Date.now());
-  const year = date.getFullYear();
-  const dateStr = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const accessDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-  switch (format) {
-    case 'mla':
-      return `"${item.title}." ${item.source}, ${dateStr}. Web. ${accessDate}. <${item.url}>.`;
-    case 'chicago':
-      return `${item.source}. "${item.title}." Accessed ${accessDate}. ${item.url}.`;
-    case 'bibtex':
-      const key = item.title.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
-      return `@online{${key}${year},\n  title = {${item.title}},\n  author = {${item.source}},\n  year = {${year}},\n  url = {${item.url}},\n  urldate = {${accessDate}}\n}`;
-    case 'apa':
-    default:
-      return `${item.source}. (${year}, ${dateStr}). ${item.title}. Retrieved ${accessDate}, from ${item.url}`;
-  }
-}
-
-function updateCitationPreview(format = 'apa') {
-  const citationText = document.getElementById('citationText');
-  if (!citationText) return;
-
-  if (selectedItems.size === 0) {
-    citationText.innerHTML = `<code>${i18n.t('citationPlaceholder') || 'Select videos to generate citations...'}</code>`;
-    return;
-  }
-
-  const items = currentResults.filter(r => selectedItems.has(r.id));
-  const citations = items.map(item => formatCitation(item, format)).join('\n\n');
-  citationText.innerHTML = `<code style="white-space: pre-wrap;">${escapeHtml(citations)}</code>`;
-}
-
-function resetFilters() {
-  const daysBack = document.getElementById('daysBack');
-  const maxItems = document.getElementById('maxItems');
-
-  if (daysBack) daysBack.value = '7';
-  if (maxItems) maxItems.value = '20';
-
-  // Reset checkboxes to their default state (first two checked in each group)
-  document.querySelectorAll('input[name="category"]').forEach((cb, index) => {
-    cb.checked = index < 2;
-  });
-  document.querySelectorAll('input[name="source"]').forEach((cb, index) => {
-    cb.checked = index < 2;
+  // Update button states
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    const isActive = btn.dataset.lang === lang;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
 
-  selectedItems.clear();
-  currentResults = [];
-
-  const results = document.getElementById('resultsGrid');
-  const emptyState = document.getElementById('emptyState');
-  const resultsCount = document.getElementById('resultsCount');
-
-  if (results) results.innerHTML = '';
-  if (emptyState) emptyState.hidden = false;
-  if (resultsCount) resultsCount.textContent = '(0)';
-
-  debug.log('Filters', 'Reset complete');
-  showNotification(i18n.t('complete'), 'success');
+  applyTranslations();
+  log('Language set to:', lang);
 }
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
+// =============================================================================
+// API FUNCTIONS
+// =============================================================================
 
-function getSelectedCategories() {
-  const checkboxes = document.querySelectorAll('input[name="category"]:checked');
-  return Array.from(checkboxes).map(cb => cb.value);
+async function apiDiscover(params) {
+  const url = new URL(`${WORKER_URL}/api/discover`);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, value);
+    }
+  });
+
+  log('API discover:', url.toString());
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status} ${response.statusText}`);
+  }
+  return response.json();
 }
 
-function getSelectedSources() {
-  const checkboxes = document.querySelectorAll('input[name="source"]:checked');
-  return Array.from(checkboxes).map(cb => cb.value);
+async function apiScrape(videoUrl) {
+  const url = `${WORKER_URL}/api/scrape?url=${encodeURIComponent(videoUrl)}`;
+  log('API scrape:', videoUrl);
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Scrape failed: ${response.status}`);
+  }
+  return response.json();
 }
 
-function formatDuration(seconds) {
-  if (!seconds) return '--:--';
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${String(secs).padStart(2, '0')}`;
+async function apiDownloadAudio(videoUrl) {
+  const url = `${WORKER_URL}/api/audio?url=${encodeURIComponent(videoUrl)}`;
+  log('API audio:', videoUrl);
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Audio download failed: ${response.status}`);
+  }
+  return response.blob();
 }
+
+// =============================================================================
+// UI HELPERS
+// =============================================================================
 
 function escapeHtml(text) {
   if (!text) return '';
@@ -1505,382 +304,679 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+function formatDuration(seconds) {
+  if (!seconds || seconds <= 0) return '';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    return new Date(dateStr).toLocaleDateString(state.currentLanguage === 'ru' ? 'ru-RU' : 'en-US');
+  } catch {
+    return '';
+  }
+}
+
+function generateId(url) {
+  return btoa(url).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+}
+
+function extractSource(url) {
+  try {
+    const hostname = new URL(url).hostname.replace('www.', '');
+    const sourceMap = {
+      '1tv.ru': 'Первый канал',
+      'smotrim.ru': 'Смотрим',
+      'rt.com': 'RT',
+      'rutube.ru': 'Rutube',
+      'iz.ru': 'Известия'
+    };
+    return sourceMap[hostname] || hostname;
+  } catch {
+    return 'Unknown';
+  }
+}
+
+function sanitizeFilename(name) {
+  return (name || 'audio').replace(/[^a-zA-Z0-9\u0400-\u04FF\s\-_]/g, '').substring(0, 50).trim() || 'audio';
+}
+
+function announce(message) {
+  const announcer = document.getElementById('announcer');
+  if (announcer) {
+    announcer.textContent = message;
+  }
+}
+
+// =============================================================================
+// NOTIFICATIONS
+// =============================================================================
+
 function showNotification(message, type = 'info') {
   const notification = document.createElement('div');
   notification.className = `notification notification-${type}`;
+  notification.setAttribute('role', 'alert');
 
   const colors = {
-    success: '#10b981',
-    warning: '#f59e0b',
     error: '#ef4444',
-    info: '#667eea'
+    success: '#10b981',
+    info: '#3b82f6'
   };
 
   notification.style.cssText = `
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: ${colors[type]};
+    padding: 12px 20px;
+    background: ${colors[type] || colors.info};
     color: white;
-    padding: 15px 25px;
-    border-radius: 10px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 10000;
-    animation: slideInRight 0.3s ease-out;
+    font-size: 14px;
+    max-width: 300px;
+    animation: slideInNotification 0.3s ease;
   `;
-  notification.textContent = message;
 
+  notification.textContent = message;
   document.body.appendChild(notification);
+
   setTimeout(() => {
-    notification.style.animation = 'slideOutRight 0.3s ease-out forwards';
+    notification.style.animation = 'slideOutNotification 0.3s ease';
     setTimeout(() => notification.remove(), 300);
-  }, 3000);
+  }, type === 'error' ? 5000 : 3000);
 }
 
 function showError(message) {
-  showNotification(message, 'error');
+  showNotification(`${t('error')}: ${message}`, 'error');
 }
 
-function toggleTheme() {
-  const body = document.body;
-  const isDark = body.classList.toggle('dark-theme');
-  localStorage.setItem('matushka_theme', isDark ? 'dark' : 'light');
-  debug.log('Theme', `Switched to ${isDark ? 'dark' : 'light'} theme`);
+function showSuccess(message) {
+  showNotification(message, 'success');
 }
 
-function loadTheme() {
-  const savedTheme = localStorage.getItem('matushka_theme');
-  if (savedTheme === 'dark') {
-    document.body.classList.add('dark-theme');
+// =============================================================================
+// LOADING STATE
+// =============================================================================
+
+function setLoading(loading, progress = null) {
+  state.isLoading = loading;
+
+  const indicator = document.getElementById('loadingIndicator');
+  const submitBtns = document.querySelectorAll('button[type="submit"]');
+
+  if (indicator) {
+    indicator.hidden = !loading;
+    const textEl = indicator.querySelector('[data-i18n]');
+    if (textEl) {
+      textEl.textContent = progress
+        ? t('loadingProgress', { current: progress.current, total: progress.total })
+        : t('loading');
+    }
   }
-}
 
-function showFavorites() {
-  const favorites = currentResults.filter(r => favoriteItems.includes(r.id));
-  if (favorites.length === 0) {
-    showNotification(i18n.t('noResults'), 'info');
-    return;
-  }
-  renderResults(favorites);
-}
-
-function showHelp() {
-  const modal = document.createElement('div');
-  modal.className = 'help-modal';
-  modal.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100000;
-  `;
-
-  modal.innerHTML = `
-    <div style="background: white; padding: 40px; border-radius: 20px; max-width: 600px; width: 90%;">
-      <h2>${i18n.t('help')}</h2>
-      <h4>Keyboard Shortcuts</h4>
-      <ul>
-        <li><kbd>Ctrl+K</kbd> - ${i18n.t('commandPalette')}</li>
-        <li><kbd>/</kbd> - ${i18n.t('search')}</li>
-        <li><kbd>d</kbd> - ${i18n.t('download')}</li>
-        <li><kbd>c</kbd> - ${i18n.t('citations')}</li>
-        <li><kbd>t</kbd> - ${i18n.t('theme')}</li>
-        <li><kbd>l</kbd> - ${i18n.t('language')}</li>
-        <li><kbd>r</kbd> - ${i18n.t('resetBtn')}</li>
-      </ul>
-      <h4>Available Sources</h4>
-      <ul>
-        <li>1tv.ru - ${i18n.t('src1tv')}</li>
-        <li>vesti.ru - ${i18n.t('srcVesti')}</li>
-        <li>tass.com - ${i18n.t('srcTass')}</li>
-        <li>ria.ru - ${i18n.t('srcRia')}</li>
-        <li>rt.com - ${i18n.t('srcRt')}</li>
-        <li>rbc.ru - ${i18n.t('srcRbc')}</li>
-        <li>kommersant.ru - ${i18n.t('srcKommersant')}</li>
-        <li>lenta.ru - ${i18n.t('srcLenta')}</li>
-        <li>gazeta.ru - ${i18n.t('srcGazeta')}</li>
-        <li>iz.ru - ${i18n.t('srcIzvestia')}</li>
-      </ul>
-      <button onclick="this.closest('.help-modal').remove()" class="btn btn-primary">${i18n.t('close')}</button>
-    </div>
-  `;
-
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.remove();
+  submitBtns.forEach(btn => {
+    btn.disabled = loading;
   });
 
-  document.body.appendChild(modal);
+  if (loading) {
+    announce(progress ? t('loadingProgress', progress) : t('loading'));
+  }
 }
 
-// ============================================================================
-// CSS ANIMATIONS (Injected)
-// ============================================================================
+// =============================================================================
+// RESULTS RENDERING
+// =============================================================================
 
-function injectAnimationStyles() {
+function updateResultsCount() {
+  const countEl = document.getElementById('resultsCount');
+  if (countEl) {
+    countEl.textContent = `(${state.currentResults.length})`;
+  }
+}
+
+function updateSelectionCount() {
+  const count = state.selectedItems.size;
+  announce(t('selected', { count }));
+  updateCitationPreview();
+}
+
+function renderResults(results) {
+  const grid = document.getElementById('resultsGrid');
+  const emptyState = document.getElementById('emptyState');
+
+  if (!grid) return;
+
+  state.currentResults = results;
+  updateResultsCount();
+
+  if (results.length === 0) {
+    grid.innerHTML = '';
+    if (emptyState) emptyState.hidden = false;
+    announce(t('noResults'));
+    return;
+  }
+
+  if (emptyState) emptyState.hidden = true;
+
+  grid.innerHTML = results.map(item => `
+    <article class="video-card" data-id="${item.id}" role="listitem">
+      <div class="video-thumbnail">
+        ${item.thumbnail
+          ? `<img src="${escapeHtml(item.thumbnail)}" alt="" loading="lazy">`
+          : `<div class="thumbnail-placeholder"></div>`
+        }
+        ${item.duration ? `<span class="video-duration">${formatDuration(item.duration)}</span>` : ''}
+      </div>
+      <div class="video-info">
+        <h3 class="video-title">${escapeHtml(item.title)}</h3>
+        <p class="video-program">${escapeHtml(item.program || '')}</p>
+        <p class="video-meta">
+          <time class="video-date">${formatDate(item.publishedAt)}</time>
+          <span class="video-source">${escapeHtml(item.source)}</span>
+          ${item.category ? `<span class="video-category">${escapeHtml(item.category)}</span>` : ''}
+        </p>
+      </div>
+      <div class="video-actions">
+        <label class="select-video">
+          <input type="checkbox" class="video-select" data-id="${item.id}"
+                 ${state.selectedItems.has(item.id) ? 'checked' : ''}
+                 aria-label="${t('selectForCitation')}">
+          <span>${t('selectForCitation')}</span>
+        </label>
+        <a href="${escapeHtml(item.url)}" class="video-link" target="_blank" rel="noopener">${t('watchVideo')}</a>
+      </div>
+    </article>
+  `).join('');
+
+  // Attach checkbox handlers - direct event binding without re-render
+  grid.querySelectorAll('.video-select').forEach(checkbox => {
+    checkbox.addEventListener('change', handleSelectionChange);
+  });
+
+  announce(`${results.length} ${t('resultsTitle').toLowerCase()}`);
+}
+
+function handleSelectionChange(e) {
+  const id = e.target.dataset.id;
+  if (e.target.checked) {
+    state.selectedItems.add(id);
+  } else {
+    state.selectedItems.delete(id);
+  }
+  updateSelectionCount();
+}
+
+// =============================================================================
+// SORTING
+// =============================================================================
+
+function sortResults(sortBy) {
+  if (state.currentResults.length === 0) return;
+
+  const sorted = [...state.currentResults];
+
+  switch (sortBy) {
+    case 'date-desc':
+      sorted.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0));
+      break;
+    case 'date-asc':
+      sorted.sort((a, b) => new Date(a.publishedAt || 0) - new Date(b.publishedAt || 0));
+      break;
+    case 'duration-desc':
+      sorted.sort((a, b) => (b.duration || 0) - (a.duration || 0));
+      break;
+    case 'duration-asc':
+      sorted.sort((a, b) => (a.duration || 0) - (b.duration || 0));
+      break;
+    case 'title-asc':
+      sorted.sort((a, b) => (a.title || '').localeCompare(b.title || '', state.currentLanguage));
+      break;
+    case 'title-desc':
+      sorted.sort((a, b) => (b.title || '').localeCompare(a.title || '', state.currentLanguage));
+      break;
+    case 'relevance':
+    default:
+      // Keep original order
+      break;
+  }
+
+  renderResults(sorted);
+  log('Sorted by:', sortBy);
+}
+
+// =============================================================================
+// SEARCH
+// =============================================================================
+
+function getFilterValues() {
+  return {
+    query: document.getElementById('searchQuery')?.value.trim() || '',
+    minDuration: parseInt(document.getElementById('minDuration')?.value) || 0,
+    maxDuration: parseInt(document.getElementById('maxDuration')?.value) || 3600,
+    startDate: document.getElementById('startDate')?.value || '',
+    endDate: document.getElementById('endDate')?.value || '',
+    maxResults: parseInt(document.getElementById('maxResults')?.value) || 20,
+    sources: Array.from(document.querySelectorAll('input[name="source"]:checked')).map(cb => cb.value),
+    categories: Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value)
+  };
+}
+
+async function performSearch(e) {
+  if (e) e.preventDefault();
+  if (state.isLoading) return;
+
+  const filters = getFilterValues();
+  log('Search filters:', filters);
+
+  // Validate
+  if (filters.sources.length === 0) {
+    showError(t('selectSource'));
+    return;
+  }
+
+  setLoading(true);
+  const emptyState = document.getElementById('emptyState');
+  if (emptyState) emptyState.hidden = true;
+
+  try {
+    // Build discover params
+    const discoverParams = {
+      source: filters.sources.join(','),
+      max: filters.maxResults * 2  // Request extra for filtering
+    };
+
+    if (filters.query) discoverParams.q = filters.query;
+    if (filters.startDate) discoverParams.start_date = filters.startDate;
+    if (filters.endDate) discoverParams.end_date = filters.endDate;
+
+    // Step 1: Discover URLs
+    const discovered = await apiDiscover(discoverParams);
+    const urls = discovered.urls || [];
+
+    log(`Discovered ${urls.length} URLs`);
+
+    if (urls.length === 0) {
+      renderResults([]);
+      setLoading(false);
+      return;
+    }
+
+    // Step 2: Scrape metadata in parallel batches
+    const results = [];
+    const batchSize = 5;
+    const maxToProcess = Math.min(urls.length, filters.maxResults * 2);
+
+    for (let i = 0; i < maxToProcess; i += batchSize) {
+      const batch = urls.slice(i, i + batchSize);
+      setLoading(true, { current: results.length, total: filters.maxResults });
+
+      const batchResults = await Promise.allSettled(batch.map(url => apiScrape(url)));
+
+      batchResults.forEach((result, idx) => {
+        if (result.status === 'fulfilled' && result.value?.metadata) {
+          const meta = result.value.metadata;
+          const url = batch[idx];
+          const duration = meta.duration || 0;
+
+          // Apply duration filter
+          if (duration < filters.minDuration || duration > filters.maxDuration) {
+            return;
+          }
+
+          results.push({
+            id: generateId(url),
+            url: url,
+            title: meta.title || 'Untitled',
+            description: meta.description || '',
+            program: meta.program || '',
+            source: extractSource(url),
+            thumbnail: meta.thumbnail || null,
+            duration: duration,
+            publishedAt: meta.published_at || new Date().toISOString(),
+            category: meta.category || null,
+            m3u8Url: meta.m3u8_url || null
+          });
+        }
+      });
+
+      // Stop early if we have enough
+      if (results.length >= filters.maxResults) break;
+    }
+
+    // Apply category filter (client-side)
+    let filtered = results;
+    if (filters.categories.length > 0 && filters.categories.length < 8) {
+      filtered = results.filter(item =>
+        !item.category || filters.categories.includes(item.category.toLowerCase())
+      );
+    }
+
+    // Trim to requested max
+    filtered = filtered.slice(0, filters.maxResults);
+
+    log(`Final results: ${filtered.length}`);
+    renderResults(filtered);
+
+  } catch (error) {
+    logError('Search failed:', error);
+    showError(error.message);
+    renderResults([]);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// =============================================================================
+// AUDIO DOWNLOAD
+// =============================================================================
+
+async function handleDownloadAudio() {
+  if (state.selectedItems.size === 0) {
+    showError(t('noResults'));
+    return;
+  }
+
+  const btn = document.getElementById('downloadCitationBtn');
+  const originalText = btn?.textContent;
+  if (btn) {
+    btn.textContent = t('downloading');
+    btn.disabled = true;
+  }
+
+  const selected = state.currentResults.filter(r => state.selectedItems.has(r.id));
+
+  for (const item of selected) {
+    try {
+      log('Downloading audio:', item.title);
+      const blob = await apiDownloadAudio(item.url);
+
+      // Create download link
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${sanitizeFilename(item.title)}.aac`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+    } catch (err) {
+      logError('Download failed for:', item.title, err);
+      showError(`${item.title}: ${err.message}`);
+    }
+  }
+
+  if (btn) {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+
+  showSuccess(t('complete'));
+}
+
+// =============================================================================
+// CITATIONS
+// =============================================================================
+
+function formatCitation(item, format) {
+  const date = new Date(item.publishedAt || Date.now());
+  const year = date.getFullYear();
+  const dateFormatted = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const accessDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  switch (format) {
+    case 'mla':
+      return `"${item.title}." ${item.source}, ${dateFormatted}. Web. ${accessDate}. <${item.url}>.`;
+
+    case 'chicago':
+      return `${item.source}. "${item.title}." Accessed ${accessDate}. ${item.url}.`;
+
+    case 'bibtex':
+      const key = (item.title || 'video').toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 12);
+      return `@online{${key}${year},
+  title = {${item.title}},
+  author = {${item.source}},
+  year = {${year}},
+  url = {${item.url}},
+  urldate = {${accessDate}}
+}`;
+
+    case 'apa':
+    default:
+      return `${item.source}. (${year}, ${dateFormatted}). ${item.title}. Retrieved ${accessDate}, from ${item.url}`;
+  }
+}
+
+function updateCitationPreview() {
+  const output = document.getElementById('citationText');
+  if (!output) return;
+
+  if (state.selectedItems.size === 0) {
+    output.innerHTML = `<code>${t('citationPlaceholder')}</code>`;
+    return;
+  }
+
+  const selected = state.currentResults.filter(r => state.selectedItems.has(r.id));
+  const citations = selected.map(item => formatCitation(item, state.currentCitationFormat)).join('\n\n');
+  output.innerHTML = `<code style="white-space: pre-wrap;">${escapeHtml(citations)}</code>`;
+}
+
+async function handleCopyCitations() {
+  if (state.selectedItems.size === 0) {
+    showError(t('noResults'));
+    return;
+  }
+
+  const selected = state.currentResults.filter(r => state.selectedItems.has(r.id));
+  const citations = selected.map(item => formatCitation(item, state.currentCitationFormat)).join('\n\n');
+
+  try {
+    await navigator.clipboard.writeText(citations);
+    showSuccess(t('copySuccess'));
+  } catch (err) {
+    logError('Copy failed:', err);
+    showError(t('copyFailed'));
+  }
+}
+
+function handleCitationFormatChange(format) {
+  state.currentCitationFormat = format;
+
+  // Update tab states
+  document.querySelectorAll('[role="tab"]').forEach(tab => {
+    const isSelected = tab.dataset.format === format;
+    tab.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+    tab.classList.toggle('active', isSelected);
+  });
+
+  updateCitationPreview();
+}
+
+// =============================================================================
+// RESET
+// =============================================================================
+
+function handleReset() {
+  // Reset form
+  document.getElementById('searchForm')?.reset();
+
+  // Set default checkbox states
+  document.querySelectorAll('input[name="category"]').forEach((cb, i) => {
+    cb.checked = i < 4;
+  });
+  document.querySelectorAll('input[name="source"]').forEach((cb, i) => {
+    cb.checked = i < 3;
+  });
+
+  // Set default dates
+  setDefaultDates();
+
+  // Clear state
+  state.selectedItems.clear();
+  state.currentResults = [];
+
+  // Clear UI
+  const grid = document.getElementById('resultsGrid');
+  const emptyState = document.getElementById('emptyState');
+  if (grid) grid.innerHTML = '';
+  if (emptyState) emptyState.hidden = false;
+
+  updateResultsCount();
+  updateCitationPreview();
+
+  showSuccess(t('complete'));
+  log('Form reset');
+}
+
+// =============================================================================
+// PANEL TOGGLE
+// =============================================================================
+
+function initPanelToggle() {
+  const toggle = document.querySelector('.panel-toggle');
+  if (!toggle) return;
+
+  toggle.addEventListener('click', () => {
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', !expanded);
+
+    const content = document.getElementById('citationsContent');
+    if (content) content.hidden = expanded;
+
+    const indicator = toggle.querySelector('.toggle-indicator');
+    if (indicator) indicator.textContent = expanded ? '[+]' : '[-]';
+  });
+}
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+function setDefaultDates() {
+  const startDate = document.getElementById('startDate');
+  const endDate = document.getElementById('endDate');
+
+  if (startDate && !startDate.value) {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    startDate.value = weekAgo.toISOString().split('T')[0];
+  }
+
+  if (endDate && !endDate.value) {
+    endDate.value = new Date().toISOString().split('T')[0];
+  }
+}
+
+function injectStyles() {
   const style = document.createElement('style');
   style.textContent = `
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes fadeOut {
-      from { opacity: 1; }
-      to { opacity: 0; }
-    }
-
-    @keyframes slideInRight {
-      from { transform: translateX(100px); opacity: 0; }
+    @keyframes slideInNotification {
+      from { transform: translateX(100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
     }
-
-    @keyframes slideOutRight {
+    @keyframes slideOutNotification {
       from { transform: translateX(0); opacity: 1; }
-      to { transform: translateX(100px); opacity: 0; }
+      to { transform: translateX(100%); opacity: 0; }
     }
-
-    @keyframes slideDown {
-      from { transform: translateY(-20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    .thumbnail-placeholder {
+      width: 100%;
+      height: 100%;
+      min-height: 100px;
+      background: linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%);
     }
-
-    @keyframes fadeInUp {
-      from { transform: translateY(30px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    .video-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-
-    @keyframes rippleEffect {
-      to { transform: scale(4); opacity: 0; }
-    }
-
-    .animate-hidden {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-
-    .animated {
-      animation-duration: 0.6s;
-      animation-fill-mode: both;
-    }
-
-    .animated.fadeInUp {
-      animation-name: fadeInUp;
-    }
-
-    .dark-theme {
-      --bg-primary: #1a1a2e;
-      --bg-secondary: #16213e;
-      --text-primary: #eee;
-      --text-secondary: #aaa;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-    }
-
-    .dark-theme .result-card,
-    .dark-theme .command-palette-modal {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-    }
-
-    .dark-theme .command-palette-input {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      border-color: #333;
-    }
-
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 14px;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-    }
-
-    .btn-secondary {
-      background: #f0f0f0;
-      color: #333;
-    }
-
-    .btn-small {
-      padding: 6px 12px;
-      font-size: 12px;
-    }
-
-    .btn:hover {
+    .video-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     }
   `;
-
   document.head.appendChild(style);
 }
 
-// ============================================================================
+// =============================================================================
 // INITIALIZATION
-// ============================================================================
+// =============================================================================
 
-document.addEventListener('DOMContentLoaded', () => {
-  debug.log('App', 'Initializing Matushka...');
+function init() {
+  log('Initializing Matushka...');
 
-  // Inject styles
-  injectAnimationStyles();
+  // Inject additional styles
+  injectStyles();
 
-  // Load theme
-  loadTheme();
+  // Apply translations
+  applyTranslations();
 
-  // Initialize systems
-  i18n.init();
-  CommandPalette.init();
+  // Set initial language button states
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    const isActive = btn.dataset.lang === state.currentLanguage;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
 
-  // Initialize UI enhancements
-  if (CONFIG.enableAnimations) {
-    initScrollAnimations();
-    initScrollProgress();
-    initCardTilt();
+  // Set default dates
+  setDefaultDates();
+
+  // Initialize panel toggle
+  initPanelToggle();
+
+  // === EVENT LISTENERS ===
+
+  // Language toggle
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+  });
+
+  // Search form submission
+  const searchForm = document.getElementById('searchForm');
+  if (searchForm) {
+    searchForm.addEventListener('submit', performSearch);
+    searchForm.addEventListener('reset', (e) => {
+      e.preventDefault();
+      handleReset();
+    });
   }
 
-  initButtonFeedback();
-
-  // Keyboard shortcuts
-  document.addEventListener('keydown', (e) => {
-    // Command palette
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-      e.preventDefault();
-      CommandPalette.open();
-      return;
-    }
-
-    // Don't process shortcuts if typing in input
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-      return;
-    }
-
-    // Quick shortcuts
-    switch (e.key) {
-      case '/':
-        e.preventDefault();
-        document.getElementById('searchBtn')?.focus();
-        break;
-      case 'd':
-        downloadSelected();
-        break;
-      case 'c':
-        exportCitations();
-        break;
-      case 't':
-        toggleTheme();
-        break;
-      case 'l':
-        i18n.toggleLanguage();
-        break;
-      case 'r':
-        resetFilters();
-        break;
-      case 'Escape':
-        if (CommandPalette.isOpen) {
-          CommandPalette.close();
-        }
-        break;
-    }
-  });
-
-  // Bind button events
-  document.getElementById('searchBtn')?.addEventListener('click', searchContent);
-  document.getElementById('resetBtn')?.addEventListener('click', resetFilters);
-  document.getElementById('downloadCitationBtn')?.addEventListener('click', downloadSelected);
-  document.getElementById('copyCitationBtn')?.addEventListener('click', exportCitations);
-
-  // Language toggle buttons
-  document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const lang = btn.dataset.lang;
-      if (lang) {
-        i18n.setLanguage(lang);
-      }
-    });
-  });
-
-  // Collapsible panels
-  document.querySelectorAll('.collapsible-header').forEach(header => {
-    header.addEventListener('click', () => {
-      const isExpanded = header.getAttribute('aria-expanded') === 'true';
-      header.setAttribute('aria-expanded', !isExpanded);
-      const content = header.nextElementSibling;
-      if (content && content.classList.contains('collapsible-content')) {
-        content.hidden = isExpanded;
-      }
-    });
-  });
-
-  // View toggle buttons
-  document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.view-btn').forEach(b => {
-        b.classList.remove('active');
-        b.setAttribute('aria-pressed', 'false');
-      });
-      btn.classList.add('active');
-      btn.setAttribute('aria-pressed', 'true');
-      const view = btn.dataset.view;
-      const resultsGrid = document.getElementById('resultsGrid');
-      if (resultsGrid) {
-        resultsGrid.className = view === 'list' ? 'results-grid results-list' : 'results-grid';
-      }
-    });
+  // Sort dropdown
+  document.getElementById('sortSelect')?.addEventListener('change', (e) => {
+    sortResults(e.target.value);
   });
 
   // Citation format tabs
-  document.querySelectorAll('.citation-tab').forEach(tab => {
+  document.querySelectorAll('[role="tab"]').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.citation-tab').forEach(t => {
-        t.classList.remove('active');
-        t.setAttribute('aria-selected', 'false');
-      });
-      tab.classList.add('active');
-      tab.setAttribute('aria-selected', 'true');
-      updateCitationPreview(tab.dataset.format);
+      handleCitationFormatChange(tab.dataset.format);
     });
   });
 
-  // Debug panel clear button
-  document.getElementById('clearDebugBtn')?.addEventListener('click', () => {
-    debug.clearLogs();
-    const debugContent = document.getElementById('debugContent');
-    if (debugContent) debugContent.textContent = '';
-  });
+  // Copy citations button
+  document.getElementById('copyCitationBtn')?.addEventListener('click', handleCopyCitations);
 
-  debug.info('App', 'Matushka initialized successfully!');
-});
+  // Download audio button
+  document.getElementById('downloadCitationBtn')?.addEventListener('click', handleDownloadAudio);
 
-// ============================================================================
-// EXPORTS (for testing/debugging)
-// ============================================================================
+  log('Matushka initialized');
+}
 
-window.Matushka = {
-  CONFIG,
-  i18n,
-  CommandPalette,
-  debug,
-  searchContent,
-  downloadSelected,
-  exportCitations,
-  resetFilters,
-  listAvailableSources
-};
+// Start when DOM is ready
+document.addEventListener('DOMContentLoaded', init);
+
+// =============================================================================
+// EXPORTS (for debugging)
+// =============================================================================
+
+if (DEBUG) {
+  window.Matushka = {
+    state,
+    performSearch,
+    handleReset,
+    setLanguage,
+    t,
+    getFilterValues
+  };
+}

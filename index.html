@@ -1,534 +1,188 @@
 <!DOCTYPE html>
-<html lang="ru" dir="ltr">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-
-    <!-- SEO & Social Sharing -->
-    <title data-i18n="pageTitle">Матушка - Premium Video Archive Search</title>
-    <meta name="description" content="Матушка - Advanced video archive search and discovery platform with premium features">
-    <meta name="keywords" content="video, archive, search, Матушка, premium, Russian, teaching materials">
-    <meta name="author" content="Матушка Team">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://matushka.app/">
-    <meta property="og:title" content="Матушка - Premium Video Archive Search">
-    <meta property="og:description" content="Advanced video archive search and discovery platform with premium features">
-    <meta property="og:image" content="https://matushka.app/og-image.png">
-    <meta property="og:locale" content="ru_RU">
-    <meta property="og:locale:alternate" content="en_US">
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://matushka.app/">
-    <meta name="twitter:title" content="Матушка - Premium Video Archive Search">
-    <meta name="twitter:description" content="Advanced video archive search and discovery platform with premium features">
-    <meta name="twitter:image" content="https://matushka.app/twitter-image.png">
-
-    <!-- Theme Color -->
-    <meta name="theme-color" content="#6366f1">
-    <meta name="msapplication-TileColor" content="#6366f1">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-
-    <!-- Inline SVG Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%236366f1'/%3E%3Cstop offset='100%25' style='stop-color:%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='45' fill='url(%23grad)'/%3E%3Ctext x='50' y='68' font-size='45' text-anchor='middle' fill='white' font-family='serif' font-weight='bold'%3E%D0%9C%3C/text%3E%3C/svg%3E">
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Stylesheets -->
+    <title data-i18n="pageTitle">Matushka - Video Archive Search</title>
+    <meta name="description" content="Video archive search platform for educational purposes">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-size='45' text-anchor='middle' fill='white' font-family='serif' font-weight='bold'%3EM%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Skip to Main Content (Accessibility) -->
     <a href="#main-content" class="skip-link" data-i18n="skipToMain">Skip to main content</a>
 
-    <!-- Background Elements -->
-    <div class="app-background" aria-hidden="true"></div>
-    <div class="background-orbs" aria-hidden="true">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-    </div>
-    <div class="background-grid" aria-hidden="true"></div>
-
-    <!-- Scroll Progress Indicator -->
-    <div class="scroll-progress" id="scrollProgress" role="progressbar" aria-label="Page scroll progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-
     <!-- Header -->
-    <header class="app-header glass-card" role="banner">
-        <div class="header-top">
-            <!-- Language Toggle -->
-            <div class="language-toggle" role="group" aria-label="Language selection">
-                <button class="lang-btn" data-lang="en" aria-label="Switch to English" title="English">
-                    <span aria-hidden="true">&#127482;&#127480;</span>
-                </button>
-                <button class="lang-btn active" data-lang="ru" aria-label="Switch to Russian" title="Russian">
-                    <span aria-hidden="true">&#127479;&#127482;</span>
-                </button>
-            </div>
-
-            <!-- Logo & Title -->
-            <div class="header-branding">
-                <h1 class="app-title" data-i18n="appTitle">Матушка</h1>
-                <p class="app-subtitle" data-i18n="appSubtitle">Premium Video Archive Search</p>
-            </div>
+    <header class="site-header">
+        <h1 class="site-title" data-i18n="appTitle">Matushka</h1>
+        <div class="lang-toggle" role="group" aria-label="Language selection">
+            <button type="button" class="lang-btn active" data-lang="en" aria-pressed="true">EN</button>
+            <button type="button" class="lang-btn" data-lang="ru" aria-pressed="false">RU</button>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main id="main-content" class="main-content" role="main">
-        <!-- Configuration Panel -->
-        <section class="config-panel glass-card collapsible" aria-labelledby="configHeading">
-            <button class="collapsible-header" aria-expanded="true" aria-controls="configContent">
-                <h2 id="configHeading" data-i18n="configTitle">Search Configuration</h2>
-                <span class="collapse-icon" aria-hidden="true">&#9660;</span>
-            </button>
-            <div class="collapsible-content" id="configContent">
-                <!-- Duration Section -->
-                <div class="config-section">
-                    <div class="section-header">
-                        <span class="section-icon" aria-hidden="true">&#9201;</span>
-                        <h3 data-i18n="durationTitle">Duration</h3>
-                    </div>
-                    <div class="duration-controls">
-                        <div class="input-group">
-                            <label for="minDuration" data-i18n="minDuration">Min (minutes)</label>
-                            <input type="number" id="minDuration" name="minDuration" min="0" value="0" aria-describedby="durationHint">
-                        </div>
-                        <div class="input-group">
-                            <label for="maxDuration" data-i18n="maxDuration">Max (minutes)</label>
-                            <input type="number" id="maxDuration" name="maxDuration" min="0" value="60" aria-describedby="durationHint">
-                        </div>
-                        <span id="durationHint" class="input-hint" data-i18n="durationHint">Set video duration range</span>
-                    </div>
-                </div>
+    <main id="main-content">
+        <!-- Error Messages -->
+        <div id="errorContainer" class="error-container" role="alert" aria-live="assertive" hidden></div>
 
-                <!-- Date Range Section -->
-                <div class="config-section">
-                    <div class="section-header">
-                        <span class="section-icon" aria-hidden="true">&#128197;</span>
-                        <h3 data-i18n="dateRangeTitle">Date Range</h3>
-                    </div>
-                    <div class="date-controls">
-                        <div class="input-group">
-                            <label for="startDate" data-i18n="startDate">Start Date</label>
-                            <input type="date" id="startDate" name="startDate" aria-describedby="dateHint">
-                        </div>
-                        <div class="input-group">
-                            <label for="endDate" data-i18n="endDate">End Date</label>
-                            <input type="date" id="endDate" name="endDate" aria-describedby="dateHint">
-                        </div>
-                        <span id="dateHint" class="input-hint" data-i18n="dateHint">Filter by broadcast date</span>
-                    </div>
-                </div>
-
-                <!-- Categories Section -->
-                <div class="config-section">
-                    <div class="section-header">
-                        <span class="section-icon" aria-hidden="true">&#127991;</span>
-                        <h3 data-i18n="categoriesTitle">Categories</h3>
-                    </div>
-                    <div class="checkbox-grid" role="group" aria-label="Category selection">
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="politics" checked>
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catPolitics">Politics</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="economy" checked>
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catEconomy">Economy</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="society" checked>
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catSociety">Society</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="world" checked>
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catWorld">World</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="sports">
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catSports">Sports</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="culture">
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catCulture">Culture</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="science">
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catScience">Science</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="tech">
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catTech">Technology</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Sources Section -->
-                <div class="config-section">
-                    <div class="section-header">
-                        <span class="section-icon" aria-hidden="true">&#128250;</span>
-                        <h3 data-i18n="sourcesTitle">Sources</h3>
-                    </div>
-                    <div class="checkbox-grid" role="group" aria-label="Source selection">
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="1tv" checked>
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="src1tv">Channel One</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="vesti" checked>
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcVesti">Vesti</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="tass" checked>
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcTass">TASS</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="ria" checked>
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcRia">RIA Novosti</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="rt" checked>
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcRt">RT</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="rbc">
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcRbc">RBC</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="kommersant">
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcKommersant">Kommersant</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="lenta">
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcLenta">Lenta</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="gazeta">
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcGazeta">Gazeta</span>
-                        </label>
-                        <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="izvestia">
-                            <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcIzvestia">Izvestia</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Max Items Section -->
-                <div class="config-section">
-                    <div class="section-header">
-                        <span class="section-icon" aria-hidden="true">&#128202;</span>
-                        <h3 data-i18n="maxItemsTitle">Results Limit</h3>
-                    </div>
-                    <div class="input-group max-items-group">
-                        <label for="maxItems" data-i18n="maxItemsLabel">Maximum items to display</label>
-                        <input type="number" id="maxItems" name="maxItems" min="1" max="100" value="20" aria-describedby="maxItemsHint">
-                        <span id="maxItemsHint" class="input-hint" data-i18n="maxItemsHint">Range: 1-100</span>
-                    </div>
-                </div>
+        <!-- Search Form -->
+        <form id="searchForm" class="search-form" aria-label="Video search">
+            <!-- Keyword Search -->
+            <div class="search-bar">
+                <label for="searchQuery" class="visually-hidden" data-i18n="searchLabel">Search keywords</label>
+                <input type="search" id="searchQuery" name="query" placeholder="Search videos..." data-i18n-placeholder="searchPlaceholder" autocomplete="off">
+                <button type="submit" class="btn btn-primary" data-i18n="searchBtn">Search</button>
             </div>
-        </section>
 
-        <!-- Action Area -->
-        <section class="action-area" aria-label="Search actions">
-            <div class="action-buttons">
-                <button class="btn btn-primary btn-large" id="searchBtn" aria-describedby="searchHint">
-                    <span class="btn-icon" aria-hidden="true">&#128269;</span>
-                    <span class="btn-text" data-i18n="searchBtn">Search Archive</span>
-                </button>
-                <button class="btn btn-secondary" id="resetBtn" aria-label="Reset all filters">
-                    <span class="btn-icon" aria-hidden="true">&#8634;</span>
-                    <span class="btn-text" data-i18n="resetBtn">Reset</span>
-                </button>
+            <!-- Duration Filter -->
+            <fieldset class="filter-group">
+                <legend data-i18n="durationTitle">Duration (seconds)</legend>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="minDuration" data-i18n="minDuration">Min</label>
+                        <input type="number" id="minDuration" name="minDuration" min="0" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="maxDuration" data-i18n="maxDuration">Max</label>
+                        <input type="number" id="maxDuration" name="maxDuration" min="0" value="3600">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Date Range Filter -->
+            <fieldset class="filter-group">
+                <legend data-i18n="dateRangeTitle">Date Range</legend>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="startDate" data-i18n="startDate">Start</label>
+                        <input type="date" id="startDate" name="startDate">
+                    </div>
+                    <div class="field">
+                        <label for="endDate" data-i18n="endDate">End</label>
+                        <input type="date" id="endDate" name="endDate">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Categories Filter -->
+            <fieldset class="filter-group">
+                <legend data-i18n="categoriesTitle">Categories</legend>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="category" value="politics"> <span data-i18n="catPolitics">Politics</span></label>
+                    <label><input type="checkbox" name="category" value="economy"> <span data-i18n="catEconomy">Economy</span></label>
+                    <label><input type="checkbox" name="category" value="society"> <span data-i18n="catSociety">Society</span></label>
+                    <label><input type="checkbox" name="category" value="world"> <span data-i18n="catWorld">World</span></label>
+                    <label><input type="checkbox" name="category" value="sports"> <span data-i18n="catSports">Sports</span></label>
+                    <label><input type="checkbox" name="category" value="culture"> <span data-i18n="catCulture">Culture</span></label>
+                    <label><input type="checkbox" name="category" value="science"> <span data-i18n="catScience">Science</span></label>
+                    <label><input type="checkbox" name="category" value="technology"> <span data-i18n="catTechnology">Technology</span></label>
+                </div>
+            </fieldset>
+
+            <!-- Sources Filter -->
+            <fieldset class="filter-group">
+                <legend data-i18n="sourcesTitle">Sources</legend>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="source" value="1tv"> <span data-i18n="src1tv">Channel One</span></label>
+                    <label><input type="checkbox" name="source" value="smotrim"> <span data-i18n="srcSmotrim">Smotrim</span></label>
+                    <label><input type="checkbox" name="source" value="rt"> <span data-i18n="srcRt">RT</span></label>
+                    <label><input type="checkbox" name="source" value="rutube"> <span data-i18n="srcRutube">Rutube</span></label>
+                    <label><input type="checkbox" name="source" value="izvestia"> <span data-i18n="srcIzvestia">Izvestia</span></label>
+                </div>
+            </fieldset>
+
+            <!-- Max Results -->
+            <fieldset class="filter-group">
+                <legend data-i18n="maxResultsTitle">Max Results</legend>
+                <div class="field">
+                    <label for="maxResults" class="visually-hidden" data-i18n="maxResultsLabel">Number of results</label>
+                    <input type="number" id="maxResults" name="maxResults" min="1" max="100" value="20">
+                </div>
+            </fieldset>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" data-i18n="searchBtn">Search</button>
+                <button type="reset" class="btn btn-secondary" data-i18n="resetBtn">Reset</button>
             </div>
-            <span id="searchHint" class="visually-hidden" data-i18n="searchHint">Click to search with current filters</span>
-            <div class="last-search-indicator" id="lastSearchIndicator" role="status" aria-live="polite" hidden>
-                <span class="indicator-icon" aria-hidden="true">&#128336;</span>
-                <span data-i18n="lastSearchLabel">Last search:</span>
-                <time id="lastSearchTime" datetime=""></time>
-            </div>
-        </section>
+        </form>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading" role="status" aria-live="polite" hidden>
+            <span class="spinner" aria-hidden="true"></span>
+            <span data-i18n="loadingText">Loading...</span>
+        </div>
 
         <!-- Results Section -->
-        <section class="results-section" id="resultsSection" aria-labelledby="resultsHeading">
-            <div class="results-header">
-                <h2 id="resultsHeading">
-                    <span data-i18n="resultsTitle">Results</span>
-                    <span class="results-count" id="resultsCount" role="status" aria-live="polite">(0)</span>
-                </h2>
-                <div class="results-controls">
-                    <!-- View Toggle -->
-                    <div class="view-toggle" role="group" aria-label="View mode selection">
-                        <button class="view-btn active" data-view="grid" aria-pressed="true" aria-label="Grid view">
-                            <span aria-hidden="true">&#9638;</span>
-                        </button>
-                        <button class="view-btn" data-view="list" aria-pressed="false" aria-label="List view">
-                            <span aria-hidden="true">&#9776;</span>
-                        </button>
-                    </div>
-                    <!-- Sort Dropdown -->
-                    <div class="sort-dropdown">
-                        <label for="sortSelect" class="visually-hidden" data-i18n="sortLabel">Sort by</label>
-                        <select id="sortSelect" class="sort-select" aria-label="Sort results">
-                            <option value="relevance" data-i18n="sortRelevance">Relevance</option>
-                            <option value="date-desc" data-i18n="sortDateDesc">Date (newest)</option>
-                            <option value="date-asc" data-i18n="sortDateAsc">Date (oldest)</option>
-                            <option value="duration-desc" data-i18n="sortDurationDesc">Duration (longest)</option>
-                            <option value="duration-asc" data-i18n="sortDurationAsc">Duration (shortest)</option>
-                            <option value="title-asc" data-i18n="sortTitleAsc">Title (A-Z)</option>
-                            <option value="title-desc" data-i18n="sortTitleDesc">Title (Z-A)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+        <section id="resultsSection" class="results-section" aria-labelledby="resultsHeading">
+            <h2 id="resultsHeading">
+                <span data-i18n="resultsTitle">Results</span>
+                <span id="resultsCount" class="results-count">(0)</span>
+            </h2>
 
-            <!-- Results Grid Container -->
-            <div class="results-grid" id="resultsGrid" role="list" aria-label="Search results">
-                <!-- Results will be dynamically inserted here -->
-            </div>
+            <div id="resultsGrid" class="results-grid" role="list" aria-label="Search results"></div>
 
-            <!-- Empty State -->
-            <div class="empty-state" id="emptyState" role="status">
-                <div class="empty-illustration" aria-hidden="true">
-                    <svg viewBox="0 0 200 200" width="150" height="150">
-                        <circle cx="100" cy="80" r="50" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"/>
-                        <line x1="135" y1="115" x2="170" y2="150" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
-                        <path d="M60 140 Q100 160 140 140" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
-                    </svg>
-                </div>
-                <h3 data-i18n="emptyStateTitle">No results yet</h3>
-                <p data-i18n="emptyStateDesc">Configure your search parameters and click Search to find videos</p>
-            </div>
-
-            <!-- Loading Skeletons -->
-            <div class="loading-skeletons" id="loadingSkeletons" hidden aria-label="Loading results" role="status">
-                <div class="skeleton-card" aria-hidden="true">
-                    <div class="skeleton-thumbnail"></div>
-                    <div class="skeleton-content">
-                        <div class="skeleton-title"></div>
-                        <div class="skeleton-text"></div>
-                        <div class="skeleton-meta"></div>
-                    </div>
-                </div>
-                <div class="skeleton-card" aria-hidden="true">
-                    <div class="skeleton-thumbnail"></div>
-                    <div class="skeleton-content">
-                        <div class="skeleton-title"></div>
-                        <div class="skeleton-text"></div>
-                        <div class="skeleton-meta"></div>
-                    </div>
-                </div>
-                <div class="skeleton-card" aria-hidden="true">
-                    <div class="skeleton-thumbnail"></div>
-                    <div class="skeleton-content">
-                        <div class="skeleton-title"></div>
-                        <div class="skeleton-text"></div>
-                        <div class="skeleton-meta"></div>
-                    </div>
-                </div>
-                <div class="skeleton-card" aria-hidden="true">
-                    <div class="skeleton-thumbnail"></div>
-                    <div class="skeleton-content">
-                        <div class="skeleton-title"></div>
-                        <div class="skeleton-text"></div>
-                        <div class="skeleton-meta"></div>
-                    </div>
-                </div>
-                <span class="visually-hidden" data-i18n="loadingText">Loading results, please wait...</span>
-            </div>
+            <p id="emptyState" class="empty-state" data-i18n="emptyStateDesc">Enter search terms and click Search to find videos.</p>
         </section>
 
         <!-- Video Card Template -->
-        <template id="video-card-template">
-            <article class="result-card card-tilt glass-card" role="listitem">
-                <div class="card-thumbnail">
-                    <img src="" alt="" class="thumbnail-img" loading="lazy">
-                    <span class="duration-badge" aria-label="Video duration"></span>
-                    <div class="card-overlay">
-                        <button class="preview-btn" data-i18n="previewBtn">Preview</button>
-                    </div>
+        <template id="videoCardTemplate">
+            <article class="video-card" role="listitem">
+                <div class="video-thumbnail">
+                    <img src="" alt="" loading="lazy">
+                    <span class="video-duration"></span>
                 </div>
-                <div class="card-content">
-                    <h3 class="card-title" data-i18n-dynamic="title"></h3>
-                    <p class="card-program"></p>
-                    <div class="card-meta">
-                        <span class="card-date"></span>
-                        <span class="card-category badge"></span>
-                    </div>
+                <div class="video-info">
+                    <h3 class="video-title"></h3>
+                    <p class="video-meta">
+                        <time class="video-date"></time>
+                        <span class="video-source"></span>
+                        <span class="video-category"></span>
+                    </p>
                 </div>
-                <div class="card-actions">
-                    <label class="card-select">
-                        <input type="checkbox" class="select-checkbox" aria-label="Select this video">
-                        <span class="checkmark"></span>
+                <div class="video-actions">
+                    <label class="select-video">
+                        <input type="checkbox" class="video-select">
+                        <span data-i18n="selectForCitation">Select</span>
                     </label>
-                    <button class="favorite-btn" aria-label="Add to favorites" aria-pressed="false">&#9733;</button>
+                    <a href="#" class="video-link" target="_blank" rel="noopener" data-i18n="watchVideo">Watch</a>
                 </div>
             </article>
         </template>
 
         <!-- Citations Panel -->
-        <section class="citations-panel glass-card collapsible" aria-labelledby="citationsHeading">
-            <button class="collapsible-header" aria-expanded="false" aria-controls="citationsContent">
-                <h2 id="citationsHeading" data-i18n="citationsTitle">Citations</h2>
-                <span class="collapse-icon" aria-hidden="true">&#9660;</span>
+        <aside id="citationsPanel" class="citations-panel" aria-labelledby="citationsHeading">
+            <button type="button" class="panel-toggle" aria-expanded="false" aria-controls="citationsContent">
+                <span id="citationsHeading" data-i18n="citationsTitle">Citations</span>
+                <span class="toggle-indicator" aria-hidden="true">[+]</span>
             </button>
-            <div class="collapsible-content" id="citationsContent" hidden>
-                <!-- Format Selector Tabs -->
-                <div class="citation-tabs" role="tablist" aria-label="Citation format selection">
-                    <button class="citation-tab active" role="tab" aria-selected="true" aria-controls="citationPreview" data-format="apa" id="tab-apa">
-                        <span data-i18n="citationAPA">APA</span>
-                    </button>
-                    <button class="citation-tab" role="tab" aria-selected="false" aria-controls="citationPreview" data-format="mla" id="tab-mla">
-                        <span data-i18n="citationMLA">MLA</span>
-                    </button>
-                    <button class="citation-tab" role="tab" aria-selected="false" aria-controls="citationPreview" data-format="chicago" id="tab-chicago">
-                        <span data-i18n="citationChicago">Chicago</span>
-                    </button>
-                    <button class="citation-tab" role="tab" aria-selected="false" aria-controls="citationPreview" data-format="bibtex" id="tab-bibtex">
-                        <span data-i18n="citationBibTeX">BibTeX</span>
-                    </button>
+            <div id="citationsContent" class="panel-content" hidden>
+                <div class="citation-formats" role="tablist" aria-label="Citation format">
+                    <button type="button" role="tab" aria-selected="true" data-format="apa" id="tabApa" aria-controls="citationOutput">APA</button>
+                    <button type="button" role="tab" aria-selected="false" data-format="mla" id="tabMla" aria-controls="citationOutput">MLA</button>
+                    <button type="button" role="tab" aria-selected="false" data-format="chicago" id="tabChicago" aria-controls="citationOutput">Chicago</button>
+                    <button type="button" role="tab" aria-selected="false" data-format="bibtex" id="tabBibtex" aria-controls="citationOutput">BibTeX</button>
                 </div>
-
-                <!-- Citation Preview Area -->
-                <div class="citation-preview" id="citationPreview" role="tabpanel" aria-labelledby="tab-apa">
-                    <pre class="citation-text" id="citationText" aria-live="polite"><code data-i18n="citationPlaceholder">Select videos to generate citations...</code></pre>
+                <div id="citationOutput" class="citation-output" role="tabpanel" aria-labelledby="tabApa">
+                    <pre id="citationText"><code data-i18n="citationPlaceholder">Select videos to generate citations...</code></pre>
                 </div>
-
-                <!-- Citation Actions -->
                 <div class="citation-actions">
-                    <button class="btn btn-secondary" id="copyCitationBtn" aria-label="Copy citation to clipboard">
-                        <span class="btn-icon" aria-hidden="true">&#128203;</span>
-                        <span class="btn-text" data-i18n="copyBtn">Copy</span>
-                    </button>
-                    <button class="btn btn-secondary" id="downloadCitationBtn" aria-label="Download citation file">
-                        <span class="btn-icon" aria-hidden="true">&#11015;</span>
-                        <span class="btn-text" data-i18n="downloadBtn">Download</span>
-                    </button>
+                    <button type="button" class="btn btn-secondary" id="copyCitationBtn" data-i18n="copyBtn">Copy</button>
+                    <button type="button" class="btn btn-secondary" id="downloadCitationBtn" data-i18n="downloadBtn">Download</button>
                 </div>
             </div>
-        </section>
-
-        <!-- Debug Panel -->
-        <section class="debug-panel glass-card collapsible" aria-labelledby="debugHeading">
-            <button class="collapsible-header" aria-expanded="false" aria-controls="debugContentPanel">
-                <h2 id="debugHeading" data-i18n="debugTitle">Debug Console</h2>
-                <span class="collapse-icon" aria-hidden="true">&#9660;</span>
-            </button>
-            <div class="collapsible-content" id="debugContentPanel" hidden>
-                <div class="debug-toolbar">
-                    <button class="btn btn-small" id="clearDebugBtn" aria-label="Clear debug log">
-                        <span data-i18n="clearDebugBtn">Clear</span>
-                    </button>
-                    <label class="custom-checkbox debug-checkbox">
-                        <input type="checkbox" id="verboseMode" name="verboseMode">
-                        <span class="checkmark"></span>
-                        <span class="checkbox-label" data-i18n="verboseMode">Verbose Mode</span>
-                    </label>
-                </div>
-                <div class="debug-log" id="debugLog" role="log" aria-live="polite" aria-label="Debug messages">
-                    <pre class="debug-content" id="debugContent"></pre>
-                </div>
-            </div>
-        </section>
+        </aside>
     </main>
 
-    <!-- Command Palette Modal -->
-    <div class="command-palette" id="commandPalette" hidden role="dialog" aria-modal="true" aria-labelledby="commandPaletteTitle">
-        <div class="command-backdrop" aria-hidden="true"></div>
-        <div class="command-modal glass-premium">
-            <h2 id="commandPaletteTitle" class="visually-hidden" data-i18n="commandPaletteTitle">Command Palette</h2>
-            <input type="text" class="command-input" id="commandInput" placeholder="Type a command..." data-i18n-placeholder="cmdPlaceholder" aria-label="Command input" autocomplete="off">
-            <div class="command-results" id="commandResults" role="listbox" aria-label="Command suggestions">
-                <!-- Command results dynamically populated -->
-            </div>
-            <div class="command-footer" aria-hidden="true">
-                <span><kbd>&#8593;</kbd><kbd>&#8595;</kbd> <span data-i18n="cmdNavigate">Navigate</span></span>
-                <span><kbd>&#8629;</kbd> <span data-i18n="cmdSelect">Select</span></span>
-                <span><kbd>esc</kbd> <span data-i18n="cmdClose">Close</span></span>
-            </div>
-        </div>
-    </div>
-
     <!-- Footer -->
-    <footer class="app-footer glass-card" role="contentinfo">
-        <div class="footer-content">
-            <!-- About Section -->
-            <div class="footer-section footer-about">
-                <h3 data-i18n="footerAboutTitle">About Матушка</h3>
-                <p data-i18n="footerAboutText">A premium video archive search platform providing access to historical broadcasts and media content for educational purposes.</p>
-            </div>
-
-            <!-- Links Section -->
-            <div class="footer-section footer-links">
-                <h3 data-i18n="footerLinksTitle">Quick Links</h3>
-                <nav aria-label="Footer navigation">
-                    <ul>
-                        <li><a href="#help" data-i18n="footerHelp">Help Center</a></li>
-                        <li><a href="#api" data-i18n="footerAPI">API Documentation</a></li>
-                        <li><a href="#contact" data-i18n="footerContact">Contact Us</a></li>
-                        <li><a href="#feedback" data-i18n="footerFeedback">Send Feedback</a></li>
-                    </ul>
-                </nav>
-            </div>
-
-            <!-- Legal Section -->
-            <div class="footer-section footer-legal">
-                <h3 data-i18n="footerLegalTitle">Legal</h3>
-                <nav aria-label="Legal links">
-                    <ul>
-                        <li><a href="#privacy" data-i18n="footerPrivacy">Privacy Policy</a></li>
-                        <li><a href="#terms" data-i18n="footerTerms">Terms of Service</a></li>
-                        <li><a href="#cookies" data-i18n="footerCookies">Cookie Policy</a></li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
-
-        <!-- Legal Disclaimer -->
-        <div class="footer-disclaimer">
-            <p data-i18n="footerDisclaimer">This service is provided for educational and research purposes only. All content is subject to applicable copyright laws. Use of this service constitutes acceptance of our terms. Users are responsible for ensuring compliance with all applicable laws and regulations.</p>
-        </div>
-
-        <!-- Version & Copyright -->
-        <div class="footer-bottom">
-            <p class="copyright" data-i18n="footerCopyright">&copy; 2024 Матушка. All rights reserved.</p>
-            <p class="version">
-                <span data-i18n="versionLabel">Version</span>
-                <span id="appVersion">2.0.0-premium</span>
-            </p>
-        </div>
+    <footer class="site-footer">
+        <p data-i18n="footerCopyright">Matushka 2024</p>
+        <p class="version"><span data-i18n="versionLabel">Version</span> <span id="appVersion">1.0.0</span></p>
     </footer>
 
-    <!-- Live Region for Announcements (Accessibility) -->
-    <div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true" id="liveAnnouncer">
-        <!-- Screen reader announcements injected here -->
-    </div>
+    <!-- Screen Reader Announcements -->
+    <div id="announcer" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- Scripts -->
     <script src="app.js" defer></script>
 </body>
 </html>
