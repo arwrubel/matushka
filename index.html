@@ -6,219 +6,452 @@
     <title>Matushka - Russian Language Teaching Materials Collector</title>
     <meta name="description" content="Free browser-based Russian language teaching materials collector for educators. Search, filter, and download video content with automatic citation generation.">
     <meta name="keywords" content="Russian language, teaching materials, education, video collector, citations">
+    <meta name="author" content="Matushka Project">
+    <meta name="theme-color" content="#1a365d">
+
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Matushka - Russian Language Teaching Materials Collector">
+    <meta property="og:description" content="Free browser-based tool for educators to discover, organize, and cite Russian language video content for classroom use.">
+    <meta property="og:image" content="assets/og-image.png">
+    <meta property="og:url" content="https://matushka.edu">
+    <meta property="og:site_name" content="Matushka">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Matushka - Russian Language Teaching Materials">
+    <meta name="twitter:description" content="Free tool for educators to discover and organize Russian language video content.">
+    <meta name="twitter:image" content="assets/og-image.png">
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Skip to Main Content Link -->
+    <a href="#main-content" class="skip-link" id="skip-link">Skip to main content</a>
+
     <div class="container">
         <!-- Header Section -->
-        <header role="banner">
-            <h1 id="app-title">Matushka</h1>
+        <header class="header" role="banner" id="app-header">
+            <!-- Decorative Pattern -->
+            <div class="header-pattern" aria-hidden="true">
+                <svg class="pattern-svg" viewBox="0 0 100 20" preserveAspectRatio="none">
+                    <path d="M0,10 Q25,0 50,10 T100,10" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.3"/>
+                    <path d="M0,15 Q25,5 50,15 T100,15" fill="none" stroke="currentColor" stroke-width="0.3" opacity="0.2"/>
+                </svg>
+            </div>
+
+            <!-- Logo Area -->
+            <div class="header-logo" id="header-logo">
+                <svg class="logo-icon" viewBox="0 0 48 48" aria-hidden="true" width="48" height="48">
+                    <circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <text x="24" y="32" text-anchor="middle" font-size="24" font-weight="600" fill="currentColor">M</text>
+                </svg>
+                <div class="logo-text">
+                    <h1 id="app-title" class="logo-title">Matushka</h1>
+                    <p class="logo-tagline" id="app-tagline">Educational Video Discovery</p>
+                </div>
+            </div>
+
             <p class="subtitle" id="app-subtitle">Russian Language Teaching Materials Collector</p>
             <p class="description" id="app-description">
                 A free, browser-based tool for educators to discover, organize, and cite Russian language video content for classroom use.
             </p>
+
+            <!-- Quick Stats Bar -->
+            <div class="header-stats" id="header-stats" aria-label="Application statistics">
+                <div class="stat-item" title="Videos in current session">
+                    <svg class="stat-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <path fill="currentColor" d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
+                    </svg>
+                    <span class="stat-value" id="stat-videos">0</span>
+                    <span class="stat-label">Videos</span>
+                </div>
+                <div class="stat-item" title="Selected items">
+                    <svg class="stat-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <span class="stat-value" id="stat-selected">0</span>
+                    <span class="stat-label">Selected</span>
+                </div>
+                <div class="stat-item" title="Citations generated">
+                    <svg class="stat-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <path fill="currentColor" d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/>
+                    </svg>
+                    <span class="stat-value" id="stat-citations">0</span>
+                    <span class="stat-label">Citations</span>
+                </div>
+            </div>
         </header>
 
-        <main role="main">
+        <main role="main" id="main-content">
             <!-- Configuration Panel -->
             <section class="config-panel" id="config-panel" aria-labelledby="config-heading">
-                <h2 id="config-heading">Search Configuration</h2>
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <svg class="panel-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                            <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                        </svg>
+                        <h2 id="config-heading">Search Configuration</h2>
+                    </div>
+                    <button type="button" class="panel-collapse-btn" id="config-collapse-btn" aria-expanded="true" aria-controls="config-form-wrapper" title="Collapse configuration panel">
+                        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                            <path fill="currentColor" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                        </svg>
+                    </button>
+                </div>
                 <p class="section-description">Customize your search filters to find the perfect teaching materials.</p>
 
-                <form id="configForm" aria-label="Search configuration form">
-                    <!-- Duration Filter -->
-                    <div class="form-section" id="duration-section">
-                        <h3 id="duration-heading">Duration Filter</h3>
-                        <div class="form-row">
+                <div class="config-form-wrapper" id="config-form-wrapper">
+                    <form id="configForm" aria-label="Search configuration form">
+                        <!-- Duration Filter -->
+                        <div class="form-section" id="duration-section">
+                            <div class="form-section-header">
+                                <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                                    <path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                                </svg>
+                                <h3 id="duration-heading">Duration Filter</h3>
+                                <span class="section-badge" title="Set video length range">Range</span>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="minDuration">
+                                        Minimum Seconds
+                                        <span class="label-hint">(min: 0)</span>
+                                    </label>
+                                    <div class="input-with-icon">
+                                        <input type="number"
+                                               id="minDuration"
+                                               name="minDuration"
+                                               value="30"
+                                               min="0"
+                                               max="3600"
+                                               aria-describedby="duration-hint"
+                                               required>
+                                        <span class="input-suffix">sec</span>
+                                    </div>
+                                </div>
+                                <div class="form-group-separator" aria-hidden="true">
+                                    <span class="separator-line"></span>
+                                    <span class="separator-text">to</span>
+                                    <span class="separator-line"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="maxDuration">
+                                        Maximum Seconds
+                                        <span class="label-hint">(max: 3600)</span>
+                                    </label>
+                                    <div class="input-with-icon">
+                                        <input type="number"
+                                               id="maxDuration"
+                                               name="maxDuration"
+                                               value="600"
+                                               min="0"
+                                               max="3600"
+                                               aria-describedby="duration-hint"
+                                               required>
+                                        <span class="input-suffix">sec</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="hint" id="duration-hint">
+                                <svg class="hint-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                                </svg>
+                                Filter videos by length (e.g., 30-600 seconds for clips between 30 seconds and 10 minutes)
+                            </p>
+                        </div>
+
+                        <div class="form-divider" aria-hidden="true"></div>
+
+                        <!-- Date Range -->
+                        <div class="form-section" id="date-section">
+                            <div class="form-section-header">
+                                <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                                    <path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+                                </svg>
+                                <h3 id="date-heading">Date Range</h3>
+                            </div>
                             <div class="form-group">
-                                <label for="minDuration">Minimum Seconds:</label>
-                                <input type="number"
-                                       id="minDuration"
-                                       name="minDuration"
-                                       value="30"
-                                       min="0"
-                                       max="3600"
-                                       aria-describedby="duration-hint"
-                                       required>
+                                <label for="daysBack">
+                                    Days Back
+                                    <span class="label-hint">(1-365 days)</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <input type="number"
+                                           id="daysBack"
+                                           name="daysBack"
+                                           value="7"
+                                           min="1"
+                                           max="365"
+                                           aria-describedby="date-hint"
+                                           required>
+                                    <span class="input-suffix">days</span>
+                                </div>
+                            </div>
+                            <p class="hint" id="date-hint">
+                                <svg class="hint-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                                </svg>
+                                Search for content published within the specified number of days
+                            </p>
+                        </div>
+
+                        <div class="form-divider" aria-hidden="true"></div>
+
+                        <!-- Categories -->
+                        <div class="form-section" id="categories-section">
+                            <div class="form-section-header">
+                                <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                                    <path fill="currentColor" d="M12 2l-5.5 9h11z M17.5 17.5L22 22l-4.5 4.5L13 22l4.5-4.5zM4 17h6v6H4zM17 11a4 4 0 100 8 4 4 0 000-8z"/>
+                                </svg>
+                                <h3 id="categories-heading">Categories</h3>
+                                <span class="section-badge section-badge-count" id="categories-count-badge" title="Categories selected">All</span>
+                            </div>
+                            <fieldset aria-labelledby="categories-heading">
+                                <legend class="visually-hidden">Select content categories</legend>
+                                <div class="checkbox-group" id="categories-group" role="group">
+                                    <div class="checkbox-item checkbox-item-all">
+                                        <label class="toggle-switch" title="Toggle all categories">
+                                            <input type="checkbox"
+                                                   id="allCategories"
+                                                   name="allCategories"
+                                                   checked
+                                                   aria-controls="category-checkboxes">
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><strong>All Categories</strong></span>
+                                        </label>
+                                    </div>
+                                    <div class="checkbox-grid" id="category-checkboxes">
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="catNews" name="categories" value="news">
+                                            <label for="catNews" title="News broadcasts and reports">
+                                                <span class="checkbox-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zm0-5H4V9h11v4zm5 5h-4V9h4v9z"/></svg>
+                                                </span>
+                                                News
+                                            </label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="catInterviews" name="categories" value="interviews">
+                                            <label for="catInterviews" title="Interview segments">
+                                                <span class="checkbox-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                                                </span>
+                                                Interviews
+                                            </label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="catCulture" name="categories" value="culture">
+                                            <label for="catCulture" title="Cultural programs and documentaries">
+                                                <span class="checkbox-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z"/></svg>
+                                                </span>
+                                                Culture
+                                            </label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="catSports" name="categories" value="sports">
+                                            <label for="catSports" title="Sports coverage">
+                                                <span class="checkbox-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                                                </span>
+                                                Sports
+                                            </label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="catPolitics" name="categories" value="politics">
+                                            <label for="catPolitics" title="Political discussions and coverage">
+                                                <span class="checkbox-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                                                </span>
+                                                Politics
+                                            </label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="catEconomics" name="categories" value="economics">
+                                            <label for="catEconomics" title="Economic news and analysis">
+                                                <span class="checkbox-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
+                                                </span>
+                                                Economics
+                                            </label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="catScience" name="categories" value="science">
+                                            <label for="catScience" title="Science and technology">
+                                                <span class="checkbox-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19.8 18.4L14 10.67V6.5l1.35-1.69c.26-.33.03-.81-.39-.81H9.04c-.42 0-.65.48-.39.81L10 6.5v4.17L4.2 18.4c-.49.66-.02 1.6.8 1.6h14c.82 0 1.29-.94.8-1.6z"/></svg>
+                                                </span>
+                                                Science
+                                            </label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="catWeather" name="categories" value="weather">
+                                            <label for="catWeather" title="Weather forecasts">
+                                                <span class="checkbox-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+                                                </span>
+                                                Weather
+                                            </label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="catEntertainment" name="categories" value="entertainment">
+                                            <label for="catEntertainment" title="Entertainment and lifestyle">
+                                                <span class="checkbox-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+                                                </span>
+                                                Entertainment
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <div class="form-divider" aria-hidden="true"></div>
+
+                        <!-- Sources -->
+                        <div class="form-section" id="sources-section">
+                            <div class="form-section-header">
+                                <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                                    <path fill="currentColor" d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9 8h2v8H9zm4 0h2v8h-2z"/>
+                                </svg>
+                                <h3 id="sources-heading">Sources</h3>
+                                <span class="section-badge section-badge-count" id="sources-count-badge" title="Sources selected">All</span>
+                            </div>
+                            <fieldset aria-labelledby="sources-heading">
+                                <legend class="visually-hidden">Select content sources</legend>
+                                <div class="checkbox-group" id="sources-group" role="group">
+                                    <div class="checkbox-item checkbox-item-all">
+                                        <label class="toggle-switch" title="Toggle all sources">
+                                            <input type="checkbox"
+                                                   id="allSources"
+                                                   name="allSources"
+                                                   checked
+                                                   aria-controls="source-checkboxes">
+                                            <span class="toggle-slider"></span>
+                                            <span class="toggle-label"><strong>All Sources</strong></span>
+                                        </label>
+                                    </div>
+                                    <div class="checkbox-grid" id="source-checkboxes">
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="srcMainNews" name="sources" value="main_news">
+                                            <label for="srcMainNews" title="Main news broadcasts">Main News</label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="srcVremya" name="sources" value="vremya">
+                                            <label for="srcVremya" title="Vremya program">Vremya</label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="srcPozner" name="sources" value="pozner">
+                                            <label for="srcPozner" title="Pozner show">Pozner</label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="srcCulture" name="sources" value="culture_section">
+                                            <label for="srcCulture" title="Culture section content">Culture</label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="srcSportsNews" name="sources" value="sports_news">
+                                            <label for="srcSportsNews" title="Sports news section">Sports</label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="srcDobroeUtro" name="sources" value="dobroe_utro">
+                                            <label for="srcDobroeUtro" title="Good Morning program">Dobroe Utro</label>
+                                        </div>
+                                        <div class="checkbox-item">
+                                            <input type="checkbox" id="srcSegodnyaVecherom" name="sources" value="segodnya_vecherom">
+                                            <label for="srcSegodnyaVecherom" title="Tonight show">Segodnya Vecherom</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <div class="form-divider" aria-hidden="true"></div>
+
+                        <!-- Max Items -->
+                        <div class="form-section" id="max-items-section">
+                            <div class="form-section-header">
+                                <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                                    <path fill="currentColor" d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+                                </svg>
+                                <h3 id="max-items-heading">Results Limit</h3>
                             </div>
                             <div class="form-group">
-                                <label for="maxDuration">Maximum Seconds:</label>
-                                <input type="number"
-                                       id="maxDuration"
-                                       name="maxDuration"
-                                       value="600"
-                                       min="0"
-                                       max="3600"
-                                       aria-describedby="duration-hint"
-                                       required>
-                            </div>
-                        </div>
-                        <p class="hint" id="duration-hint">Filter videos by length (e.g., 30-600 seconds for clips between 30 seconds and 10 minutes)</p>
-                    </div>
-
-                    <!-- Date Range -->
-                    <div class="form-section" id="date-section">
-                        <h3 id="date-heading">Date Range</h3>
-                        <div class="form-group">
-                            <label for="daysBack">Days Back:</label>
-                            <input type="number"
-                                   id="daysBack"
-                                   name="daysBack"
-                                   value="7"
-                                   min="1"
-                                   max="365"
-                                   aria-describedby="date-hint"
-                                   required>
-                        </div>
-                        <p class="hint" id="date-hint">Search for content published within the specified number of days (1-365)</p>
-                    </div>
-
-                    <!-- Categories -->
-                    <div class="form-section" id="categories-section">
-                        <h3 id="categories-heading">Categories</h3>
-                        <fieldset aria-labelledby="categories-heading">
-                            <legend class="visually-hidden">Select content categories</legend>
-                            <div class="checkbox-group" id="categories-group" role="group">
-                                <div class="checkbox-item checkbox-item-all">
-                                    <input type="checkbox"
-                                           id="allCategories"
-                                           name="allCategories"
-                                           checked
-                                           aria-controls="category-checkboxes">
-                                    <label for="allCategories"><strong>All Categories</strong></label>
-                                </div>
-                                <div class="checkbox-grid" id="category-checkboxes">
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catNews" name="categories" value="news">
-                                        <label for="catNews">News</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catInterviews" name="categories" value="interviews">
-                                        <label for="catInterviews">Interviews</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catCulture" name="categories" value="culture">
-                                        <label for="catCulture">Culture</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catSports" name="categories" value="sports">
-                                        <label for="catSports">Sports</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catPolitics" name="categories" value="politics">
-                                        <label for="catPolitics">Politics</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catEconomics" name="categories" value="economics">
-                                        <label for="catEconomics">Economics</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catScience" name="categories" value="science">
-                                        <label for="catScience">Science</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catWeather" name="categories" value="weather">
-                                        <label for="catWeather">Weather</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catEntertainment" name="categories" value="entertainment">
-                                        <label for="catEntertainment">Entertainment</label>
-                                    </div>
+                                <label for="maxItems">
+                                    Maximum number of results
+                                    <span class="label-hint">(1-100)</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <input type="number"
+                                           id="maxItems"
+                                           name="maxItems"
+                                           value="20"
+                                           min="1"
+                                           max="100"
+                                           aria-describedby="max-items-hint"
+                                           required>
+                                    <span class="input-suffix">items</span>
                                 </div>
                             </div>
-                        </fieldset>
-                    </div>
-
-                    <!-- Sources -->
-                    <div class="form-section" id="sources-section">
-                        <h3 id="sources-heading">Sources</h3>
-                        <fieldset aria-labelledby="sources-heading">
-                            <legend class="visually-hidden">Select content sources</legend>
-                            <div class="checkbox-group" id="sources-group" role="group">
-                                <div class="checkbox-item checkbox-item-all">
-                                    <input type="checkbox"
-                                           id="allSources"
-                                           name="allSources"
-                                           checked
-                                           aria-controls="source-checkboxes">
-                                    <label for="allSources"><strong>All Sources</strong></label>
-                                </div>
-                                <div class="checkbox-grid" id="source-checkboxes">
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcMainNews" name="sources" value="main_news">
-                                        <label for="srcMainNews">Main News</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcVremya" name="sources" value="vremya">
-                                        <label for="srcVremya">Vremya</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcPozner" name="sources" value="pozner">
-                                        <label for="srcPozner">Pozner</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcCulture" name="sources" value="culture_section">
-                                        <label for="srcCulture">Culture</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcSportsNews" name="sources" value="sports_news">
-                                        <label for="srcSportsNews">Sports</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcDobroeUtro" name="sources" value="dobroe_utro">
-                                        <label for="srcDobroeUtro">Dobroe Utro</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcSegodnyaVecherom" name="sources" value="segodnya_vecherom">
-                                        <label for="srcSegodnyaVecherom">Segodnya Vecherom</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                    </div>
-
-                    <!-- Max Items -->
-                    <div class="form-section" id="max-items-section">
-                        <h3 id="max-items-heading">Maximum Items</h3>
-                        <div class="form-group">
-                            <label for="maxItems">Maximum number of results:</label>
-                            <input type="number"
-                                   id="maxItems"
-                                   name="maxItems"
-                                   value="20"
-                                   min="1"
-                                   max="100"
-                                   aria-describedby="max-items-hint"
-                                   required>
+                            <p class="hint" id="max-items-hint">
+                                <svg class="hint-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                                </svg>
+                                Limit the number of search results returned
+                            </p>
                         </div>
-                        <p class="hint" id="max-items-hint">Limit the number of search results (1-100)</p>
-                    </div>
 
-                    <!-- Action Buttons -->
-                    <div class="form-actions" id="search-actions">
-                        <button type="button"
-                                id="searchBtn"
-                                class="btn btn-primary btn-large"
-                                aria-describedby="search-btn-desc">
-                            <span class="btn-icon" aria-hidden="true">&#128269;</span>
-                            Search for Content
-                        </button>
-                        <button type="button"
-                                id="resetBtn"
-                                class="btn btn-secondary"
-                                aria-label="Reset all filters to default values">
-                            Reset Filters
-                        </button>
-                    </div>
-                    <p class="visually-hidden" id="search-btn-desc">Begin searching for Russian language video content based on your filter settings</p>
+                        <!-- Action Buttons -->
+                        <div class="form-actions" id="search-actions">
+                            <button type="button"
+                                    id="searchBtn"
+                                    class="btn btn-primary btn-large btn-search"
+                                    aria-describedby="search-btn-desc">
+                                <span class="btn-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="20" height="20">
+                                        <path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                                    </svg>
+                                </span>
+                                <span class="btn-text">Search for Content</span>
+                            </button>
+                            <button type="button"
+                                    id="resetBtn"
+                                    class="btn btn-secondary"
+                                    aria-label="Reset all filters to default values"
+                                    title="Reset all filters to their default values">
+                                <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                    <path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                                </svg>
+                                Reset Filters
+                            </button>
+                        </div>
+                        <p class="visually-hidden" id="search-btn-desc">Begin searching for Russian language video content based on your filter settings</p>
 
-                    <!-- Error/Validation Messages -->
-                    <div id="validationMessages"
-                         class="validation-messages"
-                         role="alert"
-                         aria-live="polite"
-                         aria-atomic="true"></div>
-                </form>
+                        <!-- Last Search Info -->
+                        <div class="last-search-info" id="last-search-info" hidden>
+                            <span class="last-search-label">Last search:</span>
+                            <span class="last-search-time" id="last-search-time"></span>
+                            <span class="last-search-query" id="last-search-query"></span>
+                        </div>
+
+                        <!-- Error/Validation Messages -->
+                        <div id="validationMessages"
+                             class="validation-messages"
+                             role="alert"
+                             aria-live="polite"
+                             aria-atomic="true"></div>
+                    </form>
+                </div>
             </section>
 
             <!-- Status/Progress Section -->
@@ -260,45 +493,136 @@
                      id="results-section"
                      aria-labelledby="results-heading"
                      hidden>
-                <h2 id="results-heading">Search Results</h2>
+                <div class="results-panel-header">
+                    <div class="results-title-group">
+                        <svg class="panel-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                            <path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/>
+                        </svg>
+                        <h2 id="results-heading">Search Results</h2>
+                    </div>
+                </div>
 
-                <!-- Results Header -->
+                <!-- Results Header with Controls -->
                 <div class="results-header" id="results-header">
                     <div class="results-count">
-                        <span id="results-count-text">0 items found</span>
+                        <span class="results-count-number" id="results-count-number">0</span>
+                        <span id="results-count-text">items found</span>
                     </div>
+
+                    <!-- Sort Options -->
+                    <div class="results-sort" id="results-sort">
+                        <label for="sortSelect" class="sort-label">Sort by:</label>
+                        <select id="sortSelect" class="sort-select" aria-label="Sort results">
+                            <option value="date-desc">Date (Newest)</option>
+                            <option value="date-asc">Date (Oldest)</option>
+                            <option value="duration-desc">Duration (Longest)</option>
+                            <option value="duration-asc">Duration (Shortest)</option>
+                            <option value="title-asc">Title (A-Z)</option>
+                            <option value="title-desc">Title (Z-A)</option>
+                        </select>
+                    </div>
+
+                    <!-- View Toggle -->
                     <div class="results-view-toggle" role="group" aria-label="View options">
                         <button type="button"
                                 id="viewGrid"
                                 class="view-btn active"
                                 aria-pressed="true"
-                                aria-label="Grid view">
-                            <span aria-hidden="true">&#9638;</span>
+                                aria-label="Grid view"
+                                title="Grid view">
+                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                <path fill="currentColor" d="M4 4h4v4H4V4zm0 6h4v4H4v-4zm0 6h4v4H4v-4zm6-12h4v4h-4V4zm0 6h4v4h-4v-4zm0 6h4v4h-4v-4zm6-12h4v4h-4V4zm0 6h4v4h-4v-4zm0 6h4v4h-4v-4z"/>
+                            </svg>
                         </button>
                         <button type="button"
                                 id="viewList"
                                 class="view-btn"
                                 aria-pressed="false"
-                                aria-label="List view">
-                            <span aria-hidden="true">&#9776;</span>
+                                aria-label="List view"
+                                title="List view">
+                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                <path fill="currentColor" d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+                            </svg>
                         </button>
                     </div>
                 </div>
 
                 <!-- Selection Controls -->
                 <div class="selection-controls" id="selection-controls">
-                    <button type="button" id="selectAllBtn" class="btn btn-small btn-outline">
-                        Select All
-                    </button>
-                    <button type="button" id="deselectAllBtn" class="btn btn-small btn-outline">
-                        Deselect All
-                    </button>
-                    <span class="selection-count" id="selection-count">0 selected</span>
+                    <div class="selection-buttons">
+                        <button type="button" id="selectAllBtn" class="btn btn-small btn-outline" title="Select all visible items">
+                            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                <path fill="currentColor" d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"/>
+                            </svg>
+                            Select All
+                        </button>
+                        <button type="button" id="deselectAllBtn" class="btn btn-small btn-outline" title="Deselect all items">
+                            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                            Deselect All
+                        </button>
+                    </div>
+                    <span class="selection-count" id="selection-count">
+                        <span class="selection-count-number" id="selection-count-number">0</span> selected
+                    </span>
+                </div>
+
+                <!-- Loading Skeleton -->
+                <div class="results-skeleton" id="results-skeleton" hidden aria-hidden="true">
+                    <div class="skeleton-card">
+                        <div class="skeleton-thumbnail"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-title"></div>
+                            <div class="skeleton-meta"></div>
+                            <div class="skeleton-meta short"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton-thumbnail"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-title"></div>
+                            <div class="skeleton-meta"></div>
+                            <div class="skeleton-meta short"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton-thumbnail"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-title"></div>
+                            <div class="skeleton-meta"></div>
+                            <div class="skeleton-meta short"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Results Grid/List Container -->
                 <div class="results-container" id="results-container" role="list" aria-label="Search results">
                     <!-- Video cards will be dynamically inserted here -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="empty-state" hidden>
+                    <div class="empty-state-illustration" aria-hidden="true">
+                        <svg viewBox="0 0 200 160" width="200" height="160">
+                            <circle cx="100" cy="70" r="50" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                            <path d="M85 55 L85 85 L115 70 Z" fill="none" stroke="currentColor" stroke-width="2" opacity="0.5"/>
+                            <path d="M70 120 Q100 140 130 120" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                            <circle cx="60" cy="40" r="5" fill="currentColor" opacity="0.2"/>
+                            <circle cx="145" cy="50" r="3" fill="currentColor" opacity="0.2"/>
+                            <circle cx="50" cy="90" r="4" fill="currentColor" opacity="0.15"/>
+                        </svg>
+                    </div>
+                    <h3 class="empty-state-title">No Results Found</h3>
+                    <p class="empty-state-description">We couldn't find any videos matching your criteria. Try adjusting your filters or expanding your date range.</p>
+                    <div class="empty-state-actions">
+                        <button type="button" class="btn btn-secondary btn-small" id="emptyStateResetBtn">
+                            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                                <path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                            </svg>
+                            Reset Filters
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Results Actions -->
@@ -308,27 +632,25 @@
                             class="btn btn-primary"
                             disabled
                             aria-describedby="download-desc">
-                        <span class="btn-icon" aria-hidden="true">&#8681;</span>
-                        Download Selected
+                        <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                            <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        <span class="btn-text">Download Selected</span>
+                        <span class="btn-badge" id="download-count-badge" hidden>0</span>
                     </button>
                     <button type="button"
                             id="exportCitationsBtn"
                             class="btn btn-secondary"
                             disabled
                             aria-describedby="citations-desc">
-                        <span class="btn-icon" aria-hidden="true">&#128196;</span>
-                        Export Citations
+                        <svg class="btn-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                            <path fill="currentColor" d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/>
+                        </svg>
+                        <span class="btn-text">Export Citations</span>
                     </button>
                 </div>
                 <p class="visually-hidden" id="download-desc">Download selected video files</p>
                 <p class="visually-hidden" id="citations-desc">Generate and export citations for selected items</p>
-
-                <!-- Empty State -->
-                <div class="empty-state" id="empty-state" hidden>
-                    <div class="empty-state-icon" aria-hidden="true">&#128269;</div>
-                    <h3>No Results Found</h3>
-                    <p>Try adjusting your search filters or expanding your date range.</p>
-                </div>
             </section>
 
             <!-- Citations Panel -->
@@ -337,39 +659,100 @@
                      aria-labelledby="citations-heading"
                      hidden>
                 <div class="citations-header">
-                    <h2 id="citations-heading">Generated Citations</h2>
+                    <div class="citations-title-group">
+                        <svg class="panel-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                            <path fill="currentColor" d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/>
+                        </svg>
+                        <h2 id="citations-heading">Generated Citations</h2>
+                        <span class="citations-count-badge" id="citations-count-badge" title="Number of citations">0</span>
+                    </div>
                     <button type="button"
                             id="toggleCitationsBtn"
                             class="btn btn-icon-only"
                             aria-expanded="true"
                             aria-controls="citations-content"
                             aria-label="Collapse citations panel">
-                        <span class="toggle-icon" aria-hidden="true">&#9650;</span>
+                        <svg class="toggle-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                            <path fill="currentColor" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                        </svg>
                     </button>
                 </div>
 
                 <div class="citations-content" id="citations-content">
-                    <!-- Format Selector -->
-                    <div class="format-selector" id="format-selector">
-                        <label for="citationFormat" id="format-label">Citation Format:</label>
-                        <select id="citationFormat"
-                                name="citationFormat"
-                                aria-labelledby="format-label">
-                            <option value="chicago" selected>Chicago Style</option>
-                            <option value="mla">MLA</option>
-                            <option value="apa">APA</option>
-                            <option value="bibtex">BibTeX</option>
-                            <option value="json">JSON</option>
-                        </select>
+                    <!-- Format Tabs -->
+                    <div class="citations-tabs" id="citations-tabs" role="tablist" aria-label="Citation format tabs">
+                        <button type="button"
+                                class="citation-tab active"
+                                id="tab-chicago"
+                                role="tab"
+                                aria-selected="true"
+                                aria-controls="tabpanel-chicago"
+                                data-format="chicago">
+                            Chicago
+                        </button>
+                        <button type="button"
+                                class="citation-tab"
+                                id="tab-mla"
+                                role="tab"
+                                aria-selected="false"
+                                aria-controls="tabpanel-mla"
+                                data-format="mla">
+                            MLA
+                        </button>
+                        <button type="button"
+                                class="citation-tab"
+                                id="tab-apa"
+                                role="tab"
+                                aria-selected="false"
+                                aria-controls="tabpanel-apa"
+                                data-format="apa">
+                            APA
+                        </button>
+                        <button type="button"
+                                class="citation-tab"
+                                id="tab-bibtex"
+                                role="tab"
+                                aria-selected="false"
+                                aria-controls="tabpanel-bibtex"
+                                data-format="bibtex">
+                            BibTeX
+                        </button>
+                        <button type="button"
+                                class="citation-tab"
+                                id="tab-json"
+                                role="tab"
+                                aria-selected="false"
+                                aria-controls="tabpanel-json"
+                                data-format="json">
+                            JSON
+                        </button>
                     </div>
 
-                    <!-- Citations Display -->
-                    <div class="citations-display" id="citations-display">
-                        <textarea id="citationsText"
-                                  class="citations-textarea"
-                                  readonly
-                                  aria-label="Generated citations"
-                                  placeholder="Citations will appear here after export..."></textarea>
+                    <!-- Hidden select for backwards compatibility -->
+                    <select id="citationFormat"
+                            name="citationFormat"
+                            aria-label="Citation format"
+                            class="visually-hidden">
+                        <option value="chicago" selected>Chicago Style</option>
+                        <option value="mla">MLA</option>
+                        <option value="apa">APA</option>
+                        <option value="bibtex">BibTeX</option>
+                        <option value="json">JSON</option>
+                    </select>
+
+                    <!-- Citations Preview Area -->
+                    <div class="citations-preview" id="citations-preview">
+                        <div class="preview-header">
+                            <span class="preview-label">Preview</span>
+                            <span class="preview-format" id="preview-format">Chicago Style</span>
+                        </div>
+                        <div class="citations-display" id="citations-display">
+                            <textarea id="citationsText"
+                                      class="citations-textarea"
+                                      readonly
+                                      aria-label="Generated citations"
+                                      placeholder="Citations will appear here after export..."></textarea>
+                        </div>
                     </div>
 
                     <!-- Citations Actions -->
@@ -377,16 +760,22 @@
                         <button type="button"
                                 id="copyAllCitationsBtn"
                                 class="btn btn-secondary btn-small"
-                                aria-label="Copy all citations to clipboard">
-                            <span class="btn-icon" aria-hidden="true">&#128203;</span>
-                            Copy All
+                                aria-label="Copy all citations to clipboard"
+                                title="Copy citations to clipboard">
+                            <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                                <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                            <span class="btn-text">Copy All</span>
                         </button>
                         <button type="button"
                                 id="downloadCitationsBtn"
                                 class="btn btn-secondary btn-small"
-                                aria-label="Download citations as file">
-                            <span class="btn-icon" aria-hidden="true">&#8681;</span>
-                            Download File
+                                aria-label="Download citations as file"
+                                title="Download as file">
+                            <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                                <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                            </svg>
+                            <span class="btn-text">Download File</span>
                         </button>
                     </div>
                 </div>
@@ -394,7 +783,12 @@
 
             <!-- Legal Disclaimer (Brief) -->
             <section class="legal-notice" id="legal-notice" aria-labelledby="legal-heading">
-                <h2 id="legal-heading">Important Notice</h2>
+                <div class="legal-notice-header">
+                    <svg class="legal-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                    </svg>
+                    <h2 id="legal-heading">Important Notice</h2>
+                </div>
                 <div class="notice-content">
                     <p>
                         <strong>Educational Use Only:</strong> Matushka is designed exclusively for educational purposes to help Russian language educators discover and organize teaching materials.
@@ -403,41 +797,111 @@
                         Users are responsible for ensuring compliance with all applicable laws and terms of service. All materials remain the property of their original creators.
                     </p>
                     <p>
-                        <a href="legal.html" id="legal-link">Read the full legal disclaimer and terms of use</a>
+                        <a href="legal.html" id="legal-link" class="legal-link">
+                            Read the full legal disclaimer and terms of use
+                            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                <path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                            </svg>
+                        </a>
                     </p>
+                </div>
+            </section>
+
+            <!-- Debug Console -->
+            <section class="debug-console" id="debug-console" aria-labelledby="debug-heading" hidden>
+                <div class="debug-header">
+                    <div class="debug-title-group">
+                        <svg class="debug-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                            <path fill="currentColor" d="M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5c-.49 0-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z"/>
+                        </svg>
+                        <h2 id="debug-heading">Debug Console</h2>
+                    </div>
+                    <div class="debug-actions">
+                        <button type="button" id="clearDebugBtn" class="btn btn-small btn-outline" title="Clear console">
+                            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                            Clear
+                        </button>
+                        <button type="button"
+                                id="toggleDebugBtn"
+                                class="btn btn-icon-only"
+                                aria-expanded="false"
+                                aria-controls="debug-content"
+                                aria-label="Toggle debug console">
+                            <svg class="toggle-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                                <path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="debug-content" id="debug-content" hidden>
+                    <div class="debug-log" id="debug-log" role="log" aria-live="polite" aria-label="Debug messages">
+                        <!-- Debug entries will be inserted here -->
+                    </div>
                 </div>
             </section>
         </main>
 
         <!-- Footer -->
-        <footer role="contentinfo" id="app-footer">
+        <footer class="footer" role="contentinfo" id="app-footer">
             <div class="footer-content">
-                <div class="footer-section">
-                    <p class="footer-brand">Matushka</p>
-                    <p class="footer-tagline">Free Russian language teaching materials for educators worldwide.</p>
+                <div class="footer-main">
+                    <div class="footer-brand">
+                        <svg class="footer-logo" viewBox="0 0 32 32" width="32" height="32" aria-hidden="true">
+                            <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                            <text x="16" y="21" text-anchor="middle" font-size="16" font-weight="600" fill="currentColor">M</text>
+                        </svg>
+                        <div class="footer-brand-text">
+                            <p class="footer-brand-name">Matushka</p>
+                            <p class="footer-tagline">Free Russian language teaching materials for educators worldwide.</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="footer-section">
-                    <p class="footer-links">
-                        <a href="legal.html" aria-label="Legal information and disclaimer">Legal</a>
-                        <span class="separator" aria-hidden="true">|</span>
-                        <a href="https://github.com/yourusername/matushka"
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           aria-label="View Matushka on GitHub (opens in new tab)">
-                            GitHub
-                        </a>
-                    </p>
+                <div class="footer-links-section">
+                    <div class="footer-links-group">
+                        <h3 class="footer-links-title">Resources</h3>
+                        <ul class="footer-links-list">
+                            <li><a href="legal.html" aria-label="Legal information and disclaimer">Legal &amp; Terms</a></li>
+                            <li><a href="help.html" aria-label="Help and documentation">Help</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-group">
+                        <h3 class="footer-links-title">Project</h3>
+                        <ul class="footer-links-list">
+                            <li>
+                                <a href="https://github.com/yourusername/matushka"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   aria-label="View Matushka on GitHub (opens in new tab)">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                        <path fill="currentColor" d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2 0 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.4 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8 0 3.2.9.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.4.9 1.2.9 2.4v3.5c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/>
+                                    </svg>
+                                    GitHub
+                                </a>
+                            </li>
+                            <li>
+                                <a href="changelog.html" aria-label="View changelog">Changelog</a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
 
-                <div class="footer-section">
-                    <p class="footer-license">
-                        Released under the <a href="https://opensource.org/licenses/MIT"
-                                              target="_blank"
-                                              rel="noopener noreferrer">MIT License</a>
-                    </p>
+                <div class="footer-bottom">
+                    <div class="footer-meta">
+                        <p class="footer-version">
+                            <span class="version-label">Version</span>
+                            <span class="version-number" id="app-version">1.0.0</span>
+                        </p>
+                        <p class="footer-license">
+                            Released under the <a href="https://opensource.org/licenses/MIT"
+                                                  target="_blank"
+                                                  rel="noopener noreferrer">MIT License</a>
+                        </p>
+                    </div>
                     <p class="footer-copyright">
-                        <span id="copyright-year"></span> Matushka Project
+                        &copy; <span id="copyright-year"></span> Matushka Project. Made with care for educators.
                     </p>
                 </div>
             </div>
@@ -448,20 +912,59 @@
     <template id="video-card-template">
         <article class="video-card" role="listitem">
             <div class="video-card-select">
-                <input type="checkbox"
-                       class="video-select-checkbox"
-                       aria-label="Select this video">
+                <label class="video-select-label">
+                    <input type="checkbox"
+                           class="video-select-checkbox"
+                           aria-label="Select this video">
+                    <span class="video-select-checkmark">
+                        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                            <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                    </span>
+                </label>
             </div>
             <div class="video-card-thumbnail">
-                <img src="" alt="" class="video-thumbnail" loading="lazy">
+                <div class="thumbnail-container">
+                    <img src="" alt="" class="video-thumbnail" loading="lazy">
+                    <div class="thumbnail-overlay">
+                        <button type="button" class="thumbnail-preview-btn" aria-label="Preview video" title="Preview">
+                            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                                <path fill="currentColor" d="M8 5v14l11-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
                 <span class="video-duration-badge"></span>
+                <span class="video-quality-badge" hidden>HD</span>
             </div>
             <div class="video-card-content">
                 <h3 class="video-title"></h3>
                 <p class="video-program"></p>
                 <div class="video-meta">
-                    <span class="video-date"></span>
+                    <span class="video-date">
+                        <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+                            <path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+                        </svg>
+                        <span class="date-text"></span>
+                    </span>
                     <span class="video-category-badge"></span>
+                </div>
+                <div class="video-card-actions">
+                    <button type="button" class="card-action-btn preview-btn" title="Preview video" aria-label="Preview video">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                            <path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="card-action-btn download-btn" title="Download video" aria-label="Download video">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                            <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="card-action-btn cite-btn" title="Generate citation" aria-label="Generate citation">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                            <path fill="currentColor" d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </article>
@@ -470,11 +973,92 @@
     <!-- Status Message Template -->
     <template id="status-message-template">
         <div class="status-message" role="status">
-            <span class="status-icon" aria-hidden="true"></span>
+            <span class="status-icon" aria-hidden="true">
+                <svg class="icon-success" viewBox="0 0 24 24" width="20" height="20" hidden>
+                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <svg class="icon-error" viewBox="0 0 24 24" width="20" height="20" hidden>
+                    <path fill="currentColor" d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
+                </svg>
+                <svg class="icon-warning" viewBox="0 0 24 24" width="20" height="20" hidden>
+                    <path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                </svg>
+                <svg class="icon-info" viewBox="0 0 24 24" width="20" height="20" hidden>
+                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+            </span>
             <span class="status-text"></span>
-            <button type="button" class="status-dismiss" aria-label="Dismiss message">&times;</button>
+            <button type="button" class="status-dismiss" aria-label="Dismiss message">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                    <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
         </div>
     </template>
+
+    <!-- Debug Entry Template -->
+    <template id="debug-entry-template">
+        <div class="debug-entry">
+            <span class="debug-timestamp"></span>
+            <span class="debug-type"></span>
+            <span class="debug-message"></span>
+        </div>
+    </template>
+
+    <!-- Video Preview Modal -->
+    <div class="modal" id="preview-modal" role="dialog" aria-labelledby="preview-modal-title" aria-modal="true" hidden>
+        <div class="modal-backdrop" aria-hidden="true"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title" id="preview-modal-title">Video Preview</h3>
+                <button type="button" class="modal-close-btn" id="preview-modal-close" aria-label="Close preview">
+                    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                        <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="video-player-container" id="video-player-container">
+                    <!-- Video player will be inserted here -->
+                </div>
+                <div class="video-preview-info" id="video-preview-info">
+                    <h4 class="preview-video-title" id="preview-video-title"></h4>
+                    <p class="preview-video-meta" id="preview-video-meta"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="preview-close-btn">Close</button>
+                <button type="button" class="btn btn-primary" id="preview-download-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                    Download
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirm-modal" role="dialog" aria-labelledby="confirm-modal-title" aria-modal="true" hidden>
+        <div class="modal-backdrop" aria-hidden="true"></div>
+        <div class="modal-container modal-small">
+            <div class="modal-header">
+                <h3 class="modal-title" id="confirm-modal-title">Confirm Action</h3>
+                <button type="button" class="modal-close-btn" id="confirm-modal-close" aria-label="Close dialog">
+                    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                        <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-message" id="confirm-message">Are you sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="confirm-cancel-btn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-ok-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>

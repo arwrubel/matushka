@@ -10,6 +10,617 @@
  */
 
 // =============================================================================
+// DEBUG CONFIGURATION
+// =============================================================================
+
+/**
+ * Debug Configuration
+ *
+ * Set enabled to false in production to disable all debug logging.
+ */
+const DEBUG = {
+    enabled: true,
+    logLevel: 'verbose', // 'error', 'warn', 'info', 'verbose'
+    showTimestamps: true,
+    logToConsole: true,
+    logToUI: true  // Show in on-page debug panel
+};
+
+// =============================================================================
+// DEBUG LOGGER CLASS
+// =============================================================================
+
+/**
+ * DebugLogger - Comprehensive debugging and logging utility
+ *
+ * Provides styled console output, API call logging, state tracking,
+ * performance timing, and on-page debug panel support.
+ */
+const DebugLogger = {
+    // Log levels priority
+    levels: {
+        error: 0,
+        warn: 1,
+        info: 2,
+        verbose: 3
+    },
+
+    // Console style configurations
+    styles: {
+        api: 'color: #2196F3; font-weight: bold;',           // Blue for API calls
+        error: 'color: #F44336; font-weight: bold;',         // Red for errors
+        warn: 'color: #FF9800; font-weight: bold;',          // Orange for warnings
+        state: 'color: #9C27B0; font-weight: bold;',         // Purple for state changes
+        timing: 'color: #4CAF50; font-weight: bold;',        // Green for timing
+        ui: 'color: #00BCD4; font-weight: bold;',            // Cyan for UI events
+        network: 'color: #795548; font-weight: bold;',       // Brown for network
+        init: 'color: #607D8B; font-weight: bold;',          // Gray for initialization
+        default: 'color: #333; font-weight: normal;'         // Default style
+    },
+
+    // In-memory log storage for export
+    logHistory: [],
+    maxHistorySize: 1000,
+
+    /**
+     * Check if logging should occur based on level
+     * @param {string} level - Log level to check
+     * @returns {boolean} Whether to log
+     */
+    shouldLog(level) {
+        if (!DEBUG.enabled) return false;
+        const currentLevelPriority = this.levels[DEBUG.logLevel] || 3;
+        const messageLevelPriority = this.levels[level] || 3;
+        return messageLevelPriority <= currentLevelPriority;
+    },
+
+    /**
+     * Format timestamp for log output
+     * @returns {string} Formatted timestamp [HH:MM:SS.mmm]
+     */
+    getTimestamp() {
+        if (!DEBUG.showTimestamps) return '';
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
+        const ms = now.getMilliseconds().toString().padStart(3, '0');
+        return `[${hours}:${minutes}:${seconds}.${ms}]`;
+    },
+
+    /**
+     * Store log entry in history
+     * @param {string} category - Log category
+     * @param {string} message - Log message
+     * @param {*} data - Optional data
+     */
+    storeLog(category, message, data) {
+        const entry = {
+            timestamp: new Date().toISOString(),
+            category,
+            message,
+            data: data ? JSON.stringify(data).substring(0, 500) : null
+        };
+        this.logHistory.push(entry);
+        if (this.logHistory.length > this.maxHistorySize) {
+            this.logHistory.shift();
+        }
+    },
+
+    /**
+     * Log to UI debug panel if enabled and panel exists
+     * @param {string} category - Log category
+     * @param {string} message - Log message
+     * @param {string} colorClass - CSS class for color
+     */
+    logToUIPanel(category, message, colorClass) {
+        if (!DEBUG.logToUI) return;
+
+        const panel = document.getElementById('debugPanel');
+        const logContainer = document.getElementById('debugLogContainer');
+        if (!panel || !logContainer) return;
+
+        const entry = document.createElement('div');
+        entry.className = `debug-entry debug-${colorClass}`;
+        entry.innerHTML = `<span class="debug-timestamp">${this.getTimestamp()}</span> <span class="debug-category">[${category}]</span> <span class="debug-message">${this.escapeHtml(message)}</span>`;
+
+        logContainer.appendChild(entry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    },
+
+    /**
+     * Escape HTML for safe display
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped text
+     */
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+
+    /**
+     * General logging method
+     * @param {string} category - Log category (API, UI, STATE, etc.)
+     * @param {string} message - Log message
+     * @param {*} data - Optional data to log
+     */
+    log(category, message, data = null) {
+        if (!this.shouldLog('info')) return;
+
+        const timestamp = this.getTimestamp();
+        const prefix = `${timestamp} [${category.toUpperCase()}]`;
+        const style = this.styles[category.toLowerCase()] || this.styles.default;
+
+        if (DEBUG.logToConsole) {
+            if (data !== null) {
+                console.log(`%c${prefix} ${message}`, style, data);
+            } else {
+                console.log(`%c${prefix} ${message}`, style);
+            }
+        }
+
+        this.storeLog(category, message, data);
+        this.logToUIPanel(category, message, category.toLowerCase());
+    },
+
+    /**
+     * API call logging with detailed request/response info
+     * @param {string} endpoint - API endpoint
+     * @param {string} method - HTTP method
+     * @param {Object} params - Request parameters
+     * @param {Object} response - Response data (optional, for completion)
+     */
+    api(endpoint, method, params = null, response = null) {
+        if (!this.shouldLog('info')) return;
+
+        const timestamp = this.getTimestamp();
+        const style = this.styles.api;
+
+        if (DEBUG.logToConsole) {
+            if (response === null) {
+                // Request logging
+                console.log(`%c${timestamp} [API] ${method} ${endpoint}`, style);
+                if (params) {
+                    console.log(`%c               Parameters:`, style, params);
+                }
+            } else {
+                // Response logging
+                const status = response.status || 'OK';
+                const timing = response.timing ? ` (${response.timing})` : '';
+                console.log(`%c${timestamp} [API] Response ${status}${timing}`, style);
+                if (response.data) {
+                    const dataPreview = typeof response.data === 'object'
+                        ? JSON.stringify(response.data).substring(0, 200) + (JSON.stringify(response.data).length > 200 ? '...' : '')
+                        : response.data;
+                    console.log(`%c               Data: ${dataPreview}`, style);
+                }
+            }
+        }
+
+        const message = response === null
+            ? `${method} ${endpoint}`
+            : `Response ${response.status || 'OK'}`;
+        this.storeLog('API', message, params || response);
+        this.logToUIPanel('API', message, 'api');
+    },
+
+    /**
+     * Error logging with stack traces
+     * @param {string} context - Error context/location
+     * @param {Error|string} error - Error object or message
+     */
+    error(context, error) {
+        if (!this.shouldLog('error')) return;
+
+        const timestamp = this.getTimestamp();
+        const style = this.styles.error;
+        const errorMessage = error instanceof Error ? error.message : error;
+        const stack = error instanceof Error ? error.stack : null;
+
+        if (DEBUG.logToConsole) {
+            console.log(`%c${timestamp} [ERROR] ${context}`, style);
+            console.log(`%c               Message: ${errorMessage}`, style);
+            if (stack) {
+                console.log(`%c               Stack:`, style);
+                console.log(stack);
+            }
+        }
+
+        this.storeLog('ERROR', `${context}: ${errorMessage}`, { stack });
+        this.logToUIPanel('ERROR', `${context}: ${errorMessage}`, 'error');
+    },
+
+    /**
+     * Warning logging
+     * @param {string} context - Warning context
+     * @param {string} message - Warning message
+     */
+    warn(context, message) {
+        if (!this.shouldLog('warn')) return;
+
+        const timestamp = this.getTimestamp();
+        const style = this.styles.warn;
+
+        if (DEBUG.logToConsole) {
+            console.log(`%c${timestamp} [WARN] ${context}: ${message}`, style);
+        }
+
+        this.storeLog('WARN', `${context}: ${message}`, null);
+        this.logToUIPanel('WARN', `${context}: ${message}`, 'warn');
+    },
+
+    /**
+     * State change tracking
+     * @param {string} stateName - Name of the state variable
+     * @param {*} oldValue - Previous value
+     * @param {*} newValue - New value
+     */
+    state(stateName, oldValue, newValue) {
+        if (!this.shouldLog('verbose')) return;
+
+        const timestamp = this.getTimestamp();
+        const style = this.styles.state;
+
+        const formatValue = (val) => {
+            if (val === null || val === undefined) return 'null';
+            if (Array.isArray(val)) return `[${val.length} items]`;
+            if (val instanceof Set) return `Set(${val.size})`;
+            if (val instanceof Map) return `Map(${val.size})`;
+            if (typeof val === 'object') return JSON.stringify(val).substring(0, 100);
+            return String(val);
+        };
+
+        const oldStr = formatValue(oldValue);
+        const newStr = formatValue(newValue);
+
+        if (DEBUG.logToConsole) {
+            console.log(`%c${timestamp} [STATE] ${stateName}: ${oldStr} -> ${newStr}`, style);
+        }
+
+        this.storeLog('STATE', `${stateName}: ${oldStr} -> ${newStr}`, null);
+        this.logToUIPanel('STATE', `${stateName}: ${oldStr} -> ${newStr}`, 'state');
+    },
+
+    /**
+     * Performance timing
+     * @param {string} label - Operation label
+     * @param {number} startTime - Start timestamp from performance.now()
+     * @returns {number} Elapsed time in ms
+     */
+    timing(label, startTime) {
+        if (!this.shouldLog('info')) return 0;
+
+        const elapsed = performance.now() - startTime;
+        const timestamp = this.getTimestamp();
+        const style = this.styles.timing;
+        const formattedTime = elapsed < 1000
+            ? `${elapsed.toFixed(2)}ms`
+            : `${(elapsed / 1000).toFixed(3)}s`;
+
+        if (DEBUG.logToConsole) {
+            console.log(`%c${timestamp} [TIMING] ${label}: ${formattedTime}`, style);
+        }
+
+        this.storeLog('TIMING', `${label}: ${formattedTime}`, { elapsed });
+        this.logToUIPanel('TIMING', `${label}: ${formattedTime}`, 'timing');
+
+        return elapsed;
+    },
+
+    /**
+     * Start a console group
+     * @param {string} name - Group name
+     */
+    group(name) {
+        if (!DEBUG.enabled || !DEBUG.logToConsole) return;
+        console.group(`%c${this.getTimestamp()} [GROUP] ${name}`, this.styles.default);
+    },
+
+    /**
+     * End a console group
+     */
+    groupEnd() {
+        if (!DEBUG.enabled || !DEBUG.logToConsole) return;
+        console.groupEnd();
+    },
+
+    /**
+     * Log UI event
+     * @param {string} eventType - Type of UI event (click, change, etc.)
+     * @param {string} element - Element identifier
+     * @param {*} value - Event value (optional)
+     */
+    ui(eventType, element, value = null) {
+        if (!this.shouldLog('verbose')) return;
+
+        const timestamp = this.getTimestamp();
+        const style = this.styles.ui;
+        const message = value !== null
+            ? `${eventType} on ${element}: ${value}`
+            : `${eventType} on ${element}`;
+
+        if (DEBUG.logToConsole) {
+            console.log(`%c${timestamp} [UI] ${message}`, style);
+        }
+
+        this.storeLog('UI', message, null);
+        this.logToUIPanel('UI', message, 'ui');
+    },
+
+    /**
+     * Log network status
+     * @param {string} status - Network status type
+     * @param {string} message - Status message
+     * @param {Object} details - Additional details
+     */
+    network(status, message, details = null) {
+        if (!this.shouldLog('warn')) return;
+
+        const timestamp = this.getTimestamp();
+        const style = this.styles.network;
+
+        if (DEBUG.logToConsole) {
+            console.log(`%c${timestamp} [NETWORK] ${status}: ${message}`, style);
+            if (details) {
+                console.log(`%c               Details:`, style, details);
+            }
+        }
+
+        this.storeLog('NETWORK', `${status}: ${message}`, details);
+        this.logToUIPanel('NETWORK', `${status}: ${message}`, 'network');
+    },
+
+    /**
+     * Log initialization info
+     * @param {string} component - Component being initialized
+     * @param {Object} config - Configuration details
+     */
+    init(component, config = null) {
+        if (!this.shouldLog('info')) return;
+
+        const timestamp = this.getTimestamp();
+        const style = this.styles.init;
+
+        if (DEBUG.logToConsole) {
+            console.log(`%c${timestamp} [INIT] ${component}`, style);
+            if (config) {
+                console.log(`%c               Config:`, style, config);
+            }
+        }
+
+        this.storeLog('INIT', component, config);
+        this.logToUIPanel('INIT', component, 'init');
+    },
+
+    /**
+     * Export all logs as JSON
+     * @returns {string} JSON string of all logs
+     */
+    exportLogs() {
+        return JSON.stringify(this.logHistory, null, 2);
+    },
+
+    /**
+     * Clear log history
+     */
+    clearLogs() {
+        this.logHistory = [];
+        const logContainer = document.getElementById('debugLogContainer');
+        if (logContainer) {
+            logContainer.innerHTML = '';
+        }
+        this.log('DEBUG', 'Logs cleared');
+    },
+
+    /**
+     * Get browser/environment info
+     * @returns {Object} Environment information
+     */
+    getEnvironmentInfo() {
+        return {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            cookiesEnabled: navigator.cookieEnabled,
+            onLine: navigator.onLine,
+            screenWidth: window.screen.width,
+            screenHeight: window.screen.height,
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight,
+            timestamp: new Date().toISOString()
+        };
+    }
+};
+
+// =============================================================================
+// DEBUG PANEL UI FUNCTIONS
+// =============================================================================
+
+/**
+ * Initialize the debug panel in the DOM
+ * Creates the panel if it doesn't exist
+ */
+function initializeDebugPanel() {
+    if (!DEBUG.logToUI) return;
+
+    // Check if panel already exists
+    if (document.getElementById('debugPanel')) return;
+
+    const panel = document.createElement('div');
+    panel.id = 'debugPanel';
+    panel.innerHTML = `
+        <div class="debug-panel-header">
+            <span class="debug-panel-title">Debug Console</span>
+            <div class="debug-panel-controls">
+                <select id="debugFilterCategory" title="Filter by category">
+                    <option value="all">All Categories</option>
+                    <option value="api">API</option>
+                    <option value="error">Errors</option>
+                    <option value="warn">Warnings</option>
+                    <option value="state">State</option>
+                    <option value="timing">Timing</option>
+                    <option value="ui">UI</option>
+                    <option value="network">Network</option>
+                    <option value="init">Init</option>
+                </select>
+                <button id="debugClearBtn" title="Clear logs">Clear</button>
+                <button id="debugExportBtn" title="Export logs">Export</button>
+                <button id="debugToggleBtn" title="Minimize/Maximize">_</button>
+            </div>
+        </div>
+        <div id="debugLogContainer" class="debug-log-container"></div>
+    `;
+
+    // Add styles
+    const styles = document.createElement('style');
+    styles.textContent = `
+        #debugPanel {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 500px;
+            max-height: 300px;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px 0 0 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 11px;
+            z-index: 10000;
+            box-shadow: -2px -2px 10px rgba(0,0,0,0.3);
+        }
+        #debugPanel.minimized {
+            max-height: 30px;
+            overflow: hidden;
+        }
+        #debugPanel.minimized .debug-log-container {
+            display: none;
+        }
+        .debug-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            background: #333;
+            border-bottom: 1px solid #444;
+            border-radius: 8px 0 0 0;
+        }
+        .debug-panel-title {
+            color: #fff;
+            font-weight: bold;
+        }
+        .debug-panel-controls {
+            display: flex;
+            gap: 5px;
+        }
+        .debug-panel-controls button,
+        .debug-panel-controls select {
+            padding: 2px 8px;
+            font-size: 10px;
+            background: #555;
+            color: #fff;
+            border: 1px solid #666;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .debug-panel-controls button:hover,
+        .debug-panel-controls select:hover {
+            background: #666;
+        }
+        .debug-log-container {
+            max-height: 260px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        .debug-entry {
+            padding: 2px 5px;
+            margin: 1px 0;
+            border-radius: 2px;
+            word-wrap: break-word;
+        }
+        .debug-timestamp {
+            color: #888;
+        }
+        .debug-category {
+            font-weight: bold;
+        }
+        .debug-message {
+            color: #ccc;
+        }
+        .debug-api .debug-category { color: #2196F3; }
+        .debug-error { background: rgba(244, 67, 54, 0.1); }
+        .debug-error .debug-category { color: #F44336; }
+        .debug-warn { background: rgba(255, 152, 0, 0.1); }
+        .debug-warn .debug-category { color: #FF9800; }
+        .debug-state .debug-category { color: #9C27B0; }
+        .debug-timing .debug-category { color: #4CAF50; }
+        .debug-ui .debug-category { color: #00BCD4; }
+        .debug-network .debug-category { color: #795548; }
+        .debug-init .debug-category { color: #607D8B; }
+    `;
+    document.head.appendChild(styles);
+    document.body.appendChild(panel);
+
+    // Add event listeners
+    document.getElementById('debugClearBtn').addEventListener('click', () => {
+        DebugLogger.clearLogs();
+    });
+
+    document.getElementById('debugExportBtn').addEventListener('click', () => {
+        const logs = DebugLogger.exportLogs();
+        const blob = new Blob([logs], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `matushka_debug_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        DebugLogger.log('DEBUG', 'Logs exported');
+    });
+
+    document.getElementById('debugToggleBtn').addEventListener('click', () => {
+        panel.classList.toggle('minimized');
+        const btn = document.getElementById('debugToggleBtn');
+        btn.textContent = panel.classList.contains('minimized') ? '+' : '_';
+    });
+
+    document.getElementById('debugFilterCategory').addEventListener('change', (e) => {
+        const filter = e.target.value;
+        const entries = document.querySelectorAll('.debug-entry');
+        entries.forEach(entry => {
+            if (filter === 'all') {
+                entry.style.display = 'block';
+            } else {
+                entry.style.display = entry.classList.contains(`debug-${filter}`) ? 'block' : 'none';
+            }
+        });
+    });
+}
+
+// =============================================================================
+// ERROR BOUNDARY WRAPPER
+// =============================================================================
+
+/**
+ * Wrap a function with error boundary for safe execution
+ * @param {Function} fn - Function to wrap
+ * @param {string} context - Context name for error logging
+ * @returns {Function} Wrapped function with error handling
+ */
+function withErrorBoundary(fn, context) {
+    return async function(...args) {
+        try {
+            return await fn.apply(this, args);
+        } catch (error) {
+            DebugLogger.error(context, error);
+            showError(`An error occurred in ${context}. Please try again.`);
+            throw error;
+        }
+    };
+}
+
+// =============================================================================
 // CONFIGURATION
 // =============================================================================
 
@@ -306,8 +917,11 @@ function generateCitationId(metadata) {
  * @param {string} message - Error message to display
  */
 function showError(message) {
+    DebugLogger.log('UI', `Showing error message: ${message}`);
+
     const container = document.getElementById('errorMessages');
     if (!container) {
+        DebugLogger.warn('showError', 'Error container not found in DOM');
         console.error('Error:', message);
         return;
     }
@@ -337,8 +951,11 @@ function showError(message) {
  * @param {string} message - Success message to display
  */
 function showSuccess(message) {
+    DebugLogger.log('UI', `Showing success message: ${message}`);
+
     const container = document.getElementById('errorMessages');
     if (!container) {
+        DebugLogger.warn('showSuccess', 'Error container not found in DOM');
         console.log('Success:', message);
         return;
     }
@@ -373,6 +990,7 @@ function clearMessages() {
  * Show the loading spinner and disable interactive elements
  */
 function showLoading() {
+    DebugLogger.log('UI', 'Showing loading spinner');
     AppState.isLoading = true;
 
     // Show loading spinner
@@ -399,6 +1017,7 @@ function showLoading() {
  * Hide the loading spinner and re-enable interactive elements
  */
 function hideLoading() {
+    DebugLogger.log('UI', 'Hiding loading spinner');
     AppState.isLoading = false;
 
     // Hide loading spinner
@@ -452,6 +1071,9 @@ function createTimeout(ms) {
 async function fetchWithTimeout(url, options = {}, timeout = API_CONFIG.TIMEOUT_MS) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const startTime = performance.now();
+
+    DebugLogger.api(url, options.method || 'GET', options.body ? JSON.parse(options.body) : null);
 
     try {
         const response = await fetch(url, {
@@ -459,12 +1081,27 @@ async function fetchWithTimeout(url, options = {}, timeout = API_CONFIG.TIMEOUT_
             signal: controller.signal
         });
         clearTimeout(timeoutId);
+
+        const elapsed = performance.now() - startTime;
+        const timingStr = elapsed < 1000 ? `${elapsed.toFixed(0)}ms` : `${(elapsed / 1000).toFixed(3)}s`;
+
+        DebugLogger.api(url, options.method || 'GET', null, {
+            status: response.status,
+            timing: timingStr,
+            ok: response.ok
+        });
+
         return response;
     } catch (error) {
         clearTimeout(timeoutId);
+        const elapsed = performance.now() - startTime;
+
         if (error.name === 'AbortError') {
+            DebugLogger.network('TIMEOUT', `Request timed out after ${timeout}ms`, { url, elapsed });
             throw new Error(`Request timed out after ${timeout}ms`);
         }
+
+        DebugLogger.network('ERROR', error.message, { url, elapsed, error: error.name });
         throw error;
     }
 }
@@ -494,6 +1131,10 @@ function delay(ms) {
  */
 async function discoverContent(filters) {
     const url = `${WORKER_URL}${API_CONFIG.ENDPOINTS.DISCOVER}`;
+    const startTime = performance.now();
+
+    DebugLogger.group('Content Discovery');
+    DebugLogger.log('API', `Starting content discovery`, filters);
 
     try {
         const response = await fetchWithTimeout(url, {
@@ -506,16 +1147,27 @@ async function discoverContent(filters) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
+            DebugLogger.error('discoverContent', `API returned ${response.status}: ${errorData.error || 'Unknown error'}`);
             throw new Error(errorData.error || `API error: ${response.status}`);
         }
 
         const data = await response.json();
-        return data.urls || [];
+        const urls = data.urls || [];
+
+        DebugLogger.timing('Content discovery', startTime);
+        DebugLogger.log('API', `Found ${urls.length} URLs`);
+        DebugLogger.groupEnd();
+
+        return urls;
     } catch (error) {
+        DebugLogger.groupEnd();
+
         if (error.message.includes('timed out')) {
+            DebugLogger.network('TIMEOUT', 'Discovery request timed out', { url, filters });
             throw new Error('Discovery request timed out. Please try again or reduce your search scope.');
         }
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            DebugLogger.network('UNREACHABLE', 'Worker unreachable or CORS issue', { url, error: error.message });
             throw new Error('Network error. Please check your connection and ensure the worker URL is correct.');
         }
         throw error;
@@ -532,6 +1184,7 @@ async function discoverContent(filters) {
  */
 async function scrapeMetadata(contentUrl) {
     const url = `${WORKER_URL}${API_CONFIG.ENDPOINTS.SCRAPE}`;
+    const startTime = performance.now();
 
     try {
         const response = await fetchWithTimeout(url, {
@@ -544,14 +1197,16 @@ async function scrapeMetadata(contentUrl) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
+            DebugLogger.error('scrapeMetadata', `Scrape failed for ${contentUrl}: ${response.status}`);
             throw new Error(errorData.error || `Scrape error: ${response.status}`);
         }
 
         const data = await response.json();
+        DebugLogger.log('API', `Scraped: ${data.title || contentUrl}`, { duration: data.duration_seconds });
         return data;
     } catch (error) {
         // Return partial data on error to allow graceful degradation
-        console.warn(`Failed to scrape ${contentUrl}:`, error.message);
+        DebugLogger.warn('scrapeMetadata', `Failed to scrape ${contentUrl}: ${error.message}`);
         return {
             source_url: contentUrl,
             error: error.message,
@@ -570,10 +1225,18 @@ async function scrapeMetadata(contentUrl) {
 async function scrapeMultipleUrls(urls, onProgress) {
     const results = [];
     const maxConcurrent = API_CONFIG.MAX_CONCURRENT_SCRAPES;
+    const startTime = performance.now();
+
+    DebugLogger.group('Batch Scraping');
+    DebugLogger.log('API', `Starting batch scrape of ${urls.length} URLs`, { maxConcurrent });
 
     // Process URLs in batches
     for (let i = 0; i < urls.length; i += maxConcurrent) {
         const batch = urls.slice(i, i + maxConcurrent);
+        const batchNum = Math.floor(i / maxConcurrent) + 1;
+        const totalBatches = Math.ceil(urls.length / maxConcurrent);
+
+        DebugLogger.log('API', `Processing batch ${batchNum}/${totalBatches}`);
 
         // Scrape batch concurrently
         const batchPromises = batch.map(url => scrapeMetadata(url));
@@ -591,6 +1254,13 @@ async function scrapeMultipleUrls(urls, onProgress) {
             await delay(API_CONFIG.BATCH_DELAY_MS);
         }
     }
+
+    const successCount = results.filter(r => !r.error).length;
+    const errorCount = results.filter(r => r.error).length;
+
+    DebugLogger.timing('Batch scraping complete', startTime);
+    DebugLogger.log('API', `Batch complete: ${successCount} success, ${errorCount} errors`);
+    DebugLogger.groupEnd();
 
     return results;
 }
@@ -620,6 +1290,8 @@ function getProxyUrl(contentUrl) {
  * @returns {Object} Filter object for API calls
  */
 function collectFilters() {
+    const oldFilters = { ...AppState.filters };
+
     const filters = {
         duration: {
             min_seconds: parseInt(document.getElementById('minDuration')?.value) || 30,
@@ -631,8 +1303,11 @@ function collectFilters() {
         max_items: parseInt(document.getElementById('maxItems')?.value) || 50
     };
 
-    // Update state
+    // Update state and log changes
+    DebugLogger.state('AppState.filters', oldFilters, filters);
     AppState.filters = filters;
+
+    DebugLogger.log('FILTERS', 'Filters collected', filters);
 
     return filters;
 }
@@ -781,8 +1456,15 @@ function validateFilters(filters) {
  * 6. Displays results
  */
 async function executeSearch() {
+    const searchStartTime = performance.now();
+
+    DebugLogger.group('Search Execution');
+    DebugLogger.log('SEARCH', 'Starting search execution');
+
     // Prevent multiple concurrent searches
     if (AppState.isLoading) {
+        DebugLogger.warn('executeSearch', 'Search already in progress, ignoring request');
+        DebugLogger.groupEnd();
         return;
     }
 
@@ -793,31 +1475,40 @@ async function executeSearch() {
     const validationErrors = validateFilters(filters);
 
     if (validationErrors.length > 0) {
+        DebugLogger.error('executeSearch', `Validation failed: ${validationErrors.join(', ')}`);
         validationErrors.forEach(error => showError(error));
+        DebugLogger.groupEnd();
         return;
     }
 
     // Check worker URL configuration
     if (WORKER_URL.includes('YOUR_SUBDOMAIN')) {
+        DebugLogger.error('executeSearch', 'Worker URL not configured');
         showError('Please configure the WORKER_URL in app.js with your deployed Cloudflare Worker URL.');
+        DebugLogger.groupEnd();
         return;
     }
 
     // Show loading state
     showLoading();
+    DebugLogger.state('AppState.isLoading', false, true);
 
     try {
         // Step 1: Discover content URLs
+        DebugLogger.log('SEARCH', 'Step 1: Discovering content URLs');
         updateLoadingProgress('Discovering content...');
         const discoveredUrls = await discoverContent(filters);
 
         if (discoveredUrls.length === 0) {
+            DebugLogger.log('SEARCH', 'No content found matching filters');
             hideLoading();
             showSuccess('No content found matching your filters. Try adjusting your search criteria.');
             displayResults([]);
+            DebugLogger.groupEnd();
             return;
         }
 
+        DebugLogger.log('SEARCH', `Step 2: Scraping metadata for ${discoveredUrls.length} URLs`);
         updateLoadingProgress(`Found ${discoveredUrls.length} items. Fetching metadata...`);
 
         // Step 2: Scrape metadata for each URL
@@ -826,40 +1517,58 @@ async function executeSearch() {
         });
 
         // Step 3: Filter out items with errors
+        DebugLogger.log('SEARCH', 'Step 3: Filtering out error items');
         const validMetadata = allMetadata.filter(item => !item.error);
+        DebugLogger.log('SEARCH', `Valid metadata: ${validMetadata.length}/${allMetadata.length}`);
 
         // Step 4: Apply client-side duration filtering
+        DebugLogger.log('SEARCH', 'Step 4: Applying duration filter');
         let filteredResults = filterByDuration(
             validMetadata,
             filters.duration.min_seconds,
             filters.duration.max_seconds
         );
+        DebugLogger.log('SEARCH', `After duration filter: ${filteredResults.length} items`);
 
         // Step 5: Apply category filtering
+        DebugLogger.log('SEARCH', 'Step 5: Applying category filter');
         filteredResults = filterByCategory(filteredResults, filters.categories);
+        DebugLogger.log('SEARCH', `After category filter: ${filteredResults.length} items`);
 
         // Step 6: Limit to max_items
+        DebugLogger.log('SEARCH', `Step 6: Limiting to max ${filters.max_items} items`);
         filteredResults = filteredResults.slice(0, filters.max_items);
 
         // Update state
+        const oldResults = AppState.searchResults;
         AppState.searchResults = filteredResults;
+        DebugLogger.state('AppState.searchResults', oldResults, filteredResults);
+
+        const oldSelected = AppState.selectedItems.size;
         AppState.selectedItems.clear();
+        DebugLogger.state('AppState.selectedItems', `Set(${oldSelected})`, 'Set(0)');
 
         // Display results
         hideLoading();
         displayResults(filteredResults);
 
+        DebugLogger.timing('Total search time', searchStartTime);
+
         if (filteredResults.length > 0) {
             showSuccess(`Found ${filteredResults.length} items matching your criteria.`);
+            DebugLogger.log('SEARCH', `Search complete: ${filteredResults.length} results`);
         } else {
             showSuccess('No items matched your duration or category filters after metadata check.');
+            DebugLogger.log('SEARCH', 'Search complete: no results after filtering');
         }
 
     } catch (error) {
         hideLoading();
-        console.error('Search error:', error);
+        DebugLogger.error('executeSearch', error);
         showError(error.message || 'An error occurred during search. Please try again.');
     }
+
+    DebugLogger.groupEnd();
 }
 
 // =============================================================================
@@ -872,12 +1581,15 @@ async function executeSearch() {
  * @param {Array} results - Array of metadata objects to display
  */
 function displayResults(results) {
+    const renderStartTime = performance.now();
+    DebugLogger.log('UI', `Rendering ${results.length} result cards...`);
+
     const resultsSection = document.getElementById('resultsSection');
     const resultsGrid = document.getElementById('resultsGrid');
     const resultsCount = document.getElementById('resultsCount');
 
     if (!resultsSection || !resultsGrid) {
-        console.error('Results container not found');
+        DebugLogger.error('displayResults', 'Results container not found in DOM');
         return;
     }
 
@@ -894,6 +1606,7 @@ function displayResults(results) {
 
     if (results.length === 0) {
         resultsGrid.innerHTML = '<p class="no-results">No results to display. Try adjusting your filters.</p>';
+        DebugLogger.log('UI', 'No results to display');
         return;
     }
 
@@ -906,8 +1619,11 @@ function displayResults(results) {
     // Update selection UI
     updateSelectionUI();
 
+    DebugLogger.timing('Render complete', renderStartTime);
+
     // Scroll to results
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    DebugLogger.log('UI', 'Scrolled to results section');
 }
 
 /**
@@ -1001,12 +1717,17 @@ function truncateText(text, maxLength) {
  * @param {boolean} isSelected - Whether the item is selected
  */
 function handleItemSelection(itemId, isSelected) {
+    const oldSize = AppState.selectedItems.size;
+
     if (isSelected) {
         AppState.selectedItems.add(itemId);
+        DebugLogger.ui('checkbox', `item ${itemId}`, 'selected');
     } else {
         AppState.selectedItems.delete(itemId);
+        DebugLogger.ui('checkbox', `item ${itemId}`, 'deselected');
     }
 
+    DebugLogger.state('AppState.selectedItems', `Set(${oldSize})`, `Set(${AppState.selectedItems.size})`);
     updateSelectionUI();
 }
 
@@ -1093,13 +1814,22 @@ function handleSelectAllToggle(event) {
  * Initiates download for all selected items through the proxy.
  */
 async function downloadSelectedItems() {
+    const downloadStartTime = performance.now();
+
+    DebugLogger.group('Download Selected Items');
+    DebugLogger.log('DOWNLOAD', `Starting download of ${AppState.selectedItems.size} items`);
+
     if (AppState.selectedItems.size === 0) {
+        DebugLogger.warn('downloadSelectedItems', 'No items selected');
         showError('No items selected for download.');
+        DebugLogger.groupEnd();
         return;
     }
 
     if (AppState.downloadProgress.inProgress) {
+        DebugLogger.warn('downloadSelectedItems', 'Download already in progress');
         showError('Download already in progress. Please wait.');
+        DebugLogger.groupEnd();
         return;
     }
 
@@ -1109,7 +1839,9 @@ async function downloadSelectedItems() {
     );
 
     if (selectedMetadata.length === 0) {
+        DebugLogger.error('downloadSelectedItems', 'Could not find metadata for selected items');
         showError('Could not find metadata for selected items.');
+        DebugLogger.groupEnd();
         return;
     }
 
@@ -1119,6 +1851,7 @@ async function downloadSelectedItems() {
         total: selectedMetadata.length,
         inProgress: true
     };
+    DebugLogger.state('AppState.downloadProgress', null, AppState.downloadProgress);
 
     updateDownloadProgress();
 
@@ -1126,14 +1859,17 @@ async function downloadSelectedItems() {
         // Process downloads sequentially to avoid overwhelming the browser
         for (const item of selectedMetadata) {
             try {
+                DebugLogger.log('DOWNLOAD', `Downloading: ${item.title}`);
                 await downloadSingleItem(item);
 
                 // Store downloaded item
                 AppState.downloadedItems.set(item.id, item);
+                DebugLogger.log('DOWNLOAD', `Download complete: ${item.title}`);
 
                 // Generate citation
                 const citation = generateCitationData(item);
                 AppState.citations.push(citation);
+                DebugLogger.log('CITATION', `Generated citation for: ${item.title}`);
 
                 // Update progress
                 AppState.downloadProgress.current++;
@@ -1143,7 +1879,7 @@ async function downloadSelectedItems() {
                 await delay(500);
 
             } catch (error) {
-                console.error(`Failed to download ${item.title}:`, error);
+                DebugLogger.error('downloadSingleItem', `Failed to download ${item.title}: ${error.message}`);
                 // Continue with next item
             }
         }
@@ -1151,13 +1887,17 @@ async function downloadSelectedItems() {
         // Update citations panel
         updateCitationsPanel();
 
+        DebugLogger.timing('Total download time', downloadStartTime);
+        DebugLogger.log('DOWNLOAD', `Completed: ${AppState.downloadProgress.current}/${AppState.downloadProgress.total}`);
         showSuccess(`Downloaded ${AppState.downloadProgress.current} of ${AppState.downloadProgress.total} items.`);
 
     } catch (error) {
+        DebugLogger.error('downloadSelectedItems', error);
         showError('Download process failed: ' + error.message);
     } finally {
         AppState.downloadProgress.inProgress = false;
         updateDownloadProgress();
+        DebugLogger.groupEnd();
     }
 }
 
@@ -1168,12 +1908,19 @@ async function downloadSelectedItems() {
  */
 async function downloadSingleItem(item) {
     if (!item.source_url) {
+        DebugLogger.error('downloadSingleItem', 'No source URL available');
         throw new Error('No source URL available');
     }
 
     // Create download link
     const proxyUrl = getProxyUrl(item.source_url);
     const filename = sanitizeFilename(item.title || 'download') + (item.file_format ? `.${item.file_format}` : '.mp4');
+
+    DebugLogger.log('DOWNLOAD', `Initiating download via proxy`, {
+        originalUrl: item.source_url,
+        proxyUrl: proxyUrl,
+        filename: filename
+    });
 
     // Create temporary anchor element for download
     const link = document.createElement('a');
@@ -1185,6 +1932,8 @@ async function downloadSingleItem(item) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    DebugLogger.log('DOWNLOAD', `Download triggered: ${filename}`);
 }
 
 /**
@@ -1230,7 +1979,9 @@ function updateDownloadProgress() {
 function generateCitationData(metadata) {
     const now = new Date();
 
-    return {
+    DebugLogger.log('CITATION', `Generating citation data for: ${metadata.title || 'Untitled'}`);
+
+    const citation = {
         // Core identification
         id: generateCitationId(metadata),
         source_url: metadata.source_url || '',
@@ -1273,6 +2024,10 @@ function generateCitationData(metadata) {
             metadata.publish_date
         )
     };
+
+    DebugLogger.log('CITATION', `Citation ID: ${citation.id}`, { complete: citation.metadata_complete });
+
+    return citation;
 }
 
 /**
@@ -1555,10 +2310,14 @@ async function copyCitationsToClipboard() {
     const format = document.getElementById('citationFormat')?.value || 'chicago';
     const formattedCitations = formatAllCitations(format);
 
+    DebugLogger.log('CITATION', `Copying ${AppState.citations.length} citations to clipboard in ${format} format`);
+
     try {
         await navigator.clipboard.writeText(formattedCitations);
+        DebugLogger.log('CITATION', 'Citations copied to clipboard successfully');
         showSuccess('Citations copied to clipboard!');
     } catch (error) {
+        DebugLogger.warn('copyCitationsToClipboard', 'Clipboard API failed, using fallback');
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
         textArea.value = formattedCitations;
@@ -1569,8 +2328,10 @@ async function copyCitationsToClipboard() {
 
         try {
             document.execCommand('copy');
+            DebugLogger.log('CITATION', 'Citations copied via fallback method');
             showSuccess('Citations copied to clipboard!');
         } catch (e) {
+            DebugLogger.error('copyCitationsToClipboard', e);
             showError('Failed to copy citations. Please select and copy manually.');
         }
 
@@ -1584,6 +2345,8 @@ async function copyCitationsToClipboard() {
 function downloadCitationsAsFile() {
     const format = document.getElementById('citationFormat')?.value || 'chicago';
     const formattedCitations = formatAllCitations(format);
+
+    DebugLogger.log('CITATION', `Downloading ${AppState.citations.length} citations as ${format} file`);
 
     // Determine file extension
     let extension = '.txt';
@@ -1610,6 +2373,7 @@ function downloadCitationsAsFile() {
 
     URL.revokeObjectURL(url);
 
+    DebugLogger.log('CITATION', `Citations file downloaded: ${link.download}`);
     showSuccess(`Citations downloaded as ${link.download}`);
 }
 
@@ -1631,10 +2395,40 @@ function handleCitationFormatChange(event) {
  * Initialize all event listeners when DOM is ready
  */
 document.addEventListener('DOMContentLoaded', function() {
+    const initStartTime = performance.now();
+
+    // Initialize debug panel first
+    initializeDebugPanel();
+
+    DebugLogger.group('Application Initialization');
+    DebugLogger.init('Matushka Application', {
+        version: '2.0.0',
+        workerUrl: WORKER_URL,
+        debugEnabled: DEBUG.enabled,
+        logLevel: DEBUG.logLevel
+    });
+
+    // Log environment info
+    DebugLogger.init('Environment', DebugLogger.getEnvironmentInfo());
+
+    // Log configuration
+    DebugLogger.init('API Configuration', API_CONFIG);
+
     initializeEventListeners();
+    DebugLogger.init('Event listeners registered');
+
     initializeCheckboxBehavior();
+    DebugLogger.init('Checkbox behavior initialized');
+
     initializeResultsSection();
+    DebugLogger.init('Results section initialized');
+
     initializeCitationsSection();
+    DebugLogger.init('Citations section initialized');
+
+    DebugLogger.timing('Initialization complete', initStartTime);
+    DebugLogger.log('INIT', 'Application ready');
+    DebugLogger.groupEnd();
 });
 
 /**
@@ -1644,43 +2438,64 @@ function initializeEventListeners() {
     // Search button
     const searchBtn = document.getElementById('searchBtn');
     if (searchBtn) {
-        searchBtn.addEventListener('click', executeSearch);
+        searchBtn.addEventListener('click', () => {
+            DebugLogger.ui('click', 'searchBtn');
+            executeSearch();
+        });
     }
 
     // Reset button
     const resetBtn = document.getElementById('resetBtn');
     if (resetBtn) {
-        resetBtn.addEventListener('click', resetToDefaults);
+        resetBtn.addEventListener('click', () => {
+            DebugLogger.ui('click', 'resetBtn');
+            resetToDefaults();
+        });
     }
 
     // Select all checkbox
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', handleSelectAllToggle);
+        selectAllCheckbox.addEventListener('change', (e) => {
+            DebugLogger.ui('change', 'selectAllCheckbox', e.target.checked);
+            handleSelectAllToggle(e);
+        });
     }
 
     // Download selected button
     const downloadBtn = document.getElementById('downloadSelectedBtn');
     if (downloadBtn) {
-        downloadBtn.addEventListener('click', downloadSelectedItems);
+        downloadBtn.addEventListener('click', () => {
+            DebugLogger.ui('click', 'downloadSelectedBtn');
+            downloadSelectedItems();
+        });
     }
 
     // Citation format selector
     const citationFormat = document.getElementById('citationFormat');
     if (citationFormat) {
-        citationFormat.addEventListener('change', handleCitationFormatChange);
+        citationFormat.addEventListener('change', (e) => {
+            DebugLogger.ui('change', 'citationFormat', e.target.value);
+            handleCitationFormatChange(e);
+        });
     }
 
     // Copy citations button
     const copyCitationsBtn = document.getElementById('copyCitationsBtn');
     if (copyCitationsBtn) {
-        copyCitationsBtn.addEventListener('click', copyCitationsToClipboard);
+        copyCitationsBtn.addEventListener('click', () => {
+            DebugLogger.ui('click', 'copyCitationsBtn');
+            copyCitationsToClipboard();
+        });
     }
 
     // Download citations button
     const downloadCitationsBtn = document.getElementById('downloadCitationsBtn');
     if (downloadCitationsBtn) {
-        downloadCitationsBtn.addEventListener('click', downloadCitationsAsFile);
+        downloadCitationsBtn.addEventListener('click', () => {
+            DebugLogger.ui('click', 'downloadCitationsBtn');
+            downloadCitationsAsFile();
+        });
     }
 
     // Enter key on form inputs should trigger search
@@ -1688,9 +2503,14 @@ function initializeEventListeners() {
     formInputs.forEach(input => {
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
+                DebugLogger.ui('keypress', `${input.id} (Enter)`);
                 e.preventDefault();
                 executeSearch();
             }
+        });
+        // Log value changes on blur
+        input.addEventListener('blur', (e) => {
+            DebugLogger.ui('change', input.id, e.target.value);
         });
     });
 }
@@ -1735,17 +2555,21 @@ function handleAllCategoriesCheckbox() {
     const allCategoriesCheckbox = document.getElementById('allCategories');
     const categoryCheckboxes = document.querySelectorAll('input[name="categories"]');
 
+    DebugLogger.ui('change', 'allCategories', allCategoriesCheckbox?.checked);
+
     if (allCategoriesCheckbox?.checked) {
         // Disable and uncheck individual category checkboxes
         categoryCheckboxes.forEach(checkbox => {
             checkbox.disabled = true;
             checkbox.checked = false;
         });
+        DebugLogger.log('UI', 'All individual category checkboxes disabled');
     } else {
         // Enable individual category checkboxes
         categoryCheckboxes.forEach(checkbox => {
             checkbox.disabled = false;
         });
+        DebugLogger.log('UI', 'All individual category checkboxes enabled');
     }
 }
 
@@ -1755,7 +2579,10 @@ function handleAllCategoriesCheckbox() {
 function handleIndividualCategoryChange() {
     const allCategoriesCheckbox = document.getElementById('allCategories');
     const categoryCheckboxes = document.querySelectorAll('input[name="categories"]');
-    const anyChecked = Array.from(categoryCheckboxes).some(cb => cb.checked);
+    const checkedCategories = Array.from(categoryCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+    const anyChecked = checkedCategories.length > 0;
+
+    DebugLogger.ui('change', 'categories', checkedCategories);
 
     // Uncheck "All Categories" if any individual category is checked
     if (anyChecked && allCategoriesCheckbox) {
@@ -1770,17 +2597,21 @@ function handleAllSourcesCheckbox() {
     const allSourcesCheckbox = document.getElementById('allSources');
     const sourceCheckboxes = document.querySelectorAll('input[name="sources"]');
 
+    DebugLogger.ui('change', 'allSources', allSourcesCheckbox?.checked);
+
     if (allSourcesCheckbox?.checked) {
         // Disable and uncheck individual source checkboxes
         sourceCheckboxes.forEach(checkbox => {
             checkbox.disabled = true;
             checkbox.checked = false;
         });
+        DebugLogger.log('UI', 'All individual source checkboxes disabled');
     } else {
         // Enable individual source checkboxes
         sourceCheckboxes.forEach(checkbox => {
             checkbox.disabled = false;
         });
+        DebugLogger.log('UI', 'All individual source checkboxes enabled');
     }
 }
 
@@ -1790,7 +2621,10 @@ function handleAllSourcesCheckbox() {
 function handleIndividualSourceChange() {
     const allSourcesCheckbox = document.getElementById('allSources');
     const sourceCheckboxes = document.querySelectorAll('input[name="sources"]');
-    const anyChecked = Array.from(sourceCheckboxes).some(cb => cb.checked);
+    const checkedSources = Array.from(sourceCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+    const anyChecked = checkedSources.length > 0;
+
+    DebugLogger.ui('change', 'sources', checkedSources);
 
     // Uncheck "All Sources" if any individual source is checked
     if (anyChecked && allSourcesCheckbox) {
@@ -1828,6 +2662,9 @@ function initializeCitationsSection() {
  * Reset form to default values
  */
 function resetToDefaults() {
+    DebugLogger.group('Reset to Defaults');
+    DebugLogger.log('UI', 'Resetting form to default values');
+
     clearMessages();
 
     // Duration
@@ -1867,7 +2704,10 @@ function resetToDefaults() {
     if (maxItems) maxItems.value = 50;
 
     // Clear results
+    DebugLogger.state('AppState.searchResults', AppState.searchResults, []);
     AppState.searchResults = [];
+
+    DebugLogger.state('AppState.selectedItems', `Set(${AppState.selectedItems.size})`, 'Set(0)');
     AppState.selectedItems.clear();
 
     const resultsSection = document.getElementById('resultsSection');
@@ -1876,13 +2716,19 @@ function resetToDefaults() {
     }
 
     // Clear citations
+    DebugLogger.state('AppState.citations', AppState.citations, []);
     AppState.citations = [];
+
+    DebugLogger.state('AppState.downloadedItems', `Map(${AppState.downloadedItems.size})`, 'Map(0)');
     AppState.downloadedItems.clear();
 
     const citationsSection = document.getElementById('citationsSection');
     if (citationsSection) {
         citationsSection.style.display = 'none';
     }
+
+    DebugLogger.log('UI', 'Form reset complete');
+    DebugLogger.groupEnd();
 
     showSuccess('Form reset to default values');
 }
@@ -2037,9 +2883,15 @@ if (typeof window !== 'undefined') {
         // Configuration
         WORKER_URL,
         API_CONFIG,
+        DEBUG,
 
         // State
         AppState,
+
+        // Debug utilities
+        DebugLogger,
+        initializeDebugPanel,
+        withErrorBoundary,
 
         // Utilities
         formatDuration,
@@ -2075,4 +2927,7 @@ if (typeof window !== 'undefined') {
         resetToDefaults,
         collectFilters
     };
+
+    // Log that the application is available
+    DebugLogger.log('INIT', 'Matushka object exposed on window');
 }
