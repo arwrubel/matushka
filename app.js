@@ -179,7 +179,118 @@ const TRANSLATIONS = {
     tooltipCitations: "Press C to export citations",
     tooltipTheme: "Press T to toggle theme",
     tooltipLanguage: "Press L to switch language",
-    tooltipCommandPalette: "Press Ctrl+K for command palette"
+    tooltipCommandPalette: "Press Ctrl+K for command palette",
+
+    // Page & App
+    pageTitle: "Matushka - Russian Language Teaching Materials",
+    skipToMain: "Skip to main content",
+    appTitle: "Matushka",
+    appSubtitle: "Russian Language Teaching Materials Collector",
+
+    // Stats
+    streakLabel: "Day Streak",
+    pointsLabel: "Points",
+    levelLabel: "Level",
+
+    // Configuration
+    configTitle: "Search Configuration",
+    durationTitle: "Duration",
+    minDuration: "Minimum Duration",
+    maxDuration: "Maximum Duration",
+    durationHint: "Set duration range in seconds",
+
+    // Date Range
+    dateRangeTitle: "Date Range",
+    dateHint: "Select date range for content",
+
+    // Categories
+    categoriesTitle: "Categories",
+    catNews: "News",
+    catDocumentary: "Documentary",
+    catEntertainment: "Entertainment",
+    catSports: "Sports",
+    catCulture: "Culture",
+    catEducation: "Education",
+
+    // Sources
+    sourcesTitle: "Sources",
+    srcChannel1: "Channel One",
+    srcRussia1: "Russia 1",
+    srcNTV: "NTV",
+    srcCulture: "Culture",
+    srcRT: "RT",
+    srcArchive: "Archive",
+
+    // Max Items
+    maxItemsTitle: "Results Limit",
+    maxItemsLabel: "Maximum Items",
+    maxItemsHint: "Limit the number of results",
+
+    // Search
+    searchHint: "Click to search the archive",
+    lastSearchLabel: "Last Search",
+
+    // Results
+    resultsTitle: "Search Results",
+    sortLabel: "Sort by",
+    sortDateDesc: "Date (Newest)",
+    sortDateAsc: "Date (Oldest)",
+    sortDurationDesc: "Duration (Longest)",
+    sortDurationAsc: "Duration (Shortest)",
+    sortTitleAsc: "Title (A-Z)",
+    sortTitleDesc: "Title (Z-A)",
+
+    // Empty State
+    emptyStateTitle: "No Results Found",
+    emptyStateDesc: "Try adjusting your search filters",
+
+    // Loading
+    loadingText: "Searching...",
+
+    // Preview
+    previewBtn: "Preview",
+
+    // Citations
+    citationsTitle: "Export Citations",
+    citationAPA: "APA Format",
+    citationMLA: "MLA Format",
+    citationChicago: "Chicago Format",
+    citationBibTeX: "BibTeX Format",
+    citationPlaceholder: "Select items to generate citations",
+
+    // Actions
+    copyBtn: "Copy",
+    downloadBtn: "Download",
+
+    // Debug
+    debugTitle: "Debug Console",
+    clearDebugBtn: "Clear",
+    verboseMode: "Verbose Mode",
+
+    // Command Palette
+    commandPaletteTitle: "Command Palette",
+    cmdNavigate: "Navigate",
+    cmdSelect: "Select",
+    cmdClose: "Close",
+
+    // Onboarding
+    onboardingTitle: "Welcome to Matushka",
+
+    // Footer
+    footerAboutTitle: "About",
+    footerAboutText: "Matushka helps language teachers find authentic Russian content for their classrooms.",
+    footerLinksTitle: "Links",
+    footerHelp: "Help",
+    footerAPI: "API Documentation",
+    footerContact: "Contact Us",
+    footerFeedback: "Send Feedback",
+    footerLegalTitle: "Legal",
+    footerPrivacy: "Privacy Policy",
+    footerTerms: "Terms of Service",
+    footerCookies: "Cookie Policy",
+    footerDisclaimer: "This service is provided for educational purposes only.",
+    footerCopyright: "All rights reserved.",
+    versionLabel: "Version"
   },
 
   ru: {
@@ -345,7 +456,118 @@ const TRANSLATIONS = {
     tooltipCitations: "Нажмите C для экспорта цитат",
     tooltipTheme: "Нажмите T для смены темы",
     tooltipLanguage: "Нажмите L для смены языка",
-    tooltipCommandPalette: "Нажмите Ctrl+K для палитры команд"
+    tooltipCommandPalette: "Нажмите Ctrl+K для палитры команд",
+
+    // Page & App
+    pageTitle: "Матушка - Материалы для преподавания русского языка",
+    skipToMain: "Перейти к основному содержанию",
+    appTitle: "Матушка",
+    appSubtitle: "Материалы для преподавания русского языка",
+
+    // Stats
+    streakLabel: "Дней подряд",
+    pointsLabel: "Очки",
+    levelLabel: "Уровень",
+
+    // Configuration
+    configTitle: "Настройки поиска",
+    durationTitle: "Длительность",
+    minDuration: "Минимальная длительность",
+    maxDuration: "Максимальная длительность",
+    durationHint: "Укажите диапазон длительности в секундах",
+
+    // Date Range
+    dateRangeTitle: "Период",
+    dateHint: "Выберите период для контента",
+
+    // Categories
+    categoriesTitle: "Категории",
+    catNews: "Новости",
+    catDocumentary: "Документальное",
+    catEntertainment: "Развлечения",
+    catSports: "Спорт",
+    catCulture: "Культура",
+    catEducation: "Образование",
+
+    // Sources
+    sourcesTitle: "Источники",
+    srcChannel1: "Первый канал",
+    srcRussia1: "Россия 1",
+    srcNTV: "НТВ",
+    srcCulture: "Культура",
+    srcRT: "RT",
+    srcArchive: "Архив",
+
+    // Max Items
+    maxItemsTitle: "Лимит результатов",
+    maxItemsLabel: "Максимум материалов",
+    maxItemsHint: "Ограничить количество результатов",
+
+    // Search
+    searchHint: "Нажмите для поиска в архиве",
+    lastSearchLabel: "Последний поиск",
+
+    // Results
+    resultsTitle: "Результаты поиска",
+    sortLabel: "Сортировать по",
+    sortDateDesc: "Дате (сначала новые)",
+    sortDateAsc: "Дате (сначала старые)",
+    sortDurationDesc: "Длительности (сначала длинные)",
+    sortDurationAsc: "Длительности (сначала короткие)",
+    sortTitleAsc: "Названию (А-Я)",
+    sortTitleDesc: "Названию (Я-А)",
+
+    // Empty State
+    emptyStateTitle: "Ничего не найдено",
+    emptyStateDesc: "Попробуйте изменить параметры поиска",
+
+    // Loading
+    loadingText: "Поиск...",
+
+    // Preview
+    previewBtn: "Предпросмотр",
+
+    // Citations
+    citationsTitle: "Экспорт цитат",
+    citationAPA: "Формат APA",
+    citationMLA: "Формат MLA",
+    citationChicago: "Формат Chicago",
+    citationBibTeX: "Формат BibTeX",
+    citationPlaceholder: "Выберите материалы для генерации цитат",
+
+    // Actions
+    copyBtn: "Копировать",
+    downloadBtn: "Скачать",
+
+    // Debug
+    debugTitle: "Консоль отладки",
+    clearDebugBtn: "Очистить",
+    verboseMode: "Подробный режим",
+
+    // Command Palette
+    commandPaletteTitle: "Палитра команд",
+    cmdNavigate: "Навигация",
+    cmdSelect: "Выбрать",
+    cmdClose: "Закрыть",
+
+    // Onboarding
+    onboardingTitle: "Добро пожаловать в Матушку",
+
+    // Footer
+    footerAboutTitle: "О проекте",
+    footerAboutText: "Матушка помогает преподавателям находить аутентичный русскоязычный контент для занятий.",
+    footerLinksTitle: "Ссылки",
+    footerHelp: "Помощь",
+    footerAPI: "Документация API",
+    footerContact: "Связаться с нами",
+    footerFeedback: "Отправить отзыв",
+    footerLegalTitle: "Правовая информация",
+    footerPrivacy: "Политика конфиденциальности",
+    footerTerms: "Условия использования",
+    footerCookies: "Политика cookies",
+    footerDisclaimer: "Этот сервис предоставляется только в образовательных целях.",
+    footerCopyright: "Все права защищены.",
+    versionLabel: "Версия"
   }
 };
 
