@@ -411,10 +411,15 @@ const i18n = {
   },
 
   updateLanguageSelector() {
-    const selector = document.getElementById('languageSelector');
-    if (selector) {
-      selector.value = this.currentLang;
-    }
+    // Update language toggle buttons (.lang-btn with .active class)
+    const langButtons = document.querySelectorAll('.lang-btn');
+    langButtons.forEach(btn => {
+      if (btn.dataset.lang === this.currentLang) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
   },
 
   toggleLanguage() {
@@ -847,10 +852,10 @@ const GamificationManager = {
 
   updateUI() {
     // Update stats bar
-    const pointsEl = document.getElementById('totalPoints');
-    const levelEl = document.getElementById('currentLevel');
-    const streakEl = document.getElementById('currentStreak');
-    const progressEl = document.getElementById('levelProgress');
+    const pointsEl = document.getElementById('pointsCount');
+    const levelEl = document.getElementById('levelCount');
+    const streakEl = document.getElementById('streakCount');
+    const progressEl = document.getElementById('levelProgressFill');
 
     if (pointsEl) pointsEl.textContent = this.state.points;
     if (levelEl) levelEl.textContent = this.state.level;
@@ -862,32 +867,6 @@ const GamificationManager = {
       const progress = ((this.state.points - currentThreshold) / (nextThreshold - currentThreshold)) * 100;
       progressEl.style.width = `${Math.min(progress, 100)}%`;
     }
-
-    // Update achievements display
-    this.updateAchievementsDisplay();
-  },
-
-  updateAchievementsDisplay() {
-    const container = document.getElementById('achievementsContainer');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    Object.values(this.ACHIEVEMENTS).forEach(achievement => {
-      const isUnlocked = this.state.achievements.includes(achievement.id);
-      const isRussian = i18n.currentLang === 'ru';
-      const title = isRussian ? achievement.titleRu : achievement.title;
-
-      const badge = document.createElement('div');
-      badge.className = `achievement-badge ${isUnlocked ? 'unlocked' : 'locked'}`;
-      badge.innerHTML = `
-        <span class="badge-icon">${achievement.icon}</span>
-        <span class="badge-title">${title}</span>
-      `;
-      badge.title = isRussian ? achievement.descriptionRu : achievement.description;
-
-      container.appendChild(badge);
-    });
   },
 
   getStats() {
@@ -1291,8 +1270,8 @@ const CommandPalette = {
 
   commands: [
     { id: 'search', label: 'Search', labelRu: 'Поиск', shortcut: '/', icon: '🔍', action: () => document.getElementById('searchBtn')?.click() },
-    { id: 'download', label: 'Download Selected', labelRu: 'Скачать выбранное', shortcut: 'd', icon: '📥', action: () => document.getElementById('downloadBtn')?.click() },
-    { id: 'citations', label: 'Export Citations', labelRu: 'Экспорт цитат', shortcut: 'c', icon: '📝', action: () => document.getElementById('citationsBtn')?.click() },
+    { id: 'download', label: 'Download Citations', labelRu: 'Скачать цитаты', shortcut: 'd', icon: '📥', action: () => document.getElementById('downloadCitationBtn')?.click() },
+    { id: 'citations', label: 'Copy Citations', labelRu: 'Копировать цитаты', shortcut: 'c', icon: '📝', action: () => document.getElementById('copyCitationBtn')?.click() },
     { id: 'theme', label: 'Toggle Theme', labelRu: 'Сменить тему', shortcut: 't', icon: '🌓', action: () => toggleTheme() },
     { id: 'lang', label: 'Switch Language', labelRu: 'Сменить язык', shortcut: 'l', icon: '🌍', action: () => { i18n.toggleLanguage(); CommandPalette.trackLanguageSwitch(); } },
     { id: 'reset', label: 'Reset Filters', labelRu: 'Сбросить фильтры', shortcut: 'r', icon: '🔄', action: () => document.getElementById('resetBtn')?.click() },
@@ -1513,7 +1492,7 @@ const OnboardingManager = {
       titleRu: 'Настройте поиск',
       message: 'Set your filters for duration, date range, categories, and sources.',
       messageRu: 'Установите фильтры длительности, периода, категорий и источников.',
-      target: '#config-panel',
+      target: '.config-panel',
       position: 'right'
     },
     {
@@ -1531,16 +1510,16 @@ const OnboardingManager = {
       titleRu: 'Просмотр результатов',
       message: 'Your search results will appear here. Select items to download.',
       messageRu: 'Здесь появятся результаты поиска. Выберите материалы для скачивания.',
-      target: '#results-section',
+      target: '#resultsSection',
       position: 'left'
     },
     {
-      id: 'download',
-      title: 'Download Content',
-      titleRu: 'Скачайте материалы',
-      message: 'Download selected items or export citations for your lesson plans.',
-      messageRu: 'Скачайте выбранные материалы или экспортируйте цитаты для планов уроков.',
-      target: '#downloadBtn',
+      id: 'citations',
+      title: 'Export Citations',
+      titleRu: 'Экспорт цитат',
+      message: 'Copy or download citations for your selected videos in various formats.',
+      messageRu: 'Копируйте или скачивайте цитаты для выбранных видео в различных форматах.',
+      target: '.citations-panel',
       position: 'top'
     },
     {
@@ -1855,8 +1834,9 @@ let currentResults = [];
 
 async function searchContent() {
   const searchBtn = document.getElementById('searchBtn');
-  const resultsContainer = document.getElementById('results');
-  const loadingIndicator = document.getElementById('loading');
+  const resultsContainer = document.getElementById('resultsGrid');
+  const loadingIndicator = document.getElementById('loadingSkeletons');
+  const emptyState = document.getElementById('emptyState');
 
   debug.group('Search Operation');
   debug.log('Search', 'Starting search...');
@@ -1864,19 +1844,24 @@ async function searchContent() {
   // Update UI
   if (searchBtn) {
     searchBtn.disabled = true;
-    searchBtn.textContent = i18n.t('loading');
+    const btnText = searchBtn.querySelector('.btn-text');
+    if (btnText) btnText.textContent = i18n.t('loading');
   }
-  if (loadingIndicator) loadingIndicator.style.display = 'block';
+  if (loadingIndicator) loadingIndicator.hidden = false;
+  if (emptyState) emptyState.hidden = true;
   if (resultsContainer) resultsContainer.innerHTML = '';
 
-  // Gather parameters
+  // Gather parameters - use date inputs instead of daysBack
+  const startDate = document.getElementById('startDate')?.value;
+  const endDate = document.getElementById('endDate')?.value;
   const params = {
     minDuration: parseInt(document.getElementById('minDuration')?.value) || 0,
-    maxDuration: parseInt(document.getElementById('maxDuration')?.value) || 600,
-    daysBack: parseInt(document.getElementById('daysBack')?.value) || 7,
+    maxDuration: parseInt(document.getElementById('maxDuration')?.value) || 60,
+    startDate: startDate || null,
+    endDate: endDate || null,
     categories: getSelectedCategories(),
     sources: getSelectedSources(),
-    maxItems: parseInt(document.getElementById('maxItems')?.value) || 50
+    maxItems: parseInt(document.getElementById('maxItems')?.value) || 20
   };
 
   debug.log('Search', 'Parameters:', params);
@@ -1910,42 +1895,42 @@ async function searchContent() {
   } catch (error) {
     debug.error('Search', 'Search failed', error);
     showError(i18n.t('error') + ': ' + error.message);
+    // Show empty state on error
+    if (emptyState) emptyState.hidden = false;
   } finally {
     if (searchBtn) {
       searchBtn.disabled = false;
-      searchBtn.textContent = i18n.t('searchBtn');
+      const btnText = searchBtn.querySelector('.btn-text');
+      if (btnText) btnText.textContent = i18n.t('searchBtn');
     }
-    if (loadingIndicator) loadingIndicator.style.display = 'none';
+    if (loadingIndicator) loadingIndicator.hidden = true;
     debug.groupEnd();
   }
 }
 
 function renderResults(results) {
-  const container = document.getElementById('results');
+  const container = document.getElementById('resultsGrid');
+  const emptyState = document.getElementById('emptyState');
+  const resultsCount = document.getElementById('resultsCount');
+
   if (!container) return;
 
+  // Update results count display
+  if (resultsCount) {
+    resultsCount.textContent = `(${results.length})`;
+  }
+
   if (results.length === 0) {
-    container.innerHTML = `
-      <div class="no-results" style="text-align: center; padding: 60px; color: #666;">
-        <div style="font-size: 48px; margin-bottom: 20px;">🔍</div>
-        <h3>${i18n.t('noResults')}</h3>
-      </div>
-    `;
+    container.innerHTML = '';
+    if (emptyState) emptyState.hidden = false;
     return;
   }
 
-  container.innerHTML = `
-    <div class="results-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <span>${i18n.t('resultCount', { count: results.length })}</span>
-      <div>
-        <button onclick="selectAllResults()" class="btn btn-small">${i18n.t('selectAll')}</button>
-        <button onclick="deselectAllResults()" class="btn btn-small">${i18n.t('deselectAll')}</button>
-      </div>
-    </div>
-    <div class="results-grid" style="display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
-      ${results.map((item, index) => renderResultCard(item, index)).join('')}
-    </div>
-  `;
+  // Hide empty state when we have results
+  if (emptyState) emptyState.hidden = true;
+
+  // Render results directly into the grid container
+  container.innerHTML = results.map((item, index) => renderResultCard(item, index)).join('');
 
   // Initialize card interactions
   initCardTilt();
@@ -2015,10 +2000,8 @@ function deselectAllResults() {
 }
 
 function updateSelectionCount() {
-  const countEl = document.getElementById('selectionCount');
-  if (countEl) {
-    countEl.textContent = selectedItems.size;
-  }
+  // Selection count is shown via results count - no separate element needed
+  debug.log('Selection', `Selected items: ${selectedItems.size}`);
 }
 
 function toggleFavorite(id) {
@@ -2076,10 +2059,11 @@ async function downloadSelected() {
     return;
   }
 
-  const downloadBtn = document.getElementById('downloadBtn');
+  const downloadBtn = document.getElementById('downloadCitationBtn');
   if (downloadBtn) {
     downloadBtn.disabled = true;
-    downloadBtn.textContent = i18n.t('downloading');
+    const btnText = downloadBtn.querySelector('.btn-text');
+    if (btnText) btnText.textContent = i18n.t('downloading');
   }
 
   debug.log('Download', `Downloading ${selectedItems.size} items`);
@@ -2117,7 +2101,8 @@ async function downloadSelected() {
   } finally {
     if (downloadBtn) {
       downloadBtn.disabled = false;
-      downloadBtn.textContent = i18n.t('download');
+      const btnText = downloadBtn.querySelector('.btn-text');
+      if (btnText) btnText.textContent = i18n.t('downloadBtn');
     }
   }
 }
@@ -2128,42 +2113,94 @@ async function exportCitations() {
     return;
   }
 
-  debug.log('Citations', `Exporting ${selectedItems.size} citations`);
+  // Get current citation format from active tab
+  const activeTab = document.querySelector('.citation-tab.active');
+  const format = activeTab?.dataset.format || 'apa';
+
+  debug.log('Citations', `Exporting ${selectedItems.size} citations in ${format} format`);
 
   const items = currentResults.filter(r => selectedItems.has(r.id));
-  const citations = items.map(item => formatCitation(item)).join('\n\n');
+  const citations = items.map(item => formatCitation(item, format)).join('\n\n');
 
-  const blob = new Blob([citations], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `matushka-citations-${Date.now()}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
-
-  showNotification(i18n.t('complete'), 'success');
+  // Copy to clipboard
+  try {
+    await navigator.clipboard.writeText(citations);
+    showNotification(i18n.t('complete'), 'success');
+  } catch (e) {
+    // Fallback: show in citation preview
+    const citationText = document.getElementById('citationText');
+    if (citationText) {
+      citationText.innerHTML = `<code>${escapeHtml(citations)}</code>`;
+    }
+    showNotification('Citations copied to preview', 'info');
+  }
 }
 
-function formatCitation(item) {
+function formatCitation(item, format = 'apa') {
   const date = new Date(item.publishedAt || Date.now());
+  const year = date.getFullYear();
   const dateStr = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  return `${item.title}. (${dateStr}). ${item.source}. Retrieved from ${item.url}`;
+  switch (format) {
+    case 'mla':
+      return `"${item.title}." ${item.source}, ${dateStr}. ${item.url}.`;
+    case 'chicago':
+      return `${item.source}. "${item.title}." Accessed ${dateStr}. ${item.url}.`;
+    case 'bibtex':
+      const key = item.title.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
+      return `@online{${key}${year},\n  title = {${item.title}},\n  author = {${item.source}},\n  year = {${year}},\n  url = {${item.url}}\n}`;
+    case 'apa':
+    default:
+      return `${item.title}. (${dateStr}). ${item.source}. Retrieved from ${item.url}`;
+  }
+}
+
+function updateCitationPreview(format = 'apa') {
+  const citationText = document.getElementById('citationText');
+  if (!citationText) return;
+
+  if (selectedItems.size === 0) {
+    citationText.innerHTML = `<code>${i18n.t('citationPlaceholder') || 'Select videos to generate citations...'}</code>`;
+    return;
+  }
+
+  const items = currentResults.filter(r => selectedItems.has(r.id));
+  const citations = items.map(item => formatCitation(item, format)).join('\n\n');
+  citationText.innerHTML = `<code>${escapeHtml(citations)}</code>`;
 }
 
 function resetFilters() {
-  document.getElementById('minDuration')?.setAttribute('value', '0');
-  document.getElementById('maxDuration')?.setAttribute('value', '600');
-  document.getElementById('daysBack')?.setAttribute('value', '7');
-  document.getElementById('maxItems')?.setAttribute('value', '50');
+  // Reset duration inputs
+  const minDuration = document.getElementById('minDuration');
+  const maxDuration = document.getElementById('maxDuration');
+  const maxItems = document.getElementById('maxItems');
+  const startDate = document.getElementById('startDate');
+  const endDate = document.getElementById('endDate');
 
-  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+  if (minDuration) minDuration.value = '0';
+  if (maxDuration) maxDuration.value = '60';
+  if (maxItems) maxItems.value = '20';
+  if (startDate) startDate.value = '';
+  if (endDate) endDate.value = '';
+
+  // Reset checkboxes to their default state (first two checked in each group)
+  document.querySelectorAll('input[name="category"]').forEach((cb, index) => {
+    cb.checked = index < 2;
+  });
+  document.querySelectorAll('input[name="source"]').forEach((cb, index) => {
+    cb.checked = index < 2;
+  });
 
   selectedItems.clear();
   currentResults = [];
 
-  const results = document.getElementById('results');
+  const results = document.getElementById('resultsGrid');
+  const emptyState = document.getElementById('emptyState');
+  const resultsCount = document.getElementById('resultsCount');
+
   if (results) results.innerHTML = '';
+  if (emptyState) emptyState.hidden = false;
+  if (resultsCount) resultsCount.textContent = '(0)';
 
   debug.log('Filters', 'Reset complete');
   showNotification(i18n.t('complete'), 'success');
@@ -2654,10 +2691,68 @@ document.addEventListener('DOMContentLoaded', () => {
   // Bind button events
   document.getElementById('searchBtn')?.addEventListener('click', searchContent);
   document.getElementById('resetBtn')?.addEventListener('click', resetFilters);
-  document.getElementById('downloadBtn')?.addEventListener('click', downloadSelected);
-  document.getElementById('citationsBtn')?.addEventListener('click', exportCitations);
-  document.getElementById('languageSelector')?.addEventListener('change', (e) => {
-    i18n.setLanguage(e.target.value);
+  document.getElementById('downloadCitationBtn')?.addEventListener('click', downloadSelected);
+  document.getElementById('copyCitationBtn')?.addEventListener('click', exportCitations);
+
+  // Language toggle buttons (.lang-btn with data-lang attribute)
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lang = btn.dataset.lang;
+      if (lang) {
+        i18n.setLanguage(lang);
+        CommandPalette.trackLanguageSwitch();
+      }
+    });
+  });
+
+  // Collapsible panels
+  document.querySelectorAll('.collapsible-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const isExpanded = header.getAttribute('aria-expanded') === 'true';
+      header.setAttribute('aria-expanded', !isExpanded);
+      const content = header.nextElementSibling;
+      if (content && content.classList.contains('collapsible-content')) {
+        content.hidden = isExpanded;
+      }
+    });
+  });
+
+  // View toggle buttons
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.view-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
+      const view = btn.dataset.view;
+      const resultsGrid = document.getElementById('resultsGrid');
+      if (resultsGrid) {
+        resultsGrid.className = view === 'list' ? 'results-grid results-list' : 'results-grid';
+      }
+    });
+  });
+
+  // Citation format tabs
+  document.querySelectorAll('.citation-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.citation-tab').forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      // Update citation preview based on format
+      updateCitationPreview(tab.dataset.format);
+    });
+  });
+
+  // Debug panel clear button
+  document.getElementById('clearDebugBtn')?.addEventListener('click', () => {
+    debug.clearLogs();
+    const debugContent = document.getElementById('debugContent');
+    if (debugContent) debugContent.textContent = '';
   });
 
   debug.info('App', 'Matushka Premium initialized successfully!');
