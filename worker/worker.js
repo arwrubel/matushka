@@ -2,9 +2,16 @@
  * Matushka Enhanced Cloudflare Worker
  *
  * Multi-site Russian news video discovery, metadata extraction, and audio extraction.
- * Supports: 1tv.ru, smotrim.ru, rt.com, Rutube (for iz.ru, kommersant.ru)
+ * Supports: 1tv.ru, smotrim.ru, rt.com, rutube.ru, iz.ru (via Rutube)
  *
- * @version 2.0.0
+ * Discovery Methods:
+ * - 1tv.ru: Schedule API + page scraping
+ * - smotrim.ru: Official API (api.smotrim.ru)
+ * - rt.com: RSS feeds + page scraping
+ * - rutube.ru: Category API
+ * - iz.ru: Rutube channel API (channel 23872322)
+ *
+ * @version 3.0.0
  * @license MIT
  */
 
@@ -32,12 +39,13 @@ const CATEGORIES = {
   technology: { en: 'Technology', ru: 'Технологии' },
 };
 
-// Site configurations with discovery URLs and category mappings
+// Site configurations with discovery URLs, API endpoints, and category mappings
 const SITES = {
   '1tv': {
     name: 'Channel One',
     nameRu: 'Первый канал',
     domain: '1tv.ru',
+    scheduleApi: 'https://stream.1tv.ru/api/schedule.json',
     sources: {
       'news': { url: 'https://www.1tv.ru/news', categories: ['politics', 'society', 'world'] },
       'politics': { url: 'https://www.1tv.ru/news/politika', categories: ['politics'] },
@@ -46,23 +54,31 @@ const SITES = {
       'world': { url: 'https://www.1tv.ru/news/v-mire', categories: ['world'] },
       'sports': { url: 'https://www.1tv.ru/news/sport', categories: ['sports'] },
       'culture': { url: 'https://www.1tv.ru/news/kultura', categories: ['culture'] },
-      'vremya': { url: 'https://www.1tv.ru/shows/vremya', categories: ['politics', 'world'] },
+      'vremya': { url: 'https://www.1tv.ru/shows/vremya', categories: ['politics', 'world'], programId: 'vremya' },
     }
   },
   'smotrim': {
     name: 'Smotrim (VGTRK)',
     nameRu: 'Смотрим (ВГТРК)',
     domain: 'smotrim.ru',
-    apiBase: 'https://player.smotrim.ru/iframe',
+    apiBase: 'https://api.smotrim.ru/api/v1',
+    playerApi: 'https://player.smotrim.ru/iframe/datavideo/id',
     sources: {
-      'news': { url: 'https://smotrim.ru/vesti', categories: ['politics', 'society', 'world'] },
-      'russia24': { url: 'https://smotrim.ru/russia24', categories: ['politics', 'economy', 'world'] },
+      'news': { brandId: 5402, categories: ['politics', 'society', 'world'], name: 'Вести' },
+      'russia24': { brandId: 58500, categories: ['politics', 'economy', 'world'], name: 'Вести в 20:00' },
+      'vesti-nedeli': { brandId: 5206, categories: ['politics', 'world'], name: 'Вести недели' },
     }
   },
   'rt': {
     name: 'RT',
     nameRu: 'RT',
     domain: 'rt.com',
+    rssFeeds: {
+      'news': 'https://www.rt.com/rss/news/',
+      'russia': 'https://www.rt.com/rss/russia/',
+      'business': 'https://www.rt.com/rss/business/',
+      'sport': 'https://www.rt.com/rss/sport/',
+    },
     sources: {
       'news': { url: 'https://www.rt.com/news/', categories: ['politics', 'world'] },
       'russia': { url: 'https://www.rt.com/russia/', categories: ['politics', 'society'] },
@@ -79,15 +95,29 @@ const SITES = {
     nameRu: 'Рутуб',
     domain: 'rutube.ru',
     apiBase: 'https://rutube.ru/api',
-    // Used for iz.ru, kommersant.ru embeds
+    // Category IDs for discovery
+    categoryIds: {
+      'news': 13,       // Новости
+      'politics': 42,   // Политика
+      'science': 8,     // Наука и техника
+      'society': 21,    // Общество
+      'sports': 14,     // Спорт
+      'culture': 7,     // Искусство
+    },
+    sources: {
+      'news': { categoryId: 13, categories: ['politics', 'world'] },
+      'politics': { categoryId: 42, categories: ['politics'] },
+      'society': { categoryId: 21, categories: ['society'] },
+    }
   },
   'izvestia': {
     name: 'Izvestia',
     nameRu: 'Известия',
     domain: 'iz.ru',
     usesRutube: true,
+    rutubeChannelId: 23872322,  // Izvestia's Rutube channel
     sources: {
-      'video': { url: 'https://iz.ru/video', categories: ['politics', 'society', 'world'] },
+      'video': { categories: ['politics', 'society', 'world'] },
     }
   },
 };
@@ -493,25 +523,221 @@ async function discover1tv(sourceKey, maxItems = 20) {
   const source = SITES['1tv'].sources[sourceKey];
   if (!source) throw new Error(`Unknown 1tv source: ${sourceKey}`);
 
-  log('Discovering from 1tv:', source.url);
-  const response = await fetchWithHeaders(source.url);
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const html = await response.text();
+  log('Discovering from 1tv:', sourceKey);
+  const results = [];
 
-  const links = extractLinks(html, source.url);
-  const videoUrls = links.filter(link => {
-    return link.includes('1tv.ru') &&
-           /\/news\/[^/]+\/\d{4}-\d{2}-\d{2}\//.test(link);
-  });
+  // Strategy 1: Try the schedule API for program-based content (vremya, news)
+  if (sourceKey === 'vremya' || sourceKey === 'news') {
+    try {
+      log('Trying 1tv schedule API...');
+      const scheduleData = await fetchJson(SITES['1tv'].scheduleApi);
 
-  return videoUrls.slice(0, maxItems).map(url => ({
-    url,
-    source: '1tv',
-    categories: source.categories,
-  }));
+      if (scheduleData?.channel?.schedule?.program) {
+        const programs = scheduleData.channel.schedule.program;
+        for (const program of programs) {
+          // Filter by program type for vremya
+          if (sourceKey === 'vremya' && !program.title?.toLowerCase().includes('время')) {
+            continue;
+          }
+
+          if (program.link || program.url) {
+            const url = program.link || program.url;
+            const fullUrl = url.startsWith('http') ? url : `https://www.1tv.ru${url}`;
+            results.push({
+              url: fullUrl,
+              source: '1tv',
+              sourceKey,
+              title: program.title || null,
+              thumbnail: program.image || program.preview || null,
+              publishDate: program.datetime || program.date || null,
+              duration: program.duration || null,
+              categories: source.categories,
+            });
+          }
+        }
+        log('Found', results.length, 'items from schedule API');
+      }
+    } catch (e) {
+      log('Schedule API failed:', e.message);
+    }
+  }
+
+  // Strategy 2: Scrape the category page
+  if (results.length < maxItems) {
+    try {
+      log('Trying page scrape for:', source.url);
+      const response = await fetchWithHeaders(source.url);
+      if (response.ok) {
+        const html = await response.text();
+
+        // Try __NEXT_DATA__ first
+        const nextDataMatch = html.match(/<script[^>]+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+        if (nextDataMatch) {
+          try {
+            const nextData = JSON.parse(nextDataMatch[1]);
+            const pageProps = nextData?.props?.pageProps;
+
+            // Search through various data locations
+            const dataLocations = [
+              pageProps?.data?.items,
+              pageProps?.data?.news,
+              pageProps?.data?.videos,
+              pageProps?.items,
+              pageProps?.news,
+              pageProps?.videos,
+              pageProps?.initialData?.items,
+              pageProps?.ssrData?.items,
+            ];
+
+            for (const items of dataLocations) {
+              if (Array.isArray(items) && items.length > 0) {
+                for (const item of items) {
+                  const itemUrl = item.url || item.link || item.href || item.path ||
+                    (item.slug ? `/news/${item.slug}` : null) ||
+                    (item.id ? `/news/${item.id}` : null);
+
+                  if (itemUrl) {
+                    const fullUrl = itemUrl.startsWith('http') ? itemUrl : `https://www.1tv.ru${itemUrl}`;
+                    // Avoid duplicates
+                    if (!results.find(r => r.url === fullUrl)) {
+                      results.push({
+                        url: fullUrl,
+                        source: '1tv',
+                        sourceKey,
+                        title: item.title || item.name || item.headline || null,
+                        thumbnail: item.image || item.preview || item.thumbnail || null,
+                        publishDate: item.date || item.datetime || item.publishedAt || null,
+                        duration: item.duration || null,
+                        categories: source.categories,
+                      });
+                    }
+                  }
+                }
+                log('Found', results.length, 'items from __NEXT_DATA__');
+                break;
+              }
+            }
+          } catch (e) {
+            log('Failed to parse __NEXT_DATA__:', e.message);
+          }
+        }
+
+        // Fallback: Extract links from HTML
+        if (results.length === 0) {
+          const links = extractLinks(html, source.url);
+          const newsLinks = links.filter(link => {
+            return link.includes('1tv.ru') &&
+                   (/\/news\/[^/]+\/\d{4}-\d{2}-\d{2}/.test(link) ||
+                    /\/news\/\d{4}-\d{2}-\d{2}/.test(link) ||
+                    /\/shows\/[^/]+\/[^/]+\/\d{4}/.test(link));
+          });
+
+          for (const url of newsLinks) {
+            if (!results.find(r => r.url === url)) {
+              results.push({
+                url,
+                source: '1tv',
+                sourceKey,
+                categories: source.categories,
+              });
+            }
+          }
+          log('Found', results.length, 'items from link extraction');
+        }
+      }
+    } catch (e) {
+      log('Page scrape failed:', e.message);
+    }
+  }
+
+  return results.slice(0, maxItems);
 }
 
 // --- SMOTRIM.RU ---
+
+async function discoverSmotrim(sourceKey, maxItems = 20) {
+  const source = SITES['smotrim'].sources[sourceKey];
+  if (!source) throw new Error(`Unknown smotrim source: ${sourceKey}`);
+
+  log('Discovering from smotrim:', sourceKey, 'brandId:', source.brandId);
+  const results = [];
+
+  try {
+    // Use the official Smotrim API
+    const apiUrl = `${SITES['smotrim'].apiBase}/videos?brands=${source.brandId}&limit=${maxItems}&offset=0`;
+    log('Fetching Smotrim API:', apiUrl);
+
+    const response = await fetchWithHeaders(apiUrl, {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data?.data && Array.isArray(data.data)) {
+        for (const item of data.data) {
+          const videoId = item.id || item.video_id;
+          if (videoId) {
+            results.push({
+              url: `https://smotrim.ru/video/${videoId}`,
+              source: 'smotrim',
+              sourceKey,
+              videoId,
+              title: item.title || item.name || null,
+              description: item.anons || item.description || null,
+              thumbnail: item.picture || item.preview || item.thumbnail || null,
+              publishDate: item.date || item.datePublished || item.created || null,
+              duration: item.duration || null,
+              program: item.brandTitle || source.name || null,
+              categories: source.categories,
+            });
+          }
+        }
+        log('Found', results.length, 'videos from Smotrim API');
+      }
+    } else {
+      log('Smotrim API returned:', response.status);
+    }
+  } catch (e) {
+    log('Smotrim API error:', e.message);
+  }
+
+  // Fallback: scrape the web page
+  if (results.length === 0) {
+    try {
+      const pageUrl = `https://smotrim.ru/brand/${source.brandId}`;
+      log('Trying page scrape:', pageUrl);
+
+      const response = await fetchWithHeaders(pageUrl);
+      if (response.ok) {
+        const html = await response.text();
+
+        // Look for video IDs in the page
+        const videoIdMatches = html.matchAll(/\/video\/(\d+)/g);
+        const seenIds = new Set();
+
+        for (const match of videoIdMatches) {
+          const videoId = match[1];
+          if (!seenIds.has(videoId)) {
+            seenIds.add(videoId);
+            results.push({
+              url: `https://smotrim.ru/video/${videoId}`,
+              source: 'smotrim',
+              sourceKey,
+              videoId,
+              categories: source.categories,
+            });
+          }
+        }
+        log('Found', results.length, 'videos from page scrape');
+      }
+    } catch (e) {
+      log('Page scrape failed:', e.message);
+    }
+  }
+
+  return results.slice(0, maxItems);
+}
 
 async function extractSmotrim(url) {
   log('Extracting from smotrim.ru:', url);
@@ -521,41 +747,171 @@ async function extractSmotrim(url) {
   if (!idMatch) throw new Error('Could not extract video ID from smotrim.ru URL');
   const videoId = idMatch[1];
 
-  // Fetch video data from API
-  const apiUrl = `https://player.smotrim.ru/iframe/datavideo/id/${videoId}`;
-  const data = await fetchJson(apiUrl);
-
-  if (!data || !data.data) throw new Error('Invalid API response');
-
-  const video = data.data;
-  const playlist = video.playlist && video.playlist.medialist;
-
+  let videoData = null;
   let m3u8Url = null;
   let mp4Url = null;
 
-  if (playlist && playlist.length > 0) {
-    const media = playlist[playlist.length - 1];
-    if (media.sources) {
-      m3u8Url = media.sources.m3u8 || null;
-      mp4Url = media.sources.mp4 || null;
+  // Strategy 1: Try the main API first
+  try {
+    const mainApiUrl = `${SITES['smotrim'].apiBase}/video/${videoId}`;
+    log('Trying main API:', mainApiUrl);
+    const mainData = await fetchJson(mainApiUrl);
+
+    if (mainData?.data) {
+      videoData = mainData.data;
+      // Check for stream URLs in main API response
+      if (videoData.sources) {
+        m3u8Url = videoData.sources.m3u8 || videoData.sources.hls || null;
+        mp4Url = videoData.sources.mp4 || null;
+      }
+      log('Got metadata from main API');
     }
+  } catch (e) {
+    log('Main API failed:', e.message);
+  }
+
+  // Strategy 2: Use player API for stream URLs (more reliable for streams)
+  try {
+    const playerApiUrl = `${SITES['smotrim'].playerApi}/${videoId}`;
+    log('Trying player API:', playerApiUrl);
+    const playerData = await fetchJson(playerApiUrl);
+
+    if (playerData?.data) {
+      // Use player data for metadata if main API failed
+      if (!videoData) {
+        videoData = playerData.data;
+      }
+
+      // Get stream URLs from player API (priority)
+      const playlist = playerData.data.playlist?.medialist;
+      if (playlist && playlist.length > 0) {
+        // Get highest quality version (last in list)
+        const media = playlist[playlist.length - 1];
+        if (media.sources) {
+          m3u8Url = media.sources.m3u8 || m3u8Url;
+          mp4Url = media.sources.mp4 || mp4Url;
+        }
+      }
+      log('Got stream URLs from player API');
+    }
+  } catch (e) {
+    log('Player API failed:', e.message);
+  }
+
+  if (!videoData) {
+    throw new Error('Could not fetch video data from Smotrim APIs');
   }
 
   return {
     source: 'smotrim',
     sourceUrl: url,
-    title: video.title || video.episodeTitle || 'Unknown',
-    description: video.anons || null,
-    thumbnail: video.picture || null,
-    publishDate: video.datePublished || null,
-    duration: video.duration || null,
+    videoId,
+    title: videoData.title || videoData.episodeTitle || 'Unknown',
+    description: videoData.anons || videoData.description || null,
+    thumbnail: videoData.picture || videoData.preview || null,
+    publishDate: videoData.datePublished || videoData.date || null,
+    duration: videoData.duration || null,
+    program: videoData.brandTitle || null,
     m3u8Url,
     mp4Url,
-    streamType: m3u8Url ? 'hls' : 'mp4',
+    streamType: m3u8Url ? 'hls' : (mp4Url ? 'mp4' : null),
   };
 }
 
 // --- RT.COM ---
+
+async function discoverRt(sourceKey, maxItems = 20) {
+  const site = SITES['rt'];
+  const source = site.sources[sourceKey];
+  if (!source) throw new Error(`Unknown RT source: ${sourceKey}`);
+
+  log('Discovering from RT:', sourceKey);
+  const results = [];
+
+  // Strategy 1: Use RSS feeds (more reliable)
+  const rssFeed = site.rssFeeds[sourceKey] || site.rssFeeds.news;
+  if (rssFeed) {
+    try {
+      log('Fetching RSS feed:', rssFeed);
+      const response = await fetchWithHeaders(rssFeed, {
+        headers: { 'Accept': 'application/rss+xml, application/xml, text/xml' }
+      });
+
+      if (response.ok) {
+        const xml = await response.text();
+
+        // Parse RSS items
+        const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/gi);
+
+        for (const itemMatch of itemMatches) {
+          const itemXml = itemMatch[1];
+
+          // Extract fields from RSS item
+          const titleMatch = itemXml.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>|<title>(.*?)<\/title>/i);
+          const linkMatch = itemXml.match(/<link>(.*?)<\/link>/i);
+          const descMatch = itemXml.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>|<description>(.*?)<\/description>/i);
+          const dateMatch = itemXml.match(/<pubDate>(.*?)<\/pubDate>/i);
+          const mediaMatch = itemXml.match(/<enclosure[^>]+url=["']([^"']+)["']/i);
+          const thumbnailMatch = itemXml.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i);
+
+          const url = linkMatch ? linkMatch[1].trim() : null;
+          if (url && url.includes('rt.com')) {
+            results.push({
+              url,
+              source: 'rt',
+              sourceKey,
+              title: titleMatch ? (titleMatch[1] || titleMatch[2] || '').trim() : null,
+              description: descMatch ? (descMatch[1] || descMatch[2] || '').trim() : null,
+              publishDate: dateMatch ? dateMatch[1].trim() : null,
+              thumbnail: thumbnailMatch ? thumbnailMatch[1] : null,
+              mediaUrl: mediaMatch ? mediaMatch[1] : null,
+              categories: source.categories,
+            });
+          }
+
+          if (results.length >= maxItems) break;
+        }
+        log('Found', results.length, 'items from RSS');
+      }
+    } catch (e) {
+      log('RSS feed error:', e.message);
+    }
+  }
+
+  // Strategy 2: Scrape the web page
+  if (results.length < maxItems) {
+    try {
+      log('Trying page scrape:', source.url);
+      const response = await fetchWithHeaders(source.url);
+
+      if (response.ok) {
+        const html = await response.text();
+
+        // Look for article links
+        const linkMatches = html.matchAll(/href=["'](https?:\/\/(?:www\.)?rt\.com\/[^"']+\/\d+[^"']*)["']/gi);
+
+        for (const match of linkMatches) {
+          const url = match[1];
+          // Filter for actual article URLs
+          if (url.match(/\/\d+-[^/]+\/?$/) && !results.find(r => r.url === url)) {
+            results.push({
+              url,
+              source: 'rt',
+              sourceKey,
+              categories: source.categories,
+            });
+          }
+          if (results.length >= maxItems) break;
+        }
+        log('Found', results.length, 'items total');
+      }
+    } catch (e) {
+      log('Page scrape error:', e.message);
+    }
+  }
+
+  return results.slice(0, maxItems);
+}
 
 async function extractRt(url) {
   log('Extracting from rt.com:', url);
@@ -566,23 +922,60 @@ async function extractRt(url) {
   const og = extractOpenGraph(html);
   const jsonLd = extractJsonLd(html);
 
-  // Look for Video.js config or direct m3u8
+  // RT uses MP4 via JW Player, not HLS
+  let mp4Url = null;
   let m3u8Url = null;
-  const m3u8Match = html.match(/src:\s*["']([^"']+\.m3u8[^"']*)["']/);
-  if (m3u8Match) {
-    m3u8Url = m3u8Match[1];
+
+  // Look for MP4 URL in JW Player config (primary method)
+  const mp4Patterns = [
+    /file:\s*["']([^"']+\.mp4[^"']*)["']/i,
+    /src:\s*["']([^"']+\.mp4[^"']*)["']/i,
+    /"file":\s*"([^"]+\.mp4[^"]*)"/i,
+    /https?:\/\/[^"'\s]+mf\.b37mrtl\.ru[^"'\s]+\.mp4/gi,
+    /https?:\/\/[^"'\s]+cdn[^"'\s]+\.mp4/gi,
+  ];
+
+  for (const pattern of mp4Patterns) {
+    const match = html.match(pattern);
+    if (match) {
+      mp4Url = match[1] || match[0];
+      mp4Url = mp4Url.replace(/\\\//g, '/');
+      log('Found MP4 URL:', mp4Url);
+      break;
+    }
+  }
+
+  // Fallback: Look for m3u8 (less common for RT)
+  if (!mp4Url) {
+    const m3u8Match = html.match(/(?:file|src):\s*["']([^"']+\.m3u8[^"']*)["']/i);
+    if (m3u8Match) {
+      m3u8Url = m3u8Match[1].replace(/\\\//g, '/');
+      log('Found m3u8 URL:', m3u8Url);
+    }
+  }
+
+  // Extract duration from JSON-LD
+  let duration = null;
+  if (jsonLd?.duration) {
+    const match = jsonLd.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/i);
+    if (match) {
+      duration = (parseInt(match[1] || 0) * 3600) +
+                 (parseInt(match[2] || 0) * 60) +
+                 parseInt(match[3] || 0);
+    }
   }
 
   return {
     source: 'rt',
     sourceUrl: url,
-    title: og.title || (jsonLd && jsonLd.name) || 'Unknown',
-    description: og.description || (jsonLd && jsonLd.description) || null,
-    thumbnail: og.image || null,
-    publishDate: jsonLd && jsonLd.datePublished || null,
-    duration: null,
+    title: og.title || (jsonLd?.name) || (jsonLd?.headline) || 'Unknown',
+    description: og.description || (jsonLd?.description) || null,
+    thumbnail: og.image || (jsonLd?.thumbnailUrl) || null,
+    publishDate: jsonLd?.datePublished || null,
+    duration,
+    mp4Url,
     m3u8Url,
-    streamType: 'hls',
+    streamType: mp4Url ? 'mp4' : (m3u8Url ? 'hls' : null),
   };
 }
 
@@ -647,6 +1040,161 @@ async function extractRutubeFromPage(url) {
   throw new Error('No Rutube embed found on page');
 }
 
+async function discoverRutube(sourceKey, maxItems = 20) {
+  const site = SITES['rutube'];
+  const source = site.sources[sourceKey];
+  if (!source) throw new Error(`Unknown Rutube source: ${sourceKey}`);
+
+  log('Discovering from Rutube:', sourceKey, 'categoryId:', source.categoryId);
+  const results = [];
+
+  try {
+    // Use Rutube's category API
+    const apiUrl = `${site.apiBase}/video/category/${source.categoryId}/?format=json&page=1&page_size=${maxItems}`;
+    log('Fetching Rutube category API:', apiUrl);
+
+    const response = await fetchWithHeaders(apiUrl, {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data?.results && Array.isArray(data.results)) {
+        for (const item of data.results) {
+          const videoId = item.id;
+          if (videoId) {
+            results.push({
+              url: `https://rutube.ru/video/${videoId}/`,
+              source: 'rutube',
+              sourceKey,
+              videoId,
+              title: item.title || null,
+              description: item.description || null,
+              thumbnail: item.thumbnail_url || item.picture || null,
+              publishDate: item.created_ts || item.publication_ts || null,
+              duration: item.duration || null,
+              author: item.author?.name || null,
+              categories: source.categories,
+            });
+          }
+        }
+        log('Found', results.length, 'videos from Rutube API');
+      }
+    } else {
+      log('Rutube API returned:', response.status);
+    }
+  } catch (e) {
+    log('Rutube API error:', e.message);
+  }
+
+  // Fallback: Try search API
+  if (results.length === 0) {
+    try {
+      const searchTerms = {
+        'news': 'новости',
+        'politics': 'политика',
+        'society': 'общество',
+      };
+      const query = searchTerms[sourceKey] || 'новости';
+      const searchUrl = `${site.apiBase}/search/video/?query=${encodeURIComponent(query)}&format=json&page=1&page_size=${maxItems}`;
+
+      log('Trying Rutube search API:', searchUrl);
+      const response = await fetchWithHeaders(searchUrl);
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data?.results) {
+          for (const item of data.results) {
+            results.push({
+              url: `https://rutube.ru/video/${item.id}/`,
+              source: 'rutube',
+              sourceKey,
+              videoId: item.id,
+              title: item.title || null,
+              thumbnail: item.thumbnail_url || null,
+              duration: item.duration || null,
+              categories: source.categories,
+            });
+          }
+          log('Found', results.length, 'videos from search');
+        }
+      }
+    } catch (e) {
+      log('Search API error:', e.message);
+    }
+  }
+
+  return results.slice(0, maxItems);
+}
+
+async function discoverIzvestia(sourceKey = 'video', maxItems = 20) {
+  const site = SITES['izvestia'];
+  const channelId = site.rutubeChannelId;
+
+  log('Discovering from Izvestia via Rutube channel:', channelId);
+  const results = [];
+
+  try {
+    // Use Rutube's person (channel) API directly
+    // This bypasses iz.ru entirely (which has Cloudflare protection)
+    const apiUrl = `https://rutube.ru/api/video/person/${channelId}/?format=json&page=1&page_size=${maxItems}`;
+    log('Fetching Rutube channel API:', apiUrl);
+
+    const response = await fetchWithHeaders(apiUrl, {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data?.results && Array.isArray(data.results)) {
+        for (const item of data.results) {
+          const videoId = item.id;
+          if (videoId) {
+            results.push({
+              url: `https://rutube.ru/video/${videoId}/`,
+              source: 'izvestia',
+              sourceKey,
+              videoId,
+              title: item.title || null,
+              description: item.description || null,
+              thumbnail: item.thumbnail_url || item.picture || null,
+              publishDate: item.created_ts || item.publication_ts || null,
+              duration: item.duration || null,
+              // Include iz.ru reference for citation purposes
+              izvestiaRef: true,
+              categories: site.sources.video.categories,
+            });
+          }
+        }
+        log('Found', results.length, 'videos from Izvestia Rutube channel');
+      }
+    } else {
+      log('Rutube channel API returned:', response.status);
+    }
+  } catch (e) {
+    log('Izvestia discovery error:', e.message);
+  }
+
+  return results.slice(0, maxItems);
+}
+
+// Extract from Izvestia - delegates to Rutube
+async function extractIzvestia(url) {
+  log('Extracting from Izvestia:', url);
+
+  // If it's already a Rutube URL, extract directly
+  if (url.includes('rutube.ru')) {
+    const result = await extractRutube(url);
+    result.source = 'izvestia';
+    return result;
+  }
+
+  // Otherwise try to find Rutube embed on iz.ru page
+  return extractRutubeFromPage(url);
+}
+
 // ============================================================================
 // UNIFIED EXTRACTION
 // ============================================================================
@@ -675,6 +1223,7 @@ async function extractMetadata(url) {
     case 'rutube':
       return extractRutube(url);
     case 'izvestia':
+      return extractIzvestia(url);
     case 'kommersant':
       return extractRutubeFromPage(url);
     default:
@@ -689,11 +1238,31 @@ async function extractMetadata(url) {
 async function extractAudio(videoUrl) {
   log('Starting audio extraction for:', videoUrl);
 
-  // First get metadata to find m3u8 URL
+  // First get metadata to find stream URL
   const meta = await extractMetadata(videoUrl);
 
+  // Generate filename from title
+  const safeTitle = (meta.title || 'audio')
+    .replace(/[^a-zA-Zа-яА-Я0-9]/g, '_')
+    .substring(0, 50);
+
+  // Handle MP4 sources (RT uses MP4)
+  if (meta.mp4Url && !meta.m3u8Url) {
+    log('Found MP4 source:', meta.mp4Url);
+
+    // For MP4, we return the URL for client-side download
+    // (Full MP4 extraction is too heavy for Workers)
+    return {
+      streamUrl: meta.mp4Url,
+      streamType: 'mp4',
+      filename: `${safeTitle}.mp4`,
+      metadata: meta,
+      message: 'MP4 stream URL provided for download'
+    };
+  }
+
   if (!meta.m3u8Url) {
-    throw new Error('No HLS stream found for this video');
+    throw new Error('No stream URL found for this video');
   }
 
   log('Found m3u8:', meta.m3u8Url);
@@ -761,10 +1330,6 @@ async function extractAudio(videoUrl) {
   const audioData = combineAudioFrames(allAudioFrames);
   log('Total audio size:', audioData.length, 'bytes');
 
-  // Generate filename from title
-  const safeTitle = (meta.title || 'audio')
-    .replace(/[^a-zA-Zа-яА-Я0-9]/g, '_')
-    .substring(0, 50);
   const filename = `${safeTitle}.aac`;
 
   return { audioData, filename, metadata: meta };
@@ -816,25 +1381,68 @@ async function handleDiscover(url) {
   const sourceParam = url.searchParams.get('source');
   const category = url.searchParams.get('category');
   const maxItems = parseInt(url.searchParams.get('max') || '20');
+  const sourcesParam = url.searchParams.get('sources'); // Comma-separated sources
 
   const results = [];
+  const errors = [];
 
-  // If specific source requested
+  // Parse sources to discover from
+  let sourcesToDiscover = [];
+
   if (sourceParam) {
-    const [siteId, sourceId] = sourceParam.split(':');
-    if (siteId === '1tv') {
-      const items = await discover1tv(sourceId, maxItems);
-      results.push(...items);
-    }
+    // Single source specified
+    sourcesToDiscover.push(sourceParam);
+  } else if (sourcesParam) {
+    // Multiple sources specified
+    sourcesToDiscover = sourcesParam.split(',').map(s => s.trim());
   } else {
-    // Discover from all 1tv sources (default)
-    for (const sourceId of Object.keys(SITES['1tv'].sources)) {
-      try {
-        const items = await discover1tv(sourceId, Math.floor(maxItems / 4));
-        results.push(...items);
-      } catch (e) {
-        log('Discovery error for', sourceId, ':', e.message);
+    // Default: discover from main sources of each site
+    sourcesToDiscover = ['1tv:news', 'smotrim:news', 'rt:news', 'rutube:news', 'izvestia:video'];
+  }
+
+  // Calculate items per source
+  const itemsPerSource = Math.max(5, Math.ceil(maxItems / sourcesToDiscover.length));
+
+  // Discover from each source
+  for (const source of sourcesToDiscover) {
+    const [siteId, sourceId] = source.split(':');
+
+    try {
+      let items = [];
+
+      switch (siteId) {
+        case '1tv':
+          items = await discover1tv(sourceId || 'news', itemsPerSource);
+          break;
+
+        case 'smotrim':
+          items = await discoverSmotrim(sourceId || 'news', itemsPerSource);
+          break;
+
+        case 'rt':
+          items = await discoverRt(sourceId || 'news', itemsPerSource);
+          break;
+
+        case 'rutube':
+          items = await discoverRutube(sourceId || 'news', itemsPerSource);
+          break;
+
+        case 'izvestia':
+          items = await discoverIzvestia(sourceId || 'video', itemsPerSource);
+          break;
+
+        default:
+          log('Unknown site:', siteId);
+          errors.push({ source, error: `Unknown site: ${siteId}` });
+          continue;
       }
+
+      results.push(...items);
+      log(`Discovered ${items.length} items from ${source}`);
+
+    } catch (e) {
+      log(`Discovery error for ${source}:`, e.message);
+      errors.push({ source, error: e.message });
     }
   }
 
@@ -844,10 +1452,19 @@ async function handleDiscover(url) {
     filtered = results.filter(r => r.categories && r.categories.includes(category));
   }
 
+  // Sort by publish date (newest first) if available
+  filtered.sort((a, b) => {
+    if (!a.publishDate && !b.publishDate) return 0;
+    if (!a.publishDate) return 1;
+    if (!b.publishDate) return -1;
+    return new Date(b.publishDate) - new Date(a.publishDate);
+  });
+
   return jsonResponse({
     success: true,
     total: filtered.length,
     items: filtered.slice(0, maxItems),
+    errors: errors.length > 0 ? errors : undefined,
   });
 }
 
@@ -917,8 +1534,22 @@ async function handleAudio(url) {
   }
 
   try {
-    const { audioData, filename, metadata } = await extractAudio(targetUrl);
-    return audioResponse(audioData, filename);
+    const result = await extractAudio(targetUrl);
+
+    // If MP4 source, return the URL for client-side handling
+    if (result.streamType === 'mp4') {
+      return jsonResponse({
+        success: true,
+        streamType: 'mp4',
+        streamUrl: result.streamUrl,
+        filename: result.filename,
+        metadata: result.metadata,
+        message: 'MP4 source detected. Use the streamUrl for direct download.',
+      });
+    }
+
+    // For HLS sources, return the extracted audio
+    return audioResponse(result.audioData, result.filename);
   } catch (e) {
     log('Audio extraction error:', e);
     return errorResponse(`Audio extraction failed: ${e.message}`, 500);
@@ -931,56 +1562,139 @@ function handleRoot() {
 <head>
   <title>Matushka API</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-    h1 { color: #1a365d; }
-    code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; }
-    pre { background: #f0f0f0; padding: 15px; border-radius: 8px; overflow-x: auto; }
-    .endpoint { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
-    .method { background: #48bb78; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 50px auto; padding: 20px; background: #f8fafc; }
+    h1 { color: #1e40af; }
+    h2 { color: #1e3a5f; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+    code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    pre { background: #1e293b; color: #e2e8f0; padding: 15px; border-radius: 8px; overflow-x: auto; }
+    .endpoint { margin: 20px 0; padding: 15px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .method { background: #22c55e; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; }
+    .source-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .source-card { background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .source-card h4 { margin: 0 0 8px 0; color: #1e40af; }
+    .source-card ul { margin: 0; padding-left: 20px; font-size: 0.9em; }
+    .tag { display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin: 2px; }
   </style>
 </head>
 <body>
-  <h1>🎬 Matushka API v2.0</h1>
-  <p>Multi-site Russian news video extraction with audio support.</p>
+  <h1>🎬 Matushka API v3.0</h1>
+  <p>Multi-site Russian news video discovery and audio extraction for language education.</p>
+
+  <h2>Endpoints</h2>
 
   <div class="endpoint">
     <p><span class="method">GET</span> <code>/api/sources</code></p>
-    <p>List all available sources and categories.</p>
+    <p>List all available sources, categories, and their configurations.</p>
   </div>
 
   <div class="endpoint">
-    <p><span class="method">GET</span> <code>/api/discover?source=1tv:news&category=politics&max=20</code></p>
-    <p>Discover videos from sources. All parameters optional.</p>
+    <p><span class="method">GET</span> <code>/api/discover</code></p>
+    <p>Discover videos from multiple sources. Returns video metadata with URLs.</p>
+    <p><strong>Parameters:</strong></p>
+    <ul>
+      <li><code>source</code> - Single source (e.g., <code>1tv:news</code>, <code>smotrim:news</code>, <code>rt:news</code>)</li>
+      <li><code>sources</code> - Multiple sources, comma-separated (e.g., <code>1tv:news,smotrim:news,rt:news</code>)</li>
+      <li><code>category</code> - Filter by category (politics, economy, society, world, sports, culture, science, technology)</li>
+      <li><code>max</code> - Maximum results (default: 20)</li>
+    </ul>
+    <p><strong>Example:</strong> <code>/api/discover?sources=1tv:news,smotrim:news&category=politics&max=10</code></p>
   </div>
 
   <div class="endpoint">
     <p><span class="method">GET</span> <code>/api/scrape?url=...</code></p>
-    <p>Extract metadata and stream URL from a video page.</p>
+    <p>Extract full metadata and stream URLs from a specific video page.</p>
   </div>
 
   <div class="endpoint">
     <p><span class="method">GET</span> <code>/api/proxy?url=...</code></p>
-    <p>Proxy m3u8 playlists with CORS headers.</p>
+    <p>Proxy m3u8 playlists with CORS headers for client-side playback.</p>
   </div>
 
   <div class="endpoint">
     <p><span class="method">GET</span> <code>/api/audio?url=...</code></p>
-    <p><strong>NEW:</strong> Extract audio from video as AAC file.</p>
+    <p>Extract audio from video. Returns AAC for HLS sources, or MP4 stream URL for direct download.</p>
   </div>
 
-  <h2>Supported Sites</h2>
-  <ul>
-    <li><strong>1tv.ru</strong> - Channel One Russia</li>
-    <li><strong>smotrim.ru</strong> - VGTRK / Vesti / Russia 24</li>
-    <li><strong>rt.com</strong> - Russia Today</li>
-    <li><strong>rutube.ru</strong> - Rutube (also for iz.ru, kommersant.ru embeds)</li>
-  </ul>
+  <h2>Supported Sources</h2>
+  <div class="source-grid">
+    <div class="source-card">
+      <h4>1tv.ru (Первый канал)</h4>
+      <ul>
+        <li>1tv:news - News</li>
+        <li>1tv:vremya - Vremya</li>
+        <li>1tv:politics - Politics</li>
+        <li>1tv:economy - Economy</li>
+        <li>1tv:world - World</li>
+      </ul>
+      <p><span class="tag">Schedule API</span> <span class="tag">HLS</span></p>
+    </div>
+    <div class="source-card">
+      <h4>smotrim.ru (ВГТРК)</h4>
+      <ul>
+        <li>smotrim:news - Vesti</li>
+        <li>smotrim:russia24 - Vesti 20:00</li>
+        <li>smotrim:vesti-nedeli - Weekly</li>
+      </ul>
+      <p><span class="tag">Official API</span> <span class="tag">HLS/MP4</span></p>
+    </div>
+    <div class="source-card">
+      <h4>rt.com (RT)</h4>
+      <ul>
+        <li>rt:news - News</li>
+        <li>rt:russia - Russia</li>
+        <li>rt:business - Business</li>
+        <li>rt:sport - Sport</li>
+      </ul>
+      <p><span class="tag">RSS Feeds</span> <span class="tag">MP4</span></p>
+    </div>
+    <div class="source-card">
+      <h4>rutube.ru (Рутуб)</h4>
+      <ul>
+        <li>rutube:news - News</li>
+        <li>rutube:politics - Politics</li>
+        <li>rutube:society - Society</li>
+      </ul>
+      <p><span class="tag">Category API</span> <span class="tag">HLS</span></p>
+    </div>
+    <div class="source-card">
+      <h4>iz.ru (Известия)</h4>
+      <ul>
+        <li>izvestia:video - All videos</li>
+      </ul>
+      <p><span class="tag">Rutube Channel</span> <span class="tag">HLS</span></p>
+    </div>
+  </div>
 
   <h2>Categories</h2>
-  <ul>
-    <li>politics, economy, society, world</li>
-    <li>sports, culture, science, technology</li>
-  </ul>
+  <p>
+    <span class="tag">politics</span>
+    <span class="tag">economy</span>
+    <span class="tag">society</span>
+    <span class="tag">world</span>
+    <span class="tag">sports</span>
+    <span class="tag">culture</span>
+    <span class="tag">science</span>
+    <span class="tag">technology</span>
+  </p>
+
+  <h2>Usage Example</h2>
+  <pre>
+// Discover recent news from multiple sources
+fetch('/api/discover?sources=1tv:news,smotrim:news&max=10')
+  .then(r => r.json())
+  .then(data => {
+    data.items.forEach(video => {
+      console.log(video.title, video.url);
+    });
+  });
+
+// Extract metadata from a specific video
+fetch('/api/scrape?url=https://www.1tv.ru/news/...')
+  .then(r => r.json())
+  .then(data => {
+    console.log(data.metadata.m3u8Url);
+  });
+  </pre>
 </body>
 </html>`;
 
