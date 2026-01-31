@@ -1,2933 +1,2683 @@
-/**
- * Matushka - Browser-Based Russian Language Teaching Materials Collector
- *
- * This application provides a complete browser-based interface for discovering,
- * filtering, downloading, and citing Russian language teaching materials from
- * public media sources.
- *
- * @version 2.0.0
- * @license MIT
- */
+// ============================================================================
+// MATUSHKA PREMIUM - Russian Language Teaching Materials Collector
+// ============================================================================
 
-// =============================================================================
-// DEBUG CONFIGURATION
-// =============================================================================
-
-/**
- * Debug Configuration
- *
- * Set enabled to false in production to disable all debug logging.
- */
-const DEBUG = {
-    enabled: true,
-    logLevel: 'verbose', // 'error', 'warn', 'info', 'verbose'
-    showTimestamps: true,
-    logToConsole: true,
-    logToUI: true  // Show in on-page debug panel
-};
-
-// =============================================================================
-// DEBUG LOGGER CLASS
-// =============================================================================
-
-/**
- * DebugLogger - Comprehensive debugging and logging utility
- *
- * Provides styled console output, API call logging, state tracking,
- * performance timing, and on-page debug panel support.
- */
-const DebugLogger = {
-    // Log levels priority
-    levels: {
-        error: 0,
-        warn: 1,
-        info: 2,
-        verbose: 3
-    },
-
-    // Console style configurations
-    styles: {
-        api: 'color: #2196F3; font-weight: bold;',           // Blue for API calls
-        error: 'color: #F44336; font-weight: bold;',         // Red for errors
-        warn: 'color: #FF9800; font-weight: bold;',          // Orange for warnings
-        state: 'color: #9C27B0; font-weight: bold;',         // Purple for state changes
-        timing: 'color: #4CAF50; font-weight: bold;',        // Green for timing
-        ui: 'color: #00BCD4; font-weight: bold;',            // Cyan for UI events
-        network: 'color: #795548; font-weight: bold;',       // Brown for network
-        init: 'color: #607D8B; font-weight: bold;',          // Gray for initialization
-        default: 'color: #333; font-weight: normal;'         // Default style
-    },
-
-    // In-memory log storage for export
-    logHistory: [],
-    maxHistorySize: 1000,
-
-    /**
-     * Check if logging should occur based on level
-     * @param {string} level - Log level to check
-     * @returns {boolean} Whether to log
-     */
-    shouldLog(level) {
-        if (!DEBUG.enabled) return false;
-        const currentLevelPriority = this.levels[DEBUG.logLevel] || 3;
-        const messageLevelPriority = this.levels[level] || 3;
-        return messageLevelPriority <= currentLevelPriority;
-    },
-
-    /**
-     * Format timestamp for log output
-     * @returns {string} Formatted timestamp [HH:MM:SS.mmm]
-     */
-    getTimestamp() {
-        if (!DEBUG.showTimestamps) return '';
-        const now = new Date();
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-        const seconds = now.getSeconds().toString().padStart(2, '0');
-        const ms = now.getMilliseconds().toString().padStart(3, '0');
-        return `[${hours}:${minutes}:${seconds}.${ms}]`;
-    },
-
-    /**
-     * Store log entry in history
-     * @param {string} category - Log category
-     * @param {string} message - Log message
-     * @param {*} data - Optional data
-     */
-    storeLog(category, message, data) {
-        const entry = {
-            timestamp: new Date().toISOString(),
-            category,
-            message,
-            data: data ? JSON.stringify(data).substring(0, 500) : null
-        };
-        this.logHistory.push(entry);
-        if (this.logHistory.length > this.maxHistorySize) {
-            this.logHistory.shift();
-        }
-    },
-
-    /**
-     * Log to UI debug panel if enabled and panel exists
-     * @param {string} category - Log category
-     * @param {string} message - Log message
-     * @param {string} colorClass - CSS class for color
-     */
-    logToUIPanel(category, message, colorClass) {
-        if (!DEBUG.logToUI) return;
-
-        const panel = document.getElementById('debugPanel');
-        const logContainer = document.getElementById('debugLogContainer');
-        if (!panel || !logContainer) return;
-
-        const entry = document.createElement('div');
-        entry.className = `debug-entry debug-${colorClass}`;
-        entry.innerHTML = `<span class="debug-timestamp">${this.getTimestamp()}</span> <span class="debug-category">[${category}]</span> <span class="debug-message">${this.escapeHtml(message)}</span>`;
-
-        logContainer.appendChild(entry);
-        logContainer.scrollTop = logContainer.scrollHeight;
-    },
-
-    /**
-     * Escape HTML for safe display
-     * @param {string} text - Text to escape
-     * @returns {string} Escaped text
-     */
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    },
-
-    /**
-     * General logging method
-     * @param {string} category - Log category (API, UI, STATE, etc.)
-     * @param {string} message - Log message
-     * @param {*} data - Optional data to log
-     */
-    log(category, message, data = null) {
-        if (!this.shouldLog('info')) return;
-
-        const timestamp = this.getTimestamp();
-        const prefix = `${timestamp} [${category.toUpperCase()}]`;
-        const style = this.styles[category.toLowerCase()] || this.styles.default;
-
-        if (DEBUG.logToConsole) {
-            if (data !== null) {
-                console.log(`%c${prefix} ${message}`, style, data);
-            } else {
-                console.log(`%c${prefix} ${message}`, style);
-            }
-        }
-
-        this.storeLog(category, message, data);
-        this.logToUIPanel(category, message, category.toLowerCase());
-    },
-
-    /**
-     * API call logging with detailed request/response info
-     * @param {string} endpoint - API endpoint
-     * @param {string} method - HTTP method
-     * @param {Object} params - Request parameters
-     * @param {Object} response - Response data (optional, for completion)
-     */
-    api(endpoint, method, params = null, response = null) {
-        if (!this.shouldLog('info')) return;
-
-        const timestamp = this.getTimestamp();
-        const style = this.styles.api;
-
-        if (DEBUG.logToConsole) {
-            if (response === null) {
-                // Request logging
-                console.log(`%c${timestamp} [API] ${method} ${endpoint}`, style);
-                if (params) {
-                    console.log(`%c               Parameters:`, style, params);
-                }
-            } else {
-                // Response logging
-                const status = response.status || 'OK';
-                const timing = response.timing ? ` (${response.timing})` : '';
-                console.log(`%c${timestamp} [API] Response ${status}${timing}`, style);
-                if (response.data) {
-                    const dataPreview = typeof response.data === 'object'
-                        ? JSON.stringify(response.data).substring(0, 200) + (JSON.stringify(response.data).length > 200 ? '...' : '')
-                        : response.data;
-                    console.log(`%c               Data: ${dataPreview}`, style);
-                }
-            }
-        }
-
-        const message = response === null
-            ? `${method} ${endpoint}`
-            : `Response ${response.status || 'OK'}`;
-        this.storeLog('API', message, params || response);
-        this.logToUIPanel('API', message, 'api');
-    },
-
-    /**
-     * Error logging with stack traces
-     * @param {string} context - Error context/location
-     * @param {Error|string} error - Error object or message
-     */
-    error(context, error) {
-        if (!this.shouldLog('error')) return;
-
-        const timestamp = this.getTimestamp();
-        const style = this.styles.error;
-        const errorMessage = error instanceof Error ? error.message : error;
-        const stack = error instanceof Error ? error.stack : null;
-
-        if (DEBUG.logToConsole) {
-            console.log(`%c${timestamp} [ERROR] ${context}`, style);
-            console.log(`%c               Message: ${errorMessage}`, style);
-            if (stack) {
-                console.log(`%c               Stack:`, style);
-                console.log(stack);
-            }
-        }
-
-        this.storeLog('ERROR', `${context}: ${errorMessage}`, { stack });
-        this.logToUIPanel('ERROR', `${context}: ${errorMessage}`, 'error');
-    },
-
-    /**
-     * Warning logging
-     * @param {string} context - Warning context
-     * @param {string} message - Warning message
-     */
-    warn(context, message) {
-        if (!this.shouldLog('warn')) return;
-
-        const timestamp = this.getTimestamp();
-        const style = this.styles.warn;
-
-        if (DEBUG.logToConsole) {
-            console.log(`%c${timestamp} [WARN] ${context}: ${message}`, style);
-        }
-
-        this.storeLog('WARN', `${context}: ${message}`, null);
-        this.logToUIPanel('WARN', `${context}: ${message}`, 'warn');
-    },
-
-    /**
-     * State change tracking
-     * @param {string} stateName - Name of the state variable
-     * @param {*} oldValue - Previous value
-     * @param {*} newValue - New value
-     */
-    state(stateName, oldValue, newValue) {
-        if (!this.shouldLog('verbose')) return;
-
-        const timestamp = this.getTimestamp();
-        const style = this.styles.state;
-
-        const formatValue = (val) => {
-            if (val === null || val === undefined) return 'null';
-            if (Array.isArray(val)) return `[${val.length} items]`;
-            if (val instanceof Set) return `Set(${val.size})`;
-            if (val instanceof Map) return `Map(${val.size})`;
-            if (typeof val === 'object') return JSON.stringify(val).substring(0, 100);
-            return String(val);
-        };
-
-        const oldStr = formatValue(oldValue);
-        const newStr = formatValue(newValue);
-
-        if (DEBUG.logToConsole) {
-            console.log(`%c${timestamp} [STATE] ${stateName}: ${oldStr} -> ${newStr}`, style);
-        }
-
-        this.storeLog('STATE', `${stateName}: ${oldStr} -> ${newStr}`, null);
-        this.logToUIPanel('STATE', `${stateName}: ${oldStr} -> ${newStr}`, 'state');
-    },
-
-    /**
-     * Performance timing
-     * @param {string} label - Operation label
-     * @param {number} startTime - Start timestamp from performance.now()
-     * @returns {number} Elapsed time in ms
-     */
-    timing(label, startTime) {
-        if (!this.shouldLog('info')) return 0;
-
-        const elapsed = performance.now() - startTime;
-        const timestamp = this.getTimestamp();
-        const style = this.styles.timing;
-        const formattedTime = elapsed < 1000
-            ? `${elapsed.toFixed(2)}ms`
-            : `${(elapsed / 1000).toFixed(3)}s`;
-
-        if (DEBUG.logToConsole) {
-            console.log(`%c${timestamp} [TIMING] ${label}: ${formattedTime}`, style);
-        }
-
-        this.storeLog('TIMING', `${label}: ${formattedTime}`, { elapsed });
-        this.logToUIPanel('TIMING', `${label}: ${formattedTime}`, 'timing');
-
-        return elapsed;
-    },
-
-    /**
-     * Start a console group
-     * @param {string} name - Group name
-     */
-    group(name) {
-        if (!DEBUG.enabled || !DEBUG.logToConsole) return;
-        console.group(`%c${this.getTimestamp()} [GROUP] ${name}`, this.styles.default);
-    },
-
-    /**
-     * End a console group
-     */
-    groupEnd() {
-        if (!DEBUG.enabled || !DEBUG.logToConsole) return;
-        console.groupEnd();
-    },
-
-    /**
-     * Log UI event
-     * @param {string} eventType - Type of UI event (click, change, etc.)
-     * @param {string} element - Element identifier
-     * @param {*} value - Event value (optional)
-     */
-    ui(eventType, element, value = null) {
-        if (!this.shouldLog('verbose')) return;
-
-        const timestamp = this.getTimestamp();
-        const style = this.styles.ui;
-        const message = value !== null
-            ? `${eventType} on ${element}: ${value}`
-            : `${eventType} on ${element}`;
-
-        if (DEBUG.logToConsole) {
-            console.log(`%c${timestamp} [UI] ${message}`, style);
-        }
-
-        this.storeLog('UI', message, null);
-        this.logToUIPanel('UI', message, 'ui');
-    },
-
-    /**
-     * Log network status
-     * @param {string} status - Network status type
-     * @param {string} message - Status message
-     * @param {Object} details - Additional details
-     */
-    network(status, message, details = null) {
-        if (!this.shouldLog('warn')) return;
-
-        const timestamp = this.getTimestamp();
-        const style = this.styles.network;
-
-        if (DEBUG.logToConsole) {
-            console.log(`%c${timestamp} [NETWORK] ${status}: ${message}`, style);
-            if (details) {
-                console.log(`%c               Details:`, style, details);
-            }
-        }
-
-        this.storeLog('NETWORK', `${status}: ${message}`, details);
-        this.logToUIPanel('NETWORK', `${status}: ${message}`, 'network');
-    },
-
-    /**
-     * Log initialization info
-     * @param {string} component - Component being initialized
-     * @param {Object} config - Configuration details
-     */
-    init(component, config = null) {
-        if (!this.shouldLog('info')) return;
-
-        const timestamp = this.getTimestamp();
-        const style = this.styles.init;
-
-        if (DEBUG.logToConsole) {
-            console.log(`%c${timestamp} [INIT] ${component}`, style);
-            if (config) {
-                console.log(`%c               Config:`, style, config);
-            }
-        }
-
-        this.storeLog('INIT', component, config);
-        this.logToUIPanel('INIT', component, 'init');
-    },
-
-    /**
-     * Export all logs as JSON
-     * @returns {string} JSON string of all logs
-     */
-    exportLogs() {
-        return JSON.stringify(this.logHistory, null, 2);
-    },
-
-    /**
-     * Clear log history
-     */
-    clearLogs() {
-        this.logHistory = [];
-        const logContainer = document.getElementById('debugLogContainer');
-        if (logContainer) {
-            logContainer.innerHTML = '';
-        }
-        this.log('DEBUG', 'Logs cleared');
-    },
-
-    /**
-     * Get browser/environment info
-     * @returns {Object} Environment information
-     */
-    getEnvironmentInfo() {
-        return {
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            language: navigator.language,
-            cookiesEnabled: navigator.cookieEnabled,
-            onLine: navigator.onLine,
-            screenWidth: window.screen.width,
-            screenHeight: window.screen.height,
-            viewportWidth: window.innerWidth,
-            viewportHeight: window.innerHeight,
-            timestamp: new Date().toISOString()
-        };
-    }
-};
-
-// =============================================================================
-// DEBUG PANEL UI FUNCTIONS
-// =============================================================================
-
-/**
- * Initialize the debug panel in the DOM
- * Creates the panel if it doesn't exist
- */
-function initializeDebugPanel() {
-    if (!DEBUG.logToUI) return;
-
-    // Check if panel already exists
-    if (document.getElementById('debugPanel')) return;
-
-    const panel = document.createElement('div');
-    panel.id = 'debugPanel';
-    panel.innerHTML = `
-        <div class="debug-panel-header">
-            <span class="debug-panel-title">Debug Console</span>
-            <div class="debug-panel-controls">
-                <select id="debugFilterCategory" title="Filter by category">
-                    <option value="all">All Categories</option>
-                    <option value="api">API</option>
-                    <option value="error">Errors</option>
-                    <option value="warn">Warnings</option>
-                    <option value="state">State</option>
-                    <option value="timing">Timing</option>
-                    <option value="ui">UI</option>
-                    <option value="network">Network</option>
-                    <option value="init">Init</option>
-                </select>
-                <button id="debugClearBtn" title="Clear logs">Clear</button>
-                <button id="debugExportBtn" title="Export logs">Export</button>
-                <button id="debugToggleBtn" title="Minimize/Maximize">_</button>
-            </div>
-        </div>
-        <div id="debugLogContainer" class="debug-log-container"></div>
-    `;
-
-    // Add styles
-    const styles = document.createElement('style');
-    styles.textContent = `
-        #debugPanel {
-            position: fixed;
-            bottom: 0;
-            right: 0;
-            width: 500px;
-            max-height: 300px;
-            background: #1e1e1e;
-            border: 1px solid #333;
-            border-radius: 8px 0 0 0;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 11px;
-            z-index: 10000;
-            box-shadow: -2px -2px 10px rgba(0,0,0,0.3);
-        }
-        #debugPanel.minimized {
-            max-height: 30px;
-            overflow: hidden;
-        }
-        #debugPanel.minimized .debug-log-container {
-            display: none;
-        }
-        .debug-panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 10px;
-            background: #333;
-            border-bottom: 1px solid #444;
-            border-radius: 8px 0 0 0;
-        }
-        .debug-panel-title {
-            color: #fff;
-            font-weight: bold;
-        }
-        .debug-panel-controls {
-            display: flex;
-            gap: 5px;
-        }
-        .debug-panel-controls button,
-        .debug-panel-controls select {
-            padding: 2px 8px;
-            font-size: 10px;
-            background: #555;
-            color: #fff;
-            border: 1px solid #666;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        .debug-panel-controls button:hover,
-        .debug-panel-controls select:hover {
-            background: #666;
-        }
-        .debug-log-container {
-            max-height: 260px;
-            overflow-y: auto;
-            padding: 5px;
-        }
-        .debug-entry {
-            padding: 2px 5px;
-            margin: 1px 0;
-            border-radius: 2px;
-            word-wrap: break-word;
-        }
-        .debug-timestamp {
-            color: #888;
-        }
-        .debug-category {
-            font-weight: bold;
-        }
-        .debug-message {
-            color: #ccc;
-        }
-        .debug-api .debug-category { color: #2196F3; }
-        .debug-error { background: rgba(244, 67, 54, 0.1); }
-        .debug-error .debug-category { color: #F44336; }
-        .debug-warn { background: rgba(255, 152, 0, 0.1); }
-        .debug-warn .debug-category { color: #FF9800; }
-        .debug-state .debug-category { color: #9C27B0; }
-        .debug-timing .debug-category { color: #4CAF50; }
-        .debug-ui .debug-category { color: #00BCD4; }
-        .debug-network .debug-category { color: #795548; }
-        .debug-init .debug-category { color: #607D8B; }
-    `;
-    document.head.appendChild(styles);
-    document.body.appendChild(panel);
-
-    // Add event listeners
-    document.getElementById('debugClearBtn').addEventListener('click', () => {
-        DebugLogger.clearLogs();
-    });
-
-    document.getElementById('debugExportBtn').addEventListener('click', () => {
-        const logs = DebugLogger.exportLogs();
-        const blob = new Blob([logs], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `matushka_debug_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-        DebugLogger.log('DEBUG', 'Logs exported');
-    });
-
-    document.getElementById('debugToggleBtn').addEventListener('click', () => {
-        panel.classList.toggle('minimized');
-        const btn = document.getElementById('debugToggleBtn');
-        btn.textContent = panel.classList.contains('minimized') ? '+' : '_';
-    });
-
-    document.getElementById('debugFilterCategory').addEventListener('change', (e) => {
-        const filter = e.target.value;
-        const entries = document.querySelectorAll('.debug-entry');
-        entries.forEach(entry => {
-            if (filter === 'all') {
-                entry.style.display = 'block';
-            } else {
-                entry.style.display = entry.classList.contains(`debug-${filter}`) ? 'block' : 'none';
-            }
-        });
-    });
-}
-
-// =============================================================================
-// ERROR BOUNDARY WRAPPER
-// =============================================================================
-
-/**
- * Wrap a function with error boundary for safe execution
- * @param {Function} fn - Function to wrap
- * @param {string} context - Context name for error logging
- * @returns {Function} Wrapped function with error handling
- */
-function withErrorBoundary(fn, context) {
-    return async function(...args) {
-        try {
-            return await fn.apply(this, args);
-        } catch (error) {
-            DebugLogger.error(context, error);
-            showError(`An error occurred in ${context}. Please try again.`);
-            throw error;
-        }
-    };
-}
-
-// =============================================================================
-// CONFIGURATION
-// =============================================================================
-
-/**
- * Worker URL Configuration
- *
- * Change this URL to point to your deployed Cloudflare Worker.
- * Deploy the worker to your Cloudflare account and update this URL accordingly.
- *
- * Example: 'https://matushka-worker.your-subdomain.workers.dev'
- */
 const WORKER_URL = 'https://matushka-api.arwrubel.workers.dev';
 
-/**
- * API Configuration
- */
-const API_CONFIG = {
-    // Request timeout in milliseconds (30 seconds)
-    TIMEOUT_MS: 30000,
-
-    // Maximum concurrent scrape requests
-    MAX_CONCURRENT_SCRAPES: 5,
-
-    // Delay between batch requests to avoid rate limiting (ms)
-    BATCH_DELAY_MS: 100,
-
-    // API endpoints (relative to WORKER_URL)
-    ENDPOINTS: {
-        DISCOVER: '/api/discover',
-        SCRAPE: '/api/scrape',
-        PROXY: '/api/proxy'
-    }
+const CONFIG = {
+  debug: true,
+  enableCursor: true,
+  enableSounds: true,
+  enableAnimations: true
 };
 
-// =============================================================================
-// STATE MANAGEMENT
-// =============================================================================
+// ============================================================================
+// INTERNATIONALIZATION (i18n) SYSTEM
+// ============================================================================
 
-/**
- * Application State
- *
- * Centralized state object containing all application data.
- * This makes state management predictable and debugging easier.
- */
-const AppState = {
-    // Current filter values from the form
-    filters: {
-        duration: {
-            min_seconds: 30,
-            max_seconds: 600
-        },
-        days_back: 7,
-        categories: ['all'],
-        sources: ['all'],
-        max_items: 50
-    },
+const TRANSLATIONS = {
+  en: {
+    // Header & Branding
+    title: "Matushka",
+    subtitle: "Russian Language Teaching Materials Collector",
+    tagline: "Find authentic Russian content for your classroom",
 
-    // Search results from the API (array of video metadata objects)
-    searchResults: [],
+    // Navigation
+    home: "Home",
+    search: "Search",
+    favorites: "Favorites",
+    history: "History",
+    settings: "Settings",
+    help: "Help",
+    about: "About",
 
-    // Set of selected item IDs for download
-    selectedItems: new Set(),
+    // Search Panel
+    searchBtn: "Search for Content",
+    resetBtn: "Reset Filters",
+    advancedSearch: "Advanced Search",
+    quickSearch: "Quick Search",
+    searchPlaceholder: "Enter keywords...",
 
-    // Map of downloaded items with their full metadata
-    // Key: item ID, Value: metadata object
-    downloadedItems: new Map(),
+    // Duration Filters
+    duration: "Duration",
+    minSeconds: "Minimum Seconds",
+    maxSeconds: "Maximum Seconds",
+    anyDuration: "Any Duration",
+    short: "Short (< 2 min)",
+    medium: "Medium (2-10 min)",
+    long: "Long (> 10 min)",
 
-    // Array of citation objects for downloaded items
-    citations: [],
+    // Date Filters
+    dateRange: "Date Range",
+    daysBack: "Days Back",
+    today: "Today",
+    thisWeek: "This Week",
+    thisMonth: "This Month",
+    thisYear: "This Year",
+    allTime: "All Time",
+    customRange: "Custom Range",
+    startDate: "Start Date",
+    endDate: "End Date",
 
-    // Loading state
-    isLoading: false,
+    // Categories
+    categories: "Categories",
+    allCategories: "All Categories",
+    news: "News",
+    entertainment: "Entertainment",
+    education: "Education",
+    music: "Music",
+    sports: "Sports",
+    culture: "Culture",
+    politics: "Politics",
+    science: "Science",
+    technology: "Technology",
+    cooking: "Cooking",
+    travel: "Travel",
+    children: "Children's Content",
 
-    // Current download progress
-    downloadProgress: {
-        current: 0,
-        total: 0,
-        inProgress: false
-    }
+    // Sources
+    sources: "Sources",
+    allSources: "All Sources",
+    selectSources: "Select Sources",
+
+    // Results
+    maxItems: "Maximum Items",
+    results: "Results",
+    noResults: "No results found",
+    resultCount: "Showing {count} results",
+    loadMore: "Load More",
+    sortBy: "Sort By",
+    sortRelevance: "Relevance",
+    sortDate: "Date",
+    sortDuration: "Duration",
+    sortPopularity: "Popularity",
+
+    // Actions
+    download: "Download Selected",
+    downloadAll: "Download All",
+    citations: "Export Citations",
+    exportCSV: "Export as CSV",
+    exportJSON: "Export as JSON",
+    copyLink: "Copy Link",
+    share: "Share",
+    addToFavorites: "Add to Favorites",
+    removeFromFavorites: "Remove from Favorites",
+    selectAll: "Select All",
+    deselectAll: "Deselect All",
+    preview: "Preview",
+    openExternal: "Open in New Tab",
+
+    // Status Messages
+    loading: "Searching...",
+    downloading: "Downloading...",
+    processing: "Processing...",
+    complete: "Complete!",
+    error: "An error occurred",
+    retry: "Retry",
+    cancel: "Cancel",
+
+    // Gamification
+    points: "Points",
+    level: "Level",
+    streak: "Day Streak",
+    achievements: "Achievements",
+    progress: "Progress",
+    nextLevel: "Next Level",
+    pointsToNext: "{points} points to next level",
+
+    // Achievement Messages
+    achievementUnlocked: "Achievement Unlocked!",
+    newLevel: "Level Up!",
+    streakContinued: "Streak Continued!",
+
+    // Onboarding
+    welcomeTitle: "Welcome to Matushka",
+    welcomeMessage: "Let's take a quick tour of the features",
+    skipTour: "Skip Tour",
+    nextStep: "Next",
+    prevStep: "Previous",
+    finishTour: "Finish",
+
+    // Command Palette
+    commandPalette: "Command Palette",
+    typeCommand: "Type a command...",
+    noCommands: "No matching commands",
+
+    // Settings
+    language: "Language",
+    theme: "Theme",
+    lightTheme: "Light",
+    darkTheme: "Dark",
+    autoTheme: "Auto",
+    soundEffects: "Sound Effects",
+    animations: "Animations",
+    notifications: "Notifications",
+    clearHistory: "Clear History",
+    clearFavorites: "Clear Favorites",
+    resetSettings: "Reset Settings",
+
+    // Misc
+    close: "Close",
+    save: "Save",
+    confirm: "Confirm",
+    yes: "Yes",
+    no: "No",
+    ok: "OK",
+    back: "Back",
+    forward: "Forward",
+    refresh: "Refresh",
+
+    // Time
+    justNow: "Just now",
+    minutesAgo: "{n} minutes ago",
+    hoursAgo: "{n} hours ago",
+    daysAgo: "{n} days ago",
+
+    // Tooltips
+    tooltipSearch: "Press / to focus search",
+    tooltipDownload: "Press D to download selected",
+    tooltipCitations: "Press C to export citations",
+    tooltipTheme: "Press T to toggle theme",
+    tooltipLanguage: "Press L to switch language",
+    tooltipCommandPalette: "Press Ctrl+K for command palette"
+  },
+
+  ru: {
+    // Header & Branding
+    title: "Матушка",
+    subtitle: "Материалы для преподавания русского языка",
+    tagline: "Находите аутентичный контент для вашего класса",
+
+    // Navigation
+    home: "Главная",
+    search: "Поиск",
+    favorites: "Избранное",
+    history: "История",
+    settings: "Настройки",
+    help: "Помощь",
+    about: "О программе",
+
+    // Search Panel
+    searchBtn: "Поиск контента",
+    resetBtn: "Сбросить фильтры",
+    advancedSearch: "Расширенный поиск",
+    quickSearch: "Быстрый поиск",
+    searchPlaceholder: "Введите ключевые слова...",
+
+    // Duration Filters
+    duration: "Длительность",
+    minSeconds: "Минимум секунд",
+    maxSeconds: "Максимум секунд",
+    anyDuration: "Любая длительность",
+    short: "Короткие (< 2 мин)",
+    medium: "Средние (2-10 мин)",
+    long: "Длинные (> 10 мин)",
+
+    // Date Filters
+    dateRange: "Период",
+    daysBack: "Дней назад",
+    today: "Сегодня",
+    thisWeek: "Эта неделя",
+    thisMonth: "Этот месяц",
+    thisYear: "Этот год",
+    allTime: "Всё время",
+    customRange: "Свой период",
+    startDate: "Начальная дата",
+    endDate: "Конечная дата",
+
+    // Categories
+    categories: "Категории",
+    allCategories: "Все категории",
+    news: "Новости",
+    entertainment: "Развлечения",
+    education: "Образование",
+    music: "Музыка",
+    sports: "Спорт",
+    culture: "Культура",
+    politics: "Политика",
+    science: "Наука",
+    technology: "Технологии",
+    cooking: "Кулинария",
+    travel: "Путешествия",
+    children: "Детский контент",
+
+    // Sources
+    sources: "Источники",
+    allSources: "Все источники",
+    selectSources: "Выберите источники",
+
+    // Results
+    maxItems: "Максимум материалов",
+    results: "Результаты",
+    noResults: "Ничего не найдено",
+    resultCount: "Показано {count} результатов",
+    loadMore: "Загрузить ещё",
+    sortBy: "Сортировать по",
+    sortRelevance: "Релевантности",
+    sortDate: "Дате",
+    sortDuration: "Длительности",
+    sortPopularity: "Популярности",
+
+    // Actions
+    download: "Скачать выбранное",
+    downloadAll: "Скачать всё",
+    citations: "Экспорт цитат",
+    exportCSV: "Экспорт в CSV",
+    exportJSON: "Экспорт в JSON",
+    copyLink: "Копировать ссылку",
+    share: "Поделиться",
+    addToFavorites: "Добавить в избранное",
+    removeFromFavorites: "Удалить из избранного",
+    selectAll: "Выбрать всё",
+    deselectAll: "Снять выбор",
+    preview: "Предпросмотр",
+    openExternal: "Открыть в новой вкладке",
+
+    // Status Messages
+    loading: "Поиск...",
+    downloading: "Скачивание...",
+    processing: "Обработка...",
+    complete: "Готово!",
+    error: "Произошла ошибка",
+    retry: "Повторить",
+    cancel: "Отмена",
+
+    // Gamification
+    points: "Очки",
+    level: "Уровень",
+    streak: "Дней подряд",
+    achievements: "Достижения",
+    progress: "Прогресс",
+    nextLevel: "Следующий уровень",
+    pointsToNext: "{points} очков до следующего уровня",
+
+    // Achievement Messages
+    achievementUnlocked: "Достижение разблокировано!",
+    newLevel: "Новый уровень!",
+    streakContinued: "Серия продолжается!",
+
+    // Onboarding
+    welcomeTitle: "Добро пожаловать в Матушку",
+    welcomeMessage: "Давайте сделаем краткий обзор функций",
+    skipTour: "Пропустить",
+    nextStep: "Далее",
+    prevStep: "Назад",
+    finishTour: "Завершить",
+
+    // Command Palette
+    commandPalette: "Палитра команд",
+    typeCommand: "Введите команду...",
+    noCommands: "Команды не найдены",
+
+    // Settings
+    language: "Язык",
+    theme: "Тема",
+    lightTheme: "Светлая",
+    darkTheme: "Тёмная",
+    autoTheme: "Авто",
+    soundEffects: "Звуковые эффекты",
+    animations: "Анимации",
+    notifications: "Уведомления",
+    clearHistory: "Очистить историю",
+    clearFavorites: "Очистить избранное",
+    resetSettings: "Сбросить настройки",
+
+    // Misc
+    close: "Закрыть",
+    save: "Сохранить",
+    confirm: "Подтвердить",
+    yes: "Да",
+    no: "Нет",
+    ok: "ОК",
+    back: "Назад",
+    forward: "Вперёд",
+    refresh: "Обновить",
+
+    // Time
+    justNow: "Только что",
+    minutesAgo: "{n} минут назад",
+    hoursAgo: "{n} часов назад",
+    daysAgo: "{n} дней назад",
+
+    // Tooltips
+    tooltipSearch: "Нажмите / для поиска",
+    tooltipDownload: "Нажмите D для скачивания",
+    tooltipCitations: "Нажмите C для экспорта цитат",
+    tooltipTheme: "Нажмите T для смены темы",
+    tooltipLanguage: "Нажмите L для смены языка",
+    tooltipCommandPalette: "Нажмите Ctrl+K для палитры команд"
+  }
 };
 
-// =============================================================================
-// UTILITY FUNCTIONS
-// =============================================================================
+const i18n = {
+  currentLang: 'en',
 
-/**
- * Format duration in seconds to human-readable format
- *
- * @param {number} seconds - Duration in seconds
- * @returns {string} Formatted duration string (e.g., "2:30", "1:05:30")
- *
- * @example
- * formatDuration(150) // Returns "2:30"
- * formatDuration(3930) // Returns "1:05:30"
- */
-function formatDuration(seconds) {
-    if (seconds === null || seconds === undefined || isNaN(seconds)) {
-        return '--:--';
-    }
-
-    const totalSeconds = Math.floor(seconds);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-
-    // Pad seconds with leading zero
-    const paddedSecs = secs.toString().padStart(2, '0');
-
-    if (hours > 0) {
-        // Format: H:MM:SS
-        const paddedMins = minutes.toString().padStart(2, '0');
-        return `${hours}:${paddedMins}:${paddedSecs}`;
+  init() {
+    const savedLang = localStorage.getItem('matushka_language');
+    if (savedLang && TRANSLATIONS[savedLang]) {
+      this.currentLang = savedLang;
     } else {
-        // Format: M:SS
-        return `${minutes}:${paddedSecs}`;
+      const browserLang = navigator.language.split('-')[0];
+      if (TRANSLATIONS[browserLang]) {
+        this.currentLang = browserLang;
+      }
     }
-}
+    this.applyToPage();
+    this.updateLanguageSelector();
+    debug.log('i18n', `Initialized with language: ${this.currentLang}`);
+  },
 
-/**
- * Format ISO date string to human-readable format
- *
- * @param {string} isoString - ISO 8601 date string
- * @returns {string} Formatted date string
- *
- * @example
- * formatDate('2024-01-15T10:30:00Z') // Returns "January 15, 2024"
- */
-function formatDate(isoString) {
-    if (!isoString) {
-        return 'Unknown date';
+  setLanguage(lang) {
+    if (!TRANSLATIONS[lang]) {
+      debug.error('i18n', `Language not supported: ${lang}`);
+      return;
     }
-
-    try {
-        const date = new Date(isoString);
-
-        // Check for invalid date
-        if (isNaN(date.getTime())) {
-            return 'Unknown date';
-        }
-
-        const options = {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        };
-
-        return date.toLocaleDateString('en-US', options);
-    } catch (error) {
-        return 'Unknown date';
-    }
-}
-
-/**
- * Format date for citations (Month Day, Year format)
- *
- * @param {string|Date} dateInput - Date to format
- * @returns {string} Formatted date for citations
- */
-function formatCitationDate(dateInput) {
-    if (!dateInput) {
-        return 'n.d.';
-    }
-
-    try {
-        const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-
-        if (isNaN(date.getTime())) {
-            return 'n.d.';
-        }
-
-        const options = {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        };
-
-        return date.toLocaleDateString('en-US', options);
-    } catch (error) {
-        return 'n.d.';
-    }
-}
-
-/**
- * Get year from date for APA citations
- *
- * @param {string|Date} dateInput - Date to extract year from
- * @returns {string} Year or 'n.d.'
- */
-function getYear(dateInput) {
-    if (!dateInput) {
-        return 'n.d.';
-    }
-
-    try {
-        const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-
-        if (isNaN(date.getTime())) {
-            return 'n.d.';
-        }
-
-        return date.getFullYear().toString();
-    } catch (error) {
-        return 'n.d.';
-    }
-}
-
-/**
- * Sanitize a string to create a safe filename
- *
- * Removes or replaces characters that are invalid in filenames across
- * different operating systems.
- *
- * @param {string} title - Original title string
- * @returns {string} Sanitized filename-safe string
- *
- * @example
- * sanitizeFilename('News: Special Report 10/15') // Returns "News_Special_Report_10-15"
- */
-function sanitizeFilename(title) {
-    if (!title || typeof title !== 'string') {
-        return 'untitled';
-    }
-
-    return title
-        // Replace slashes with dashes
-        .replace(/[\/\\]/g, '-')
-        // Replace colons with dashes
-        .replace(/:/g, '-')
-        // Remove characters invalid in Windows filenames
-        .replace(/[<>"|?*]/g, '')
-        // Replace multiple spaces with single underscore
-        .replace(/\s+/g, '_')
-        // Remove leading/trailing underscores and dashes
-        .replace(/^[-_]+|[-_]+$/g, '')
-        // Limit length to 200 characters
-        .substring(0, 200)
-        // Provide fallback if empty
-        || 'untitled';
-}
-
-/**
- * Generate a unique citation ID from metadata
- *
- * Creates a deterministic ID based on the item's metadata for consistent
- * referencing in citations.
- *
- * @param {Object} metadata - Item metadata object
- * @returns {string} Unique citation identifier
- *
- * @example
- * generateCitationId({publisher: '1tv', title: 'News', publish_date: '2024-01-15'})
- * // Returns "1tv_news_2024"
- */
-function generateCitationId(metadata) {
-    const parts = [];
-
-    // Add publisher shorthand
-    if (metadata.publisher) {
-        const publisherKey = metadata.publisher
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '')
-            .substring(0, 10);
-        parts.push(publisherKey);
-    }
-
-    // Add first word of title
-    if (metadata.title) {
-        const titleKey = metadata.title
-            .toLowerCase()
-            .split(/\s+/)[0]
-            .replace(/[^a-z0-9]/g, '')
-            .substring(0, 15);
-        parts.push(titleKey);
-    }
-
-    // Add year
-    if (metadata.publish_date) {
-        const year = getYear(metadata.publish_date);
-        if (year !== 'n.d.') {
-            parts.push(year);
-        }
-    }
-
-    // Add random suffix for uniqueness
-    const randomSuffix = Math.random().toString(36).substring(2, 6);
-    parts.push(randomSuffix);
-
-    return parts.join('_') || `item_${Date.now()}`;
-}
-
-/**
- * Display an error message to the user
- *
- * @param {string} message - Error message to display
- */
-function showError(message) {
-    DebugLogger.log('UI', `Showing error message: ${message}`);
-
-    const container = document.getElementById('errorMessages');
-    if (!container) {
-        DebugLogger.warn('showError', 'Error container not found in DOM');
-        console.error('Error:', message);
-        return;
-    }
-
-    // Clear previous messages
-    container.innerHTML = '';
-
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.textContent = message;
-    container.appendChild(errorDiv);
-
-    // Scroll error into view
-    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-    // Auto-clear after 10 seconds
-    setTimeout(() => {
-        if (container.contains(errorDiv)) {
-            errorDiv.remove();
-        }
-    }, 10000);
-}
-
-/**
- * Display a success message to the user
- *
- * @param {string} message - Success message to display
- */
-function showSuccess(message) {
-    DebugLogger.log('UI', `Showing success message: ${message}`);
-
-    const container = document.getElementById('errorMessages');
-    if (!container) {
-        DebugLogger.warn('showSuccess', 'Error container not found in DOM');
-        console.log('Success:', message);
-        return;
-    }
-
-    // Clear previous messages
-    container.innerHTML = '';
-
-    const successDiv = document.createElement('div');
-    successDiv.className = 'success-message';
-    successDiv.textContent = message;
-    container.appendChild(successDiv);
-
-    // Auto-clear after 5 seconds
-    setTimeout(() => {
-        if (container.contains(successDiv)) {
-            successDiv.remove();
-        }
-    }, 5000);
-}
-
-/**
- * Clear all messages from the message container
- */
-function clearMessages() {
-    const container = document.getElementById('errorMessages');
-    if (container) {
-        container.innerHTML = '';
-    }
-}
-
-/**
- * Show the loading spinner and disable interactive elements
- */
-function showLoading() {
-    DebugLogger.log('UI', 'Showing loading spinner');
-    AppState.isLoading = true;
-
-    // Show loading spinner
-    const spinner = document.getElementById('loadingSpinner');
-    if (spinner) {
-        spinner.style.display = 'flex';
-    }
-
-    // Hide results section during loading
-    const resultsSection = document.getElementById('resultsSection');
-    if (resultsSection) {
-        resultsSection.style.display = 'none';
-    }
-
-    // Disable search button
-    const searchBtn = document.getElementById('searchBtn');
-    if (searchBtn) {
-        searchBtn.disabled = true;
-        searchBtn.textContent = 'Searching...';
-    }
-}
-
-/**
- * Hide the loading spinner and re-enable interactive elements
- */
-function hideLoading() {
-    DebugLogger.log('UI', 'Hiding loading spinner');
-    AppState.isLoading = false;
-
-    // Hide loading spinner
-    const spinner = document.getElementById('loadingSpinner');
-    if (spinner) {
-        spinner.style.display = 'none';
-    }
-
-    // Re-enable search button
-    const searchBtn = document.getElementById('searchBtn');
-    if (searchBtn) {
-        searchBtn.disabled = false;
-        searchBtn.textContent = 'Search';
-    }
-}
-
-/**
- * Update loading progress text
- *
- * @param {string} message - Progress message to display
- */
-function updateLoadingProgress(message) {
-    const progressText = document.getElementById('loadingProgress');
-    if (progressText) {
-        progressText.textContent = message;
-    }
-}
-
-/**
- * Create a timeout promise for fetch requests
- *
- * @param {number} ms - Timeout in milliseconds
- * @returns {Promise} Promise that rejects after timeout
- */
-function createTimeout(ms) {
-    return new Promise((_, reject) => {
-        setTimeout(() => {
-            reject(new Error(`Request timed out after ${ms}ms`));
-        }, ms);
-    });
-}
-
-/**
- * Fetch with timeout wrapper
- *
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
- * @param {number} timeout - Timeout in milliseconds
- * @returns {Promise<Response>} Fetch response
- */
-async function fetchWithTimeout(url, options = {}, timeout = API_CONFIG.TIMEOUT_MS) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    const startTime = performance.now();
-
-    DebugLogger.api(url, options.method || 'GET', options.body ? JSON.parse(options.body) : null);
-
-    try {
-        const response = await fetch(url, {
-            ...options,
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        const elapsed = performance.now() - startTime;
-        const timingStr = elapsed < 1000 ? `${elapsed.toFixed(0)}ms` : `${(elapsed / 1000).toFixed(3)}s`;
-
-        DebugLogger.api(url, options.method || 'GET', null, {
-            status: response.status,
-            timing: timingStr,
-            ok: response.ok
-        });
-
-        return response;
-    } catch (error) {
-        clearTimeout(timeoutId);
-        const elapsed = performance.now() - startTime;
-
-        if (error.name === 'AbortError') {
-            DebugLogger.network('TIMEOUT', `Request timed out after ${timeout}ms`, { url, elapsed });
-            throw new Error(`Request timed out after ${timeout}ms`);
-        }
-
-        DebugLogger.network('ERROR', error.message, { url, elapsed, error: error.name });
-        throw error;
-    }
-}
-
-/**
- * Delay execution for a specified time
- *
- * @param {number} ms - Milliseconds to delay
- * @returns {Promise} Promise that resolves after delay
- */
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// =============================================================================
-// API FUNCTIONS
-// =============================================================================
-
-/**
- * Discover content URLs from sources based on filters
- *
- * Calls the worker's /api/discover endpoint to get a list of content URLs
- * that match the specified filters.
- *
- * @param {Object} filters - Filter parameters
- * @returns {Promise<Array>} Array of discovered URLs
- */
-async function discoverContent(filters) {
-    const url = `${WORKER_URL}${API_CONFIG.ENDPOINTS.DISCOVER}`;
-    const startTime = performance.now();
-
-    DebugLogger.group('Content Discovery');
-    DebugLogger.log('API', `Starting content discovery`, filters);
-
-    try {
-        const response = await fetchWithTimeout(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(filters)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            DebugLogger.error('discoverContent', `API returned ${response.status}: ${errorData.error || 'Unknown error'}`);
-            throw new Error(errorData.error || `API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const urls = data.urls || [];
-
-        DebugLogger.timing('Content discovery', startTime);
-        DebugLogger.log('API', `Found ${urls.length} URLs`);
-        DebugLogger.groupEnd();
-
-        return urls;
-    } catch (error) {
-        DebugLogger.groupEnd();
-
-        if (error.message.includes('timed out')) {
-            DebugLogger.network('TIMEOUT', 'Discovery request timed out', { url, filters });
-            throw new Error('Discovery request timed out. Please try again or reduce your search scope.');
-        }
-        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            DebugLogger.network('UNREACHABLE', 'Worker unreachable or CORS issue', { url, error: error.message });
-            throw new Error('Network error. Please check your connection and ensure the worker URL is correct.');
-        }
-        throw error;
-    }
-}
-
-/**
- * Scrape metadata for a single URL
- *
- * Calls the worker's /api/scrape endpoint to get full metadata for a content URL.
- *
- * @param {string} contentUrl - URL of the content to scrape
- * @returns {Promise<Object>} Metadata object for the content
- */
-async function scrapeMetadata(contentUrl) {
-    const url = `${WORKER_URL}${API_CONFIG.ENDPOINTS.SCRAPE}`;
-    const startTime = performance.now();
-
-    try {
-        const response = await fetchWithTimeout(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url: contentUrl })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            DebugLogger.error('scrapeMetadata', `Scrape failed for ${contentUrl}: ${response.status}`);
-            throw new Error(errorData.error || `Scrape error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        DebugLogger.log('API', `Scraped: ${data.title || contentUrl}`, { duration: data.duration_seconds });
-        return data;
-    } catch (error) {
-        // Return partial data on error to allow graceful degradation
-        DebugLogger.warn('scrapeMetadata', `Failed to scrape ${contentUrl}: ${error.message}`);
-        return {
-            source_url: contentUrl,
-            error: error.message,
-            metadata_complete: false
-        };
-    }
-}
-
-/**
- * Scrape metadata for multiple URLs with concurrency control
- *
- * @param {Array<string>} urls - Array of URLs to scrape
- * @param {Function} onProgress - Progress callback (current, total)
- * @returns {Promise<Array>} Array of metadata objects
- */
-async function scrapeMultipleUrls(urls, onProgress) {
-    const results = [];
-    const maxConcurrent = API_CONFIG.MAX_CONCURRENT_SCRAPES;
-    const startTime = performance.now();
-
-    DebugLogger.group('Batch Scraping');
-    DebugLogger.log('API', `Starting batch scrape of ${urls.length} URLs`, { maxConcurrent });
-
-    // Process URLs in batches
-    for (let i = 0; i < urls.length; i += maxConcurrent) {
-        const batch = urls.slice(i, i + maxConcurrent);
-        const batchNum = Math.floor(i / maxConcurrent) + 1;
-        const totalBatches = Math.ceil(urls.length / maxConcurrent);
-
-        DebugLogger.log('API', `Processing batch ${batchNum}/${totalBatches}`);
-
-        // Scrape batch concurrently
-        const batchPromises = batch.map(url => scrapeMetadata(url));
-        const batchResults = await Promise.all(batchPromises);
-
-        results.push(...batchResults);
-
-        // Report progress
-        if (onProgress) {
-            onProgress(results.length, urls.length);
-        }
-
-        // Small delay between batches to avoid overwhelming the worker
-        if (i + maxConcurrent < urls.length) {
-            await delay(API_CONFIG.BATCH_DELAY_MS);
-        }
-    }
-
-    const successCount = results.filter(r => !r.error).length;
-    const errorCount = results.filter(r => r.error).length;
-
-    DebugLogger.timing('Batch scraping complete', startTime);
-    DebugLogger.log('API', `Batch complete: ${successCount} success, ${errorCount} errors`);
-    DebugLogger.groupEnd();
-
-    return results;
-}
-
-/**
- * Get proxy URL for downloading content
- *
- * Constructs the proxy URL that will stream content through the worker.
- *
- * @param {string} contentUrl - Original content URL
- * @returns {string} Proxy URL for download
- */
-function getProxyUrl(contentUrl) {
-    const encodedUrl = encodeURIComponent(contentUrl);
-    return `${WORKER_URL}${API_CONFIG.ENDPOINTS.PROXY}?url=${encodedUrl}`;
-}
-
-// =============================================================================
-// FILTER FUNCTIONS
-// =============================================================================
-
-/**
- * Collect filter values from the form
- *
- * Reads all form inputs and returns a structured filter object.
- *
- * @returns {Object} Filter object for API calls
- */
-function collectFilters() {
-    const oldFilters = { ...AppState.filters };
-
-    const filters = {
-        duration: {
-            min_seconds: parseInt(document.getElementById('minDuration')?.value) || 30,
-            max_seconds: parseInt(document.getElementById('maxDuration')?.value) || 600
-        },
-        days_back: parseInt(document.getElementById('daysBack')?.value) || 7,
-        categories: getSelectedCategories(),
-        sources: getSelectedSources(),
-        max_items: parseInt(document.getElementById('maxItems')?.value) || 50
-    };
-
-    // Update state and log changes
-    DebugLogger.state('AppState.filters', oldFilters, filters);
-    AppState.filters = filters;
-
-    DebugLogger.log('FILTERS', 'Filters collected', filters);
-
-    return filters;
-}
-
-/**
- * Get selected categories from checkboxes
- *
- * @returns {Array<string>} Array of selected category values
- */
-function getSelectedCategories() {
-    const allCategoriesCheckbox = document.getElementById('allCategories');
-
-    if (allCategoriesCheckbox?.checked) {
-        return ['all'];
-    }
-
-    const categoryCheckboxes = document.querySelectorAll('input[name="categories"]:checked');
-    const categories = Array.from(categoryCheckboxes).map(cb => cb.value);
-
-    return categories.length > 0 ? categories : ['all'];
-}
-
-/**
- * Get selected sources from checkboxes
- *
- * @returns {Array<string>} Array of selected source values
- */
-function getSelectedSources() {
-    const allSourcesCheckbox = document.getElementById('allSources');
-
-    if (allSourcesCheckbox?.checked) {
-        return ['all'];
-    }
-
-    const sourceCheckboxes = document.querySelectorAll('input[name="sources"]:checked');
-    const sources = Array.from(sourceCheckboxes).map(cb => cb.value);
-
-    return sources.length > 0 ? sources : ['all'];
-}
-
-/**
- * Apply client-side duration filtering
- *
- * Filters results based on duration estimates when actual duration is available.
- *
- * @param {Array} results - Array of metadata objects
- * @param {number} minSeconds - Minimum duration in seconds
- * @param {number} maxSeconds - Maximum duration in seconds
- * @returns {Array} Filtered results
- */
-function filterByDuration(results, minSeconds, maxSeconds) {
-    return results.filter(item => {
-        // If no duration available, include the item (benefit of the doubt)
-        if (!item.duration_seconds && item.duration_seconds !== 0) {
-            return true;
-        }
-
-        const duration = item.duration_seconds;
-        return duration >= minSeconds && duration <= maxSeconds;
-    });
-}
-
-/**
- * Apply client-side category filtering
- *
- * @param {Array} results - Array of metadata objects
- * @param {Array<string>} categories - Array of allowed categories
- * @returns {Array} Filtered results
- */
-function filterByCategory(results, categories) {
-    // If 'all' is selected, return all results
-    if (categories.includes('all')) {
-        return results;
-    }
-
-    return results.filter(item => {
-        // If no category, include the item
-        if (!item.category) {
-            return true;
-        }
-
-        return categories.includes(item.category.toLowerCase());
-    });
-}
-
-/**
- * Validate filter values
- *
- * @param {Object} filters - Filter object to validate
- * @returns {Array<string>} Array of error messages (empty if valid)
- */
-function validateFilters(filters) {
-    const errors = [];
-
-    // Validate duration
-    if (filters.duration.min_seconds < 0) {
-        errors.push('Minimum duration cannot be negative');
-    }
-
-    if (filters.duration.max_seconds < 0) {
-        errors.push('Maximum duration cannot be negative');
-    }
-
-    if (filters.duration.min_seconds >= filters.duration.max_seconds) {
-        errors.push('Minimum duration must be less than maximum duration');
-    }
-
-    if (filters.duration.max_seconds > 3600) {
-        errors.push('Maximum duration cannot exceed 3600 seconds (1 hour)');
-    }
-
-    // Validate days back
-    if (filters.days_back < 1) {
-        errors.push('Days back must be at least 1');
-    }
-
-    if (filters.days_back > 365) {
-        errors.push('Days back cannot exceed 365');
-    }
-
-    // Validate max items
-    if (filters.max_items < 1) {
-        errors.push('Maximum items must be at least 1');
-    }
-
-    if (filters.max_items > 500) {
-        errors.push('Maximum items cannot exceed 500');
-    }
-
-    return errors;
-}
-
-// =============================================================================
-// SEARCH FLOW
-// =============================================================================
-
-/**
- * Execute the full search flow
- *
- * This is the main search function that:
- * 1. Collects filter values
- * 2. Validates filters
- * 3. Discovers content URLs
- * 4. Scrapes metadata for each URL
- * 5. Applies client-side filtering
- * 6. Displays results
- */
-async function executeSearch() {
-    const searchStartTime = performance.now();
-
-    DebugLogger.group('Search Execution');
-    DebugLogger.log('SEARCH', 'Starting search execution');
-
-    // Prevent multiple concurrent searches
-    if (AppState.isLoading) {
-        DebugLogger.warn('executeSearch', 'Search already in progress, ignoring request');
-        DebugLogger.groupEnd();
-        return;
-    }
-
-    clearMessages();
-
-    // Collect and validate filters
-    const filters = collectFilters();
-    const validationErrors = validateFilters(filters);
-
-    if (validationErrors.length > 0) {
-        DebugLogger.error('executeSearch', `Validation failed: ${validationErrors.join(', ')}`);
-        validationErrors.forEach(error => showError(error));
-        DebugLogger.groupEnd();
-        return;
-    }
-
-    // Check worker URL configuration
-    if (WORKER_URL.includes('YOUR_SUBDOMAIN')) {
-        DebugLogger.error('executeSearch', 'Worker URL not configured');
-        showError('Please configure the WORKER_URL in app.js with your deployed Cloudflare Worker URL.');
-        DebugLogger.groupEnd();
-        return;
-    }
-
-    // Show loading state
-    showLoading();
-    DebugLogger.state('AppState.isLoading', false, true);
-
-    try {
-        // Step 1: Discover content URLs
-        DebugLogger.log('SEARCH', 'Step 1: Discovering content URLs');
-        updateLoadingProgress('Discovering content...');
-        const discoveredUrls = await discoverContent(filters);
-
-        if (discoveredUrls.length === 0) {
-            DebugLogger.log('SEARCH', 'No content found matching filters');
-            hideLoading();
-            showSuccess('No content found matching your filters. Try adjusting your search criteria.');
-            displayResults([]);
-            DebugLogger.groupEnd();
-            return;
-        }
-
-        DebugLogger.log('SEARCH', `Step 2: Scraping metadata for ${discoveredUrls.length} URLs`);
-        updateLoadingProgress(`Found ${discoveredUrls.length} items. Fetching metadata...`);
-
-        // Step 2: Scrape metadata for each URL
-        const allMetadata = await scrapeMultipleUrls(discoveredUrls, (current, total) => {
-            updateLoadingProgress(`Fetching metadata: ${current}/${total}`);
-        });
-
-        // Step 3: Filter out items with errors
-        DebugLogger.log('SEARCH', 'Step 3: Filtering out error items');
-        const validMetadata = allMetadata.filter(item => !item.error);
-        DebugLogger.log('SEARCH', `Valid metadata: ${validMetadata.length}/${allMetadata.length}`);
-
-        // Step 4: Apply client-side duration filtering
-        DebugLogger.log('SEARCH', 'Step 4: Applying duration filter');
-        let filteredResults = filterByDuration(
-            validMetadata,
-            filters.duration.min_seconds,
-            filters.duration.max_seconds
-        );
-        DebugLogger.log('SEARCH', `After duration filter: ${filteredResults.length} items`);
-
-        // Step 5: Apply category filtering
-        DebugLogger.log('SEARCH', 'Step 5: Applying category filter');
-        filteredResults = filterByCategory(filteredResults, filters.categories);
-        DebugLogger.log('SEARCH', `After category filter: ${filteredResults.length} items`);
-
-        // Step 6: Limit to max_items
-        DebugLogger.log('SEARCH', `Step 6: Limiting to max ${filters.max_items} items`);
-        filteredResults = filteredResults.slice(0, filters.max_items);
-
-        // Update state
-        const oldResults = AppState.searchResults;
-        AppState.searchResults = filteredResults;
-        DebugLogger.state('AppState.searchResults', oldResults, filteredResults);
-
-        const oldSelected = AppState.selectedItems.size;
-        AppState.selectedItems.clear();
-        DebugLogger.state('AppState.selectedItems', `Set(${oldSelected})`, 'Set(0)');
-
-        // Display results
-        hideLoading();
-        displayResults(filteredResults);
-
-        DebugLogger.timing('Total search time', searchStartTime);
-
-        if (filteredResults.length > 0) {
-            showSuccess(`Found ${filteredResults.length} items matching your criteria.`);
-            DebugLogger.log('SEARCH', `Search complete: ${filteredResults.length} results`);
-        } else {
-            showSuccess('No items matched your duration or category filters after metadata check.');
-            DebugLogger.log('SEARCH', 'Search complete: no results after filtering');
-        }
-
-    } catch (error) {
-        hideLoading();
-        DebugLogger.error('executeSearch', error);
-        showError(error.message || 'An error occurred during search. Please try again.');
-    }
-
-    DebugLogger.groupEnd();
-}
-
-// =============================================================================
-// RESULTS DISPLAY
-// =============================================================================
-
-/**
- * Display search results in the results grid
- *
- * @param {Array} results - Array of metadata objects to display
- */
-function displayResults(results) {
-    const renderStartTime = performance.now();
-    DebugLogger.log('UI', `Rendering ${results.length} result cards...`);
-
-    const resultsSection = document.getElementById('resultsSection');
-    const resultsGrid = document.getElementById('resultsGrid');
-    const resultsCount = document.getElementById('resultsCount');
-
-    if (!resultsSection || !resultsGrid) {
-        DebugLogger.error('displayResults', 'Results container not found in DOM');
-        return;
-    }
-
-    // Update count
-    if (resultsCount) {
-        resultsCount.textContent = `${results.length} item${results.length !== 1 ? 's' : ''} found`;
-    }
-
-    // Clear previous results
-    resultsGrid.innerHTML = '';
-
-    // Show results section
-    resultsSection.style.display = 'block';
-
-    if (results.length === 0) {
-        resultsGrid.innerHTML = '<p class="no-results">No results to display. Try adjusting your filters.</p>';
-        DebugLogger.log('UI', 'No results to display');
-        return;
-    }
-
-    // Create result cards
-    results.forEach((item, index) => {
-        const card = createResultCard(item, index);
-        resultsGrid.appendChild(card);
+    this.currentLang = lang;
+    localStorage.setItem('matushka_language', lang);
+    this.applyToPage();
+    this.updateLanguageSelector();
+    debug.log('i18n', `Language changed to: ${lang}`);
+  },
+
+  t(key, params = {}) {
+    const translations = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
+    let text = translations[key] || TRANSLATIONS.en[key] || key;
+
+    // Replace parameters like {count}, {points}, {n}
+    Object.keys(params).forEach(param => {
+      text = text.replace(new RegExp(`\\{${param}\\}`, 'g'), params[param]);
     });
 
-    // Update selection UI
-    updateSelectionUI();
+    return text;
+  },
 
-    DebugLogger.timing('Render complete', renderStartTime);
+  applyToPage() {
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+      const key = element.getAttribute('data-i18n');
+      element.textContent = this.t(key);
+    });
 
-    // Scroll to results
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    DebugLogger.log('UI', 'Scrolled to results section');
-}
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+      const key = element.getAttribute('data-i18n-placeholder');
+      element.placeholder = this.t(key);
+    });
 
-/**
- * Create a result card element for a single item
- *
- * @param {Object} item - Metadata object for the item
- * @param {number} index - Index of the item in results
- * @returns {HTMLElement} Card element
- */
-function createResultCard(item, index) {
-    const card = document.createElement('div');
-    card.className = 'result-card';
-    card.dataset.index = index;
+    document.querySelectorAll('[data-i18n-title]').forEach(element => {
+      const key = element.getAttribute('data-i18n-title');
+      element.title = this.t(key);
+    });
 
-    // Generate unique ID for the item if not present
-    const itemId = item.id || `item_${index}_${Date.now()}`;
-    item.id = itemId;
+    document.documentElement.lang = this.currentLang;
+  },
 
-    // Thumbnail section
-    const thumbnailHtml = item.thumbnail_url
-        ? `<img src="${escapeHtml(item.thumbnail_url)}" alt="Thumbnail" class="result-thumbnail" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'thumbnail-placeholder\\'>No Image</div>'">`
-        : '<div class="thumbnail-placeholder">No Image</div>';
+  updateLanguageSelector() {
+    const selector = document.getElementById('languageSelector');
+    if (selector) {
+      selector.value = this.currentLang;
+    }
+  },
 
-    // Build card HTML
-    card.innerHTML = `
-        <div class="card-checkbox">
-            <input type="checkbox" id="select_${itemId}" data-item-id="${itemId}" class="item-checkbox">
-            <label for="select_${itemId}" class="visually-hidden">Select item</label>
-        </div>
-        <div class="card-thumbnail">
-            ${thumbnailHtml}
-        </div>
-        <div class="card-content">
-            <h4 class="card-title" title="${escapeHtml(item.title || 'Untitled')}">${escapeHtml(item.title || 'Untitled')}</h4>
-            <div class="card-meta">
-                ${item.program_name ? `<span class="meta-program">${escapeHtml(item.program_name)}</span>` : ''}
-                ${item.publisher ? `<span class="meta-publisher">${escapeHtml(item.publisher)}</span>` : ''}
-            </div>
-            <div class="card-details">
-                <span class="detail-duration">${formatDuration(item.duration_seconds)}</span>
-                <span class="detail-date">${formatDate(item.publish_date)}</span>
-                ${item.category ? `<span class="detail-category">${escapeHtml(item.category)}</span>` : ''}
-            </div>
-            ${item.description ? `<p class="card-description" title="${escapeHtml(item.description)}">${escapeHtml(truncateText(item.description, 150))}</p>` : ''}
-            <div class="card-source">
-                <a href="${escapeHtml(item.source_url || '#')}" target="_blank" rel="noopener noreferrer" class="source-link">View Source</a>
-            </div>
-        </div>
+  toggleLanguage() {
+    const newLang = this.currentLang === 'en' ? 'ru' : 'en';
+    this.setLanguage(newLang);
+  }
+};
+
+// ============================================================================
+// GAMIFICATION MANAGER
+// ============================================================================
+
+const GamificationManager = {
+  state: {
+    points: 0,
+    streak: 0,
+    lastActiveDate: null,
+    achievements: [],
+    level: 1,
+    totalSearches: 0,
+    totalDownloads: 0,
+    favorites: []
+  },
+
+  ACHIEVEMENTS: {
+    FIRST_SEARCH: {
+      id: 'first_search',
+      title: 'First Steps',
+      titleRu: 'Первые шаги',
+      description: 'Complete your first search',
+      descriptionRu: 'Выполните первый поиск',
+      icon: '🔍',
+      points: 10
+    },
+    TEN_SEARCHES: {
+      id: 'ten_searches',
+      title: 'Explorer',
+      titleRu: 'Исследователь',
+      description: 'Complete 10 searches',
+      descriptionRu: 'Выполните 10 поисков',
+      icon: '🗺️',
+      points: 50
+    },
+    FIFTY_SEARCHES: {
+      id: 'fifty_searches',
+      title: 'Researcher',
+      titleRu: 'Исследователь',
+      description: 'Complete 50 searches',
+      descriptionRu: 'Выполните 50 поисков',
+      icon: '📚',
+      points: 150
+    },
+    HUNDRED_SEARCHES: {
+      id: 'hundred_searches',
+      title: 'Scholar',
+      titleRu: 'Учёный',
+      description: 'Complete 100 searches',
+      descriptionRu: 'Выполните 100 поисков',
+      icon: '🎓',
+      points: 300
+    },
+    FIRST_DOWNLOAD: {
+      id: 'first_download',
+      title: 'Collector',
+      titleRu: 'Коллекционер',
+      description: 'Download your first item',
+      descriptionRu: 'Скачайте первый материал',
+      icon: '📥',
+      points: 15
+    },
+    TEN_DOWNLOADS: {
+      id: 'ten_downloads',
+      title: 'Archivist',
+      titleRu: 'Архивариус',
+      description: 'Download 10 items',
+      descriptionRu: 'Скачайте 10 материалов',
+      icon: '🗄️',
+      points: 75
+    },
+    STREAK_3: {
+      id: 'streak_3',
+      title: '3-Day Streak',
+      titleRu: '3 дня подряд',
+      description: 'Use Matushka 3 days in a row',
+      descriptionRu: 'Используйте Матушку 3 дня подряд',
+      icon: '🔥',
+      points: 30
+    },
+    STREAK_7: {
+      id: 'streak_7',
+      title: 'Weekly Warrior',
+      titleRu: 'Недельный боец',
+      description: 'Use Matushka 7 days in a row',
+      descriptionRu: 'Используйте Матушку 7 дней подряд',
+      icon: '⚔️',
+      points: 100
+    },
+    STREAK_30: {
+      id: 'streak_30',
+      title: 'Monthly Master',
+      titleRu: 'Месячный мастер',
+      description: 'Use Matushka 30 days in a row',
+      descriptionRu: 'Используйте Матушку 30 дней подряд',
+      icon: '👑',
+      points: 500
+    },
+    FIRST_FAVORITE: {
+      id: 'first_favorite',
+      title: 'Bookmark Beginner',
+      titleRu: 'Начинающий собиратель',
+      description: 'Add your first favorite',
+      descriptionRu: 'Добавьте первое избранное',
+      icon: '⭐',
+      points: 10
+    },
+    NIGHT_OWL: {
+      id: 'night_owl',
+      title: 'Night Owl',
+      titleRu: 'Ночная сова',
+      description: 'Search after midnight',
+      descriptionRu: 'Выполните поиск после полуночи',
+      icon: '🦉',
+      points: 25
+    },
+    EARLY_BIRD: {
+      id: 'early_bird',
+      title: 'Early Bird',
+      titleRu: 'Ранняя пташка',
+      description: 'Search before 6 AM',
+      descriptionRu: 'Выполните поиск до 6 утра',
+      icon: '🐦',
+      points: 25
+    },
+    POLYGLOT: {
+      id: 'polyglot',
+      title: 'Polyglot',
+      titleRu: 'Полиглот',
+      description: 'Switch languages 5 times',
+      descriptionRu: 'Переключите язык 5 раз',
+      icon: '🌍',
+      points: 20
+    }
+  },
+
+  LEVEL_THRESHOLDS: [0, 100, 250, 500, 1000, 2000, 3500, 5500, 8000, 12000, 20000],
+
+  init() {
+    this.loadState();
+    this.checkStreak();
+    this.updateUI();
+    debug.log('Gamification', 'Initialized', this.state);
+  },
+
+  loadState() {
+    const saved = localStorage.getItem('matushka_gamification');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        this.state = { ...this.state, ...parsed };
+      } catch (e) {
+        debug.error('Gamification', 'Failed to load state', e);
+      }
+    }
+  },
+
+  saveState() {
+    try {
+      localStorage.setItem('matushka_gamification', JSON.stringify(this.state));
+    } catch (e) {
+      debug.error('Gamification', 'Failed to save state', e);
+    }
+  },
+
+  checkStreak() {
+    const today = new Date().toDateString();
+    const lastActive = this.state.lastActiveDate;
+
+    if (!lastActive) {
+      this.state.streak = 1;
+    } else if (lastActive === today) {
+      // Same day, no change
+    } else {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      if (lastActive === yesterday.toDateString()) {
+        this.state.streak++;
+        this.showStreakAnimation();
+
+        // Check streak achievements
+        if (this.state.streak >= 3) this.unlockAchievement('STREAK_3');
+        if (this.state.streak >= 7) this.unlockAchievement('STREAK_7');
+        if (this.state.streak >= 30) this.unlockAchievement('STREAK_30');
+      } else {
+        this.state.streak = 1;
+      }
+    }
+
+    this.state.lastActiveDate = today;
+    this.saveState();
+  },
+
+  addPoints(amount) {
+    const oldLevel = this.state.level;
+    this.state.points += amount;
+
+    // Calculate new level
+    let newLevel = 1;
+    for (let i = this.LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+      if (this.state.points >= this.LEVEL_THRESHOLDS[i]) {
+        newLevel = i + 1;
+        break;
+      }
+    }
+
+    if (newLevel > oldLevel) {
+      this.state.level = newLevel;
+      this.showLevelUpAnimation(newLevel);
+    }
+
+    this.showPointsAnimation(amount);
+    this.saveState();
+    this.updateUI();
+  },
+
+  recordSearch() {
+    this.state.totalSearches++;
+    this.addPoints(5);
+
+    // Check time-based achievements
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour < 5) this.unlockAchievement('NIGHT_OWL');
+    if (hour >= 5 && hour < 6) this.unlockAchievement('EARLY_BIRD');
+
+    // Check search count achievements
+    if (this.state.totalSearches >= 1) this.unlockAchievement('FIRST_SEARCH');
+    if (this.state.totalSearches >= 10) this.unlockAchievement('TEN_SEARCHES');
+    if (this.state.totalSearches >= 50) this.unlockAchievement('FIFTY_SEARCHES');
+    if (this.state.totalSearches >= 100) this.unlockAchievement('HUNDRED_SEARCHES');
+
+    this.saveState();
+    debug.log('Gamification', `Search recorded. Total: ${this.state.totalSearches}`);
+  },
+
+  recordDownload() {
+    this.state.totalDownloads++;
+    this.addPoints(10);
+
+    if (this.state.totalDownloads >= 1) this.unlockAchievement('FIRST_DOWNLOAD');
+    if (this.state.totalDownloads >= 10) this.unlockAchievement('TEN_DOWNLOADS');
+
+    this.saveState();
+    debug.log('Gamification', `Download recorded. Total: ${this.state.totalDownloads}`);
+  },
+
+  addFavorite(itemId) {
+    if (!this.state.favorites.includes(itemId)) {
+      this.state.favorites.push(itemId);
+      this.addPoints(3);
+
+      if (this.state.favorites.length === 1) {
+        this.unlockAchievement('FIRST_FAVORITE');
+      }
+
+      this.saveState();
+    }
+  },
+
+  removeFavorite(itemId) {
+    const index = this.state.favorites.indexOf(itemId);
+    if (index > -1) {
+      this.state.favorites.splice(index, 1);
+      this.saveState();
+    }
+  },
+
+  unlockAchievement(key) {
+    const achievement = this.ACHIEVEMENTS[key];
+    if (!achievement) return;
+
+    if (this.state.achievements.includes(achievement.id)) {
+      return; // Already unlocked
+    }
+
+    this.state.achievements.push(achievement.id);
+    this.addPoints(achievement.points);
+    this.showAchievementToast(achievement);
+    celebrateSuccess();
+
+    this.saveState();
+    debug.log('Gamification', `Achievement unlocked: ${achievement.title}`);
+  },
+
+  showPointsAnimation(amount) {
+    if (!CONFIG.enableAnimations) return;
+
+    const popup = document.createElement('div');
+    popup.className = 'points-popup';
+    popup.textContent = `+${amount}`;
+    popup.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      font-weight: bold;
+      color: #ffd700;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      pointer-events: none;
+      z-index: 10000;
+      animation: pointsFloat 1.5s ease-out forwards;
     `;
 
-    // Add checkbox event listener
-    const checkbox = card.querySelector('.item-checkbox');
-    checkbox.addEventListener('change', (e) => {
-        handleItemSelection(itemId, e.target.checked);
+    document.body.appendChild(popup);
+    setTimeout(() => popup.remove(), 1500);
+  },
+
+  showStreakAnimation() {
+    if (!CONFIG.enableAnimations) return;
+
+    const popup = document.createElement('div');
+    popup.className = 'streak-popup';
+    popup.innerHTML = `🔥 ${this.state.streak} ${i18n.t('streak')}!`;
+    popup.style.cssText = `
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 32px;
+      font-weight: bold;
+      color: #ff6b35;
+      background: linear-gradient(135deg, #fff5f0, #ffe0d0);
+      padding: 20px 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(255,107,53,0.3);
+      pointer-events: none;
+      z-index: 10000;
+      animation: streakBounce 2s ease-out forwards;
+    `;
+
+    document.body.appendChild(popup);
+    setTimeout(() => popup.remove(), 2000);
+  },
+
+  showLevelUpAnimation(level) {
+    if (!CONFIG.enableAnimations) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'level-up-overlay';
+    overlay.innerHTML = `
+      <div class="level-up-content">
+        <div class="level-up-icon">🎉</div>
+        <div class="level-up-text">${i18n.t('newLevel')}</div>
+        <div class="level-up-number">${level}</div>
+      </div>
+    `;
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+      animation: fadeIn 0.3s ease-out;
+    `;
+
+    const content = overlay.querySelector('.level-up-content');
+    content.style.cssText = `
+      text-align: center;
+      color: white;
+      animation: levelUpScale 0.5s ease-out;
+    `;
+
+    document.body.appendChild(overlay);
+    celebrateSuccess();
+
+    setTimeout(() => {
+      overlay.style.animation = 'fadeOut 0.3s ease-out forwards';
+      setTimeout(() => overlay.remove(), 300);
+    }, 2500);
+  },
+
+  showAchievementToast(achievement) {
+    const isRussian = i18n.currentLang === 'ru';
+    const title = isRussian ? achievement.titleRu : achievement.title;
+    const description = isRussian ? achievement.descriptionRu : achievement.description;
+
+    const toast = document.createElement('div');
+    toast.className = 'achievement-toast';
+    toast.innerHTML = `
+      <div class="achievement-icon">${achievement.icon}</div>
+      <div class="achievement-info">
+        <div class="achievement-label">${i18n.t('achievementUnlocked')}</div>
+        <div class="achievement-title">${title}</div>
+        <div class="achievement-desc">${description}</div>
+        <div class="achievement-points">+${achievement.points} ${i18n.t('points')}</div>
+      </div>
+    `;
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 20px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 10px 40px rgba(102,126,234,0.4);
+      z-index: 10000;
+      animation: slideInRight 0.5s ease-out;
+      max-width: 350px;
+    `;
+
+    if (CONFIG.enableSounds) {
+      playSuccessSound();
+    }
+
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'slideOutRight 0.5s ease-out forwards';
+      setTimeout(() => toast.remove(), 500);
+    }, 4000);
+  },
+
+  updateUI() {
+    // Update stats bar
+    const pointsEl = document.getElementById('totalPoints');
+    const levelEl = document.getElementById('currentLevel');
+    const streakEl = document.getElementById('currentStreak');
+    const progressEl = document.getElementById('levelProgress');
+
+    if (pointsEl) pointsEl.textContent = this.state.points;
+    if (levelEl) levelEl.textContent = this.state.level;
+    if (streakEl) streakEl.textContent = this.state.streak;
+
+    if (progressEl) {
+      const currentThreshold = this.LEVEL_THRESHOLDS[this.state.level - 1] || 0;
+      const nextThreshold = this.LEVEL_THRESHOLDS[this.state.level] || this.state.points;
+      const progress = ((this.state.points - currentThreshold) / (nextThreshold - currentThreshold)) * 100;
+      progressEl.style.width = `${Math.min(progress, 100)}%`;
+    }
+
+    // Update achievements display
+    this.updateAchievementsDisplay();
+  },
+
+  updateAchievementsDisplay() {
+    const container = document.getElementById('achievementsContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    Object.values(this.ACHIEVEMENTS).forEach(achievement => {
+      const isUnlocked = this.state.achievements.includes(achievement.id);
+      const isRussian = i18n.currentLang === 'ru';
+      const title = isRussian ? achievement.titleRu : achievement.title;
+
+      const badge = document.createElement('div');
+      badge.className = `achievement-badge ${isUnlocked ? 'unlocked' : 'locked'}`;
+      badge.innerHTML = `
+        <span class="badge-icon">${achievement.icon}</span>
+        <span class="badge-title">${title}</span>
+      `;
+      badge.title = isRussian ? achievement.descriptionRu : achievement.description;
+
+      container.appendChild(badge);
     });
+  },
 
-    return card;
-}
-
-/**
- * Escape HTML special characters to prevent XSS
- *
- * @param {string} text - Text to escape
- * @returns {string} Escaped text
- */
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-/**
- * Truncate text to a specified length
- *
- * @param {string} text - Text to truncate
- * @param {number} maxLength - Maximum length
- * @returns {string} Truncated text with ellipsis if needed
- */
-function truncateText(text, maxLength) {
-    if (!text || text.length <= maxLength) {
-        return text || '';
-    }
-    return text.substring(0, maxLength - 3) + '...';
-}
-
-/**
- * Handle individual item selection/deselection
- *
- * @param {string} itemId - ID of the item
- * @param {boolean} isSelected - Whether the item is selected
- */
-function handleItemSelection(itemId, isSelected) {
-    const oldSize = AppState.selectedItems.size;
-
-    if (isSelected) {
-        AppState.selectedItems.add(itemId);
-        DebugLogger.ui('checkbox', `item ${itemId}`, 'selected');
-    } else {
-        AppState.selectedItems.delete(itemId);
-        DebugLogger.ui('checkbox', `item ${itemId}`, 'deselected');
-    }
-
-    DebugLogger.state('AppState.selectedItems', `Set(${oldSize})`, `Set(${AppState.selectedItems.size})`);
-    updateSelectionUI();
-}
-
-/**
- * Update selection-related UI elements
- */
-function updateSelectionUI() {
-    const selectedCount = AppState.selectedItems.size;
-    const totalCount = AppState.searchResults.length;
-
-    // Update selected count display
-    const selectedCountEl = document.getElementById('selectedCount');
-    if (selectedCountEl) {
-        selectedCountEl.textContent = `${selectedCount} selected`;
-    }
-
-    // Update download button state
-    const downloadBtn = document.getElementById('downloadSelectedBtn');
-    if (downloadBtn) {
-        downloadBtn.disabled = selectedCount === 0;
-        downloadBtn.textContent = selectedCount > 0
-            ? `Download Selected (${selectedCount})`
-            : 'Download Selected';
-    }
-
-    // Update select all checkbox state
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    if (selectAllCheckbox) {
-        selectAllCheckbox.checked = selectedCount > 0 && selectedCount === totalCount;
-        selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalCount;
-    }
-}
-
-/**
- * Select all items in the results
- */
-function selectAllItems() {
-    AppState.searchResults.forEach(item => {
-        AppState.selectedItems.add(item.id);
-    });
-
-    // Update all checkboxes
-    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
-        checkbox.checked = true;
-    });
-
-    updateSelectionUI();
-}
-
-/**
- * Deselect all items in the results
- */
-function deselectAllItems() {
-    AppState.selectedItems.clear();
-
-    // Update all checkboxes
-    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
-        checkbox.checked = false;
-    });
-
-    updateSelectionUI();
-}
-
-/**
- * Handle select all checkbox toggle
- *
- * @param {Event} event - Change event from checkbox
- */
-function handleSelectAllToggle(event) {
-    if (event.target.checked) {
-        selectAllItems();
-    } else {
-        deselectAllItems();
-    }
-}
-
-// =============================================================================
-// DOWNLOAD FLOW
-// =============================================================================
-
-/**
- * Download selected items
- *
- * Initiates download for all selected items through the proxy.
- */
-async function downloadSelectedItems() {
-    const downloadStartTime = performance.now();
-
-    DebugLogger.group('Download Selected Items');
-    DebugLogger.log('DOWNLOAD', `Starting download of ${AppState.selectedItems.size} items`);
-
-    if (AppState.selectedItems.size === 0) {
-        DebugLogger.warn('downloadSelectedItems', 'No items selected');
-        showError('No items selected for download.');
-        DebugLogger.groupEnd();
-        return;
-    }
-
-    if (AppState.downloadProgress.inProgress) {
-        DebugLogger.warn('downloadSelectedItems', 'Download already in progress');
-        showError('Download already in progress. Please wait.');
-        DebugLogger.groupEnd();
-        return;
-    }
-
-    // Get selected item metadata
-    const selectedMetadata = AppState.searchResults.filter(item =>
-        AppState.selectedItems.has(item.id)
-    );
-
-    if (selectedMetadata.length === 0) {
-        DebugLogger.error('downloadSelectedItems', 'Could not find metadata for selected items');
-        showError('Could not find metadata for selected items.');
-        DebugLogger.groupEnd();
-        return;
-    }
-
-    // Initialize progress
-    AppState.downloadProgress = {
-        current: 0,
-        total: selectedMetadata.length,
-        inProgress: true
+  getStats() {
+    return {
+      points: this.state.points,
+      level: this.state.level,
+      streak: this.state.streak,
+      totalSearches: this.state.totalSearches,
+      totalDownloads: this.state.totalDownloads,
+      achievementsUnlocked: this.state.achievements.length,
+      totalAchievements: Object.keys(this.ACHIEVEMENTS).length
     };
-    DebugLogger.state('AppState.downloadProgress', null, AppState.downloadProgress);
+  }
+};
 
-    updateDownloadProgress();
+// ============================================================================
+// CELEBRATION EFFECTS
+// ============================================================================
 
-    try {
-        // Process downloads sequentially to avoid overwhelming the browser
-        for (const item of selectedMetadata) {
-            try {
-                DebugLogger.log('DOWNLOAD', `Downloading: ${item.title}`);
-                await downloadSingleItem(item);
+function celebrateSuccess() {
+  if (!CONFIG.enableAnimations) return;
 
-                // Store downloaded item
-                AppState.downloadedItems.set(item.id, item);
-                DebugLogger.log('DOWNLOAD', `Download complete: ${item.title}`);
-
-                // Generate citation
-                const citation = generateCitationData(item);
-                AppState.citations.push(citation);
-                DebugLogger.log('CITATION', `Generated citation for: ${item.title}`);
-
-                // Update progress
-                AppState.downloadProgress.current++;
-                updateDownloadProgress();
-
-                // Small delay between downloads
-                await delay(500);
-
-            } catch (error) {
-                DebugLogger.error('downloadSingleItem', `Failed to download ${item.title}: ${error.message}`);
-                // Continue with next item
-            }
-        }
-
-        // Update citations panel
-        updateCitationsPanel();
-
-        DebugLogger.timing('Total download time', downloadStartTime);
-        DebugLogger.log('DOWNLOAD', `Completed: ${AppState.downloadProgress.current}/${AppState.downloadProgress.total}`);
-        showSuccess(`Downloaded ${AppState.downloadProgress.current} of ${AppState.downloadProgress.total} items.`);
-
-    } catch (error) {
-        DebugLogger.error('downloadSelectedItems', error);
-        showError('Download process failed: ' + error.message);
-    } finally {
-        AppState.downloadProgress.inProgress = false;
-        updateDownloadProgress();
-        DebugLogger.groupEnd();
-    }
+  createConfetti();
+  if (CONFIG.enableSounds) {
+    playSuccessSound();
+  }
 }
 
-/**
- * Download a single item through the proxy
- *
- * @param {Object} item - Metadata object for the item
- */
-async function downloadSingleItem(item) {
-    if (!item.source_url) {
-        DebugLogger.error('downloadSingleItem', 'No source URL available');
-        throw new Error('No source URL available');
+function createConfetti() {
+  const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dfe6e9', '#fd79a8', '#a29bfe'];
+  const confettiCount = 150;
+
+  const container = document.createElement('div');
+  container.className = 'confetti-container';
+  container.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+  `;
+
+  for (let i = 0; i < confettiCount; i++) {
+    const confetti = document.createElement('div');
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = Math.random() * 10 + 5;
+    const left = Math.random() * 100;
+    const animationDuration = Math.random() * 3 + 2;
+    const animationDelay = Math.random() * 0.5;
+
+    confetti.style.cssText = `
+      position: absolute;
+      width: ${size}px;
+      height: ${size}px;
+      background: ${color};
+      left: ${left}%;
+      top: -20px;
+      opacity: ${Math.random() * 0.5 + 0.5};
+      transform: rotate(${Math.random() * 360}deg);
+      animation: confettiFall ${animationDuration}s ease-out ${animationDelay}s forwards;
+    `;
+
+    if (Math.random() > 0.5) {
+      confetti.style.borderRadius = '50%';
     }
 
-    // Create download link
-    const proxyUrl = getProxyUrl(item.source_url);
-    const filename = sanitizeFilename(item.title || 'download') + (item.file_format ? `.${item.file_format}` : '.mp4');
+    container.appendChild(confetti);
+  }
 
-    DebugLogger.log('DOWNLOAD', `Initiating download via proxy`, {
-        originalUrl: item.source_url,
-        proxyUrl: proxyUrl,
-        filename: filename
+  document.body.appendChild(container);
+  setTimeout(() => container.remove(), 5000);
+}
+
+function playSuccessSound() {
+  if (!CONFIG.enableSounds) return;
+
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Create a pleasant chime sound
+    const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+
+    frequencies.forEach((freq, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = freq;
+      oscillator.type = 'sine';
+
+      const startTime = audioContext.currentTime + (index * 0.1);
+      const endTime = startTime + 0.5;
+
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, endTime);
+
+      oscillator.start(startTime);
+      oscillator.stop(endTime);
+    });
+  } catch (e) {
+    debug.warn('Audio', 'Could not play sound', e);
+  }
+}
+
+function playClickSound() {
+  if (!CONFIG.enableSounds) return;
+
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+  } catch (e) {
+    // Silently fail
+  }
+}
+
+// ============================================================================
+// MICRO-INTERACTIONS
+// ============================================================================
+
+function createRipple(event) {
+  if (!CONFIG.enableAnimations) return;
+
+  const button = event.currentTarget;
+  const ripple = document.createElement('span');
+  const rect = button.getBoundingClientRect();
+
+  const size = Math.max(rect.width, rect.height);
+  const x = event.clientX - rect.left - size / 2;
+  const y = event.clientY - rect.top - size / 2;
+
+  ripple.style.cssText = `
+    position: absolute;
+    width: ${size}px;
+    height: ${size}px;
+    left: ${x}px;
+    top: ${y}px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    transform: scale(0);
+    animation: rippleEffect 0.6s ease-out;
+    pointer-events: none;
+  `;
+
+  button.style.position = 'relative';
+  button.style.overflow = 'hidden';
+  button.appendChild(ripple);
+
+  setTimeout(() => ripple.remove(), 600);
+}
+
+function initMagneticButtons() {
+  if (!CONFIG.enableAnimations) return;
+
+  document.querySelectorAll('.magnetic-btn, .btn-primary, .btn-secondary').forEach(button => {
+    button.addEventListener('mousemove', (e) => {
+      const rect = button.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+
+      button.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
     });
 
-    // Create temporary anchor element for download
-    const link = document.createElement('a');
-    link.href = proxyUrl;
-    link.download = filename;
-    link.style.display = 'none';
-
-    // Append, click, and remove
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    DebugLogger.log('DOWNLOAD', `Download triggered: ${filename}`);
+    button.addEventListener('mouseleave', () => {
+      button.style.transform = 'translate(0, 0)';
+    });
+  });
 }
 
-/**
- * Update download progress UI
- */
-function updateDownloadProgress() {
-    const progressContainer = document.getElementById('downloadProgress');
-    const progressBar = document.getElementById('downloadProgressBar');
-    const progressText = document.getElementById('downloadProgressText');
+function initCardTilt() {
+  if (!CONFIG.enableAnimations) return;
 
-    if (!progressContainer) return;
+  document.querySelectorAll('.result-card, .tilt-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-    const { current, total, inProgress } = AppState.downloadProgress;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
 
-    if (inProgress) {
-        progressContainer.style.display = 'block';
+      const rotateX = (y - centerY) / 10;
+      const rotateY = (centerX - x) / 10;
 
-        if (progressBar) {
-            const percentage = total > 0 ? (current / total) * 100 : 0;
-            progressBar.style.width = `${percentage}%`;
-        }
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+    });
 
-        if (progressText) {
-            progressText.textContent = `Downloading: ${current}/${total}`;
-        }
-    } else {
-        progressContainer.style.display = 'none';
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+    });
+  });
+}
+
+function initButtonFeedback() {
+  document.querySelectorAll('button, .btn').forEach(button => {
+    button.addEventListener('click', (e) => {
+      createRipple(e);
+      playClickSound();
+    });
+
+    button.addEventListener('mousedown', () => {
+      if (CONFIG.enableAnimations) {
+        button.style.transform = 'scale(0.97)';
+      }
+    });
+
+    button.addEventListener('mouseup', () => {
+      if (CONFIG.enableAnimations) {
+        button.style.transform = 'scale(1)';
+      }
+    });
+  });
+}
+
+// ============================================================================
+// CUSTOM CURSOR
+// ============================================================================
+
+function initCustomCursor() {
+  if (!CONFIG.enableCursor) return;
+
+  // Disable on touch devices
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    return;
+  }
+
+  const cursorRing = document.createElement('div');
+  cursorRing.className = 'cursor-ring';
+  cursorRing.style.cssText = `
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(102, 126, 234, 0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    transition: transform 0.15s ease-out, width 0.2s, height 0.2s, border-color 0.2s;
+    transform: translate(-50%, -50%);
+  `;
+
+  const cursorDot = document.createElement('div');
+  cursorDot.className = 'cursor-dot';
+  cursorDot.style.cssText = `
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    background: rgba(102, 126, 234, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%, -50%);
+  `;
+
+  document.body.appendChild(cursorRing);
+  document.body.appendChild(cursorDot);
+
+  let mouseX = 0, mouseY = 0;
+  let ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+
+    cursorDot.style.left = mouseX + 'px';
+    cursorDot.style.top = mouseY + 'px';
+  });
+
+  // Smooth ring following
+  function animateRing() {
+    ringX += (mouseX - ringX) * 0.15;
+    ringY += (mouseY - ringY) * 0.15;
+
+    cursorRing.style.left = ringX + 'px';
+    cursorRing.style.top = ringY + 'px';
+
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  // Hover states
+  const hoverElements = 'a, button, .btn, input, select, textarea, .clickable, .result-card';
+
+  document.querySelectorAll(hoverElements).forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursorRing.style.width = '60px';
+      cursorRing.style.height = '60px';
+      cursorRing.style.borderColor = 'rgba(102, 126, 234, 0.8)';
+      cursorDot.style.transform = 'translate(-50%, -50%) scale(1.5)';
+    });
+
+    el.addEventListener('mouseleave', () => {
+      cursorRing.style.width = '40px';
+      cursorRing.style.height = '40px';
+      cursorRing.style.borderColor = 'rgba(102, 126, 234, 0.5)';
+      cursorDot.style.transform = 'translate(-50%, -50%) scale(1)';
+    });
+  });
+
+  // Hide default cursor
+  document.body.style.cursor = 'none';
+  document.querySelectorAll('*').forEach(el => {
+    el.style.cursor = 'none';
+  });
+}
+
+// ============================================================================
+// SCROLL ANIMATIONS
+// ============================================================================
+
+function initScrollAnimations() {
+  if (!CONFIG.enableAnimations) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const animation = el.dataset.animate || 'fadeInUp';
+        el.classList.add('animated', animation);
+        observer.unobserve(el);
+      }
+    });
+  }, {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  });
+
+  document.querySelectorAll('[data-animate]').forEach(el => {
+    el.classList.add('animate-hidden');
+    observer.observe(el);
+  });
+}
+
+function initParallax() {
+  if (!CONFIG.enableAnimations) return;
+
+  const parallaxElements = document.querySelectorAll('[data-parallax]');
+
+  window.addEventListener('scroll', () => {
+    const scrollY = window.scrollY;
+
+    parallaxElements.forEach(el => {
+      const speed = parseFloat(el.dataset.parallax) || 0.5;
+      el.style.transform = `translateY(${scrollY * speed}px)`;
+    });
+  });
+}
+
+function initScrollProgress() {
+  const progressBar = document.createElement('div');
+  progressBar.className = 'scroll-progress';
+  progressBar.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    z-index: 10000;
+    transition: width 0.1s ease-out;
+    width: 0%;
+  `;
+
+  document.body.appendChild(progressBar);
+
+  window.addEventListener('scroll', () => {
+    const windowHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = (window.scrollY / windowHeight) * 100;
+    progressBar.style.width = `${progress}%`;
+  });
+}
+
+// ============================================================================
+// COMMAND PALETTE
+// ============================================================================
+
+const CommandPalette = {
+  isOpen: false,
+  element: null,
+  input: null,
+  list: null,
+  selectedIndex: 0,
+  filteredCommands: [],
+  languageSwitchCount: 0,
+
+  commands: [
+    { id: 'search', label: 'Search', labelRu: 'Поиск', shortcut: '/', icon: '🔍', action: () => document.getElementById('searchBtn')?.click() },
+    { id: 'download', label: 'Download Selected', labelRu: 'Скачать выбранное', shortcut: 'd', icon: '📥', action: () => document.getElementById('downloadBtn')?.click() },
+    { id: 'citations', label: 'Export Citations', labelRu: 'Экспорт цитат', shortcut: 'c', icon: '📝', action: () => document.getElementById('citationsBtn')?.click() },
+    { id: 'theme', label: 'Toggle Theme', labelRu: 'Сменить тему', shortcut: 't', icon: '🌓', action: () => toggleTheme() },
+    { id: 'lang', label: 'Switch Language', labelRu: 'Сменить язык', shortcut: 'l', icon: '🌍', action: () => { i18n.toggleLanguage(); CommandPalette.trackLanguageSwitch(); } },
+    { id: 'reset', label: 'Reset Filters', labelRu: 'Сбросить фильтры', shortcut: 'r', icon: '🔄', action: () => document.getElementById('resetBtn')?.click() },
+    { id: 'selectAll', label: 'Select All Results', labelRu: 'Выбрать все результаты', shortcut: 'a', icon: '☑️', action: () => selectAllResults() },
+    { id: 'favorites', label: 'View Favorites', labelRu: 'Просмотр избранного', shortcut: 'f', icon: '⭐', action: () => showFavorites() },
+    { id: 'help', label: 'Show Help', labelRu: 'Показать справку', shortcut: '?', icon: '❓', action: () => showHelp() },
+    { id: 'achievements', label: 'View Achievements', labelRu: 'Просмотр достижений', shortcut: 'g', icon: '🏆', action: () => showAchievements() },
+  ],
+
+  init() {
+    this.createElement();
+    this.bindEvents();
+  },
+
+  createElement() {
+    this.element = document.createElement('div');
+    this.element.className = 'command-palette';
+    this.element.style.cssText = `
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100000;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 100px;
+    `;
+
+    const modal = document.createElement('div');
+    modal.className = 'command-palette-modal';
+    modal.style.cssText = `
+      background: white;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 25px 100px rgba(0,0,0,0.3);
+      overflow: hidden;
+      animation: slideDown 0.2s ease-out;
+    `;
+
+    this.input = document.createElement('input');
+    this.input.type = 'text';
+    this.input.placeholder = i18n.t('typeCommand');
+    this.input.className = 'command-palette-input';
+    this.input.style.cssText = `
+      width: 100%;
+      padding: 20px 25px;
+      border: none;
+      font-size: 18px;
+      outline: none;
+      border-bottom: 1px solid #eee;
+    `;
+
+    this.list = document.createElement('div');
+    this.list.className = 'command-palette-list';
+    this.list.style.cssText = `
+      max-height: 400px;
+      overflow-y: auto;
+    `;
+
+    modal.appendChild(this.input);
+    modal.appendChild(this.list);
+    this.element.appendChild(modal);
+    document.body.appendChild(this.element);
+
+    this.filteredCommands = [...this.commands];
+    this.renderList();
+  },
+
+  bindEvents() {
+    this.input.addEventListener('input', () => {
+      this.filter(this.input.value);
+    });
+
+    this.input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        this.selectedIndex = Math.min(this.selectedIndex + 1, this.filteredCommands.length - 1);
+        this.renderList();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
+        this.renderList();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const cmd = this.filteredCommands[this.selectedIndex];
+        if (cmd) this.executeCommand(cmd.id);
+      } else if (e.key === 'Escape') {
+        this.close();
+      }
+    });
+
+    this.element.addEventListener('click', (e) => {
+      if (e.target === this.element) {
+        this.close();
+      }
+    });
+  },
+
+  open() {
+    this.isOpen = true;
+    this.element.style.display = 'flex';
+    this.input.value = '';
+    this.selectedIndex = 0;
+    this.filter('');
+    this.input.focus();
+    debug.log('CommandPalette', 'Opened');
+  },
+
+  close() {
+    this.isOpen = false;
+    this.element.style.display = 'none';
+    debug.log('CommandPalette', 'Closed');
+  },
+
+  filter(query) {
+    const q = query.toLowerCase().trim();
+    const isRussian = i18n.currentLang === 'ru';
+
+    this.filteredCommands = this.commands.filter(cmd => {
+      const label = isRussian ? cmd.labelRu : cmd.label;
+      return label.toLowerCase().includes(q) || cmd.shortcut.includes(q);
+    });
+
+    this.selectedIndex = 0;
+    this.renderList();
+  },
+
+  renderList() {
+    const isRussian = i18n.currentLang === 'ru';
+
+    if (this.filteredCommands.length === 0) {
+      this.list.innerHTML = `<div style="padding: 20px; text-align: center; color: #999;">${i18n.t('noCommands')}</div>`;
+      return;
     }
-}
 
-// =============================================================================
-// CITATION SYSTEM
-// =============================================================================
+    this.list.innerHTML = this.filteredCommands.map((cmd, index) => {
+      const label = isRussian ? cmd.labelRu : cmd.label;
+      const isSelected = index === this.selectedIndex;
 
-/**
- * Generate citation data object for a downloaded item
- *
- * Creates a comprehensive citation object with all 19 required fields.
- *
- * @param {Object} metadata - Item metadata
- * @returns {Object} Citation data object
- */
-function generateCitationData(metadata) {
+      return `
+        <div class="command-item" data-id="${cmd.id}" style="
+          padding: 15px 25px;
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          cursor: pointer;
+          background: ${isSelected ? '#f0f4ff' : 'transparent'};
+          border-left: 3px solid ${isSelected ? '#667eea' : 'transparent'};
+        ">
+          <span style="font-size: 20px;">${cmd.icon}</span>
+          <span style="flex: 1;">${label}</span>
+          <kbd style="
+            background: #eee;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+          ">${cmd.shortcut}</kbd>
+        </div>
+      `;
+    }).join('');
+
+    this.list.querySelectorAll('.command-item').forEach(item => {
+      item.addEventListener('click', () => {
+        this.executeCommand(item.dataset.id);
+      });
+
+      item.addEventListener('mouseenter', () => {
+        this.selectedIndex = this.filteredCommands.findIndex(c => c.id === item.dataset.id);
+        this.renderList();
+      });
+    });
+  },
+
+  executeCommand(id) {
+    const cmd = this.commands.find(c => c.id === id);
+    if (cmd) {
+      this.close();
+      cmd.action();
+      debug.log('CommandPalette', `Executed command: ${id}`);
+    }
+  },
+
+  trackLanguageSwitch() {
+    this.languageSwitchCount++;
+    if (this.languageSwitchCount >= 5) {
+      GamificationManager.unlockAchievement('POLYGLOT');
+    }
+  }
+};
+
+// ============================================================================
+// ONBOARDING MANAGER
+// ============================================================================
+
+const OnboardingManager = {
+  currentStep: 0,
+  overlay: null,
+  tooltip: null,
+
+  steps: [
+    {
+      id: 'welcome',
+      title: 'Welcome to Matushka',
+      titleRu: 'Добро пожаловать в Матушку',
+      message: 'Your tool for finding authentic Russian content for language teaching.',
+      messageRu: 'Ваш инструмент для поиска аутентичного русского контента для преподавания языка.',
+      target: null,
+      position: 'center'
+    },
+    {
+      id: 'search',
+      title: 'Configure Search',
+      titleRu: 'Настройте поиск',
+      message: 'Set your filters for duration, date range, categories, and sources.',
+      messageRu: 'Установите фильтры длительности, периода, категорий и источников.',
+      target: '#config-panel',
+      position: 'right'
+    },
+    {
+      id: 'searchBtn',
+      title: 'Start Searching',
+      titleRu: 'Начните поиск',
+      message: 'Click here to find content matching your criteria.',
+      messageRu: 'Нажмите здесь, чтобы найти контент по вашим критериям.',
+      target: '#searchBtn',
+      position: 'bottom'
+    },
+    {
+      id: 'results',
+      title: 'Browse Results',
+      titleRu: 'Просмотр результатов',
+      message: 'Your search results will appear here. Select items to download.',
+      messageRu: 'Здесь появятся результаты поиска. Выберите материалы для скачивания.',
+      target: '#results-section',
+      position: 'left'
+    },
+    {
+      id: 'download',
+      title: 'Download Content',
+      titleRu: 'Скачайте материалы',
+      message: 'Download selected items or export citations for your lesson plans.',
+      messageRu: 'Скачайте выбранные материалы или экспортируйте цитаты для планов уроков.',
+      target: '#downloadBtn',
+      position: 'top'
+    },
+    {
+      id: 'gamification',
+      title: 'Track Your Progress',
+      titleRu: 'Отслеживайте прогресс',
+      message: 'Earn points and achievements as you use Matushka!',
+      messageRu: 'Зарабатывайте очки и достижения, используя Матушку!',
+      target: '.stats-bar',
+      position: 'bottom'
+    },
+    {
+      id: 'complete',
+      title: 'You\'re Ready!',
+      titleRu: 'Вы готовы!',
+      message: 'Press Ctrl+K anytime to open the command palette. Happy teaching!',
+      messageRu: 'Нажмите Ctrl+K для открытия палитры команд. Удачного преподавания!',
+      target: null,
+      position: 'center'
+    }
+  ],
+
+  init() {
+    this.createOverlay();
+    this.start();
+  },
+
+  createOverlay() {
+    this.overlay = document.createElement('div');
+    this.overlay.className = 'onboarding-overlay';
+    this.overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 99998;
+      display: none;
+    `;
+
+    this.tooltip = document.createElement('div');
+    this.tooltip.className = 'onboarding-tooltip';
+    this.tooltip.style.cssText = `
+      position: fixed;
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      z-index: 99999;
+      max-width: 400px;
+      animation: fadeIn 0.3s ease-out;
+    `;
+
+    document.body.appendChild(this.overlay);
+    document.body.appendChild(this.tooltip);
+  },
+
+  start() {
+    this.currentStep = 0;
+    this.overlay.style.display = 'block';
+    this.showStep(0);
+    debug.log('Onboarding', 'Started');
+  },
+
+  showStep(index) {
+    const step = this.steps[index];
+    if (!step) {
+      this.complete();
+      return;
+    }
+
+    const isRussian = i18n.currentLang === 'ru';
+    const title = isRussian ? step.titleRu : step.title;
+    const message = isRussian ? step.messageRu : step.message;
+
+    // Highlight target element
+    if (step.target) {
+      const target = document.querySelector(step.target);
+      if (target) {
+        target.style.position = 'relative';
+        target.style.zIndex = '99999';
+        target.style.boxShadow = '0 0 0 4px #667eea, 0 0 20px rgba(102,126,234,0.5)';
+        target.style.borderRadius = '8px';
+      }
+    }
+
+    this.tooltip.innerHTML = `
+      <h3 style="margin: 0 0 10px 0; font-size: 20px; color: #333;">${title}</h3>
+      <p style="margin: 0 0 20px 0; color: #666; line-height: 1.6;">${message}</p>
+      <div style="display: flex; gap: 10px; justify-content: space-between;">
+        <button class="onboarding-skip" style="
+          padding: 10px 20px;
+          border: none;
+          background: #eee;
+          border-radius: 8px;
+          cursor: pointer;
+        ">${i18n.t('skipTour')}</button>
+        <div style="display: flex; gap: 10px;">
+          ${index > 0 ? `<button class="onboarding-prev" style="
+            padding: 10px 20px;
+            border: 1px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+          ">${i18n.t('prevStep')}</button>` : ''}
+          <button class="onboarding-next" style="
+            padding: 10px 20px;
+            border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+          ">${index < this.steps.length - 1 ? i18n.t('nextStep') : i18n.t('finishTour')}</button>
+        </div>
+      </div>
+      <div style="display: flex; gap: 6px; justify-content: center; margin-top: 15px;">
+        ${this.steps.map((_, i) => `
+          <div style="
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: ${i === index ? '#667eea' : '#ddd'};
+          "></div>
+        `).join('')}
+      </div>
+    `;
+
+    // Position tooltip
+    this.positionTooltip(step);
+
+    // Bind events
+    this.tooltip.querySelector('.onboarding-skip')?.addEventListener('click', () => this.complete());
+    this.tooltip.querySelector('.onboarding-prev')?.addEventListener('click', () => this.prevStep());
+    this.tooltip.querySelector('.onboarding-next')?.addEventListener('click', () => this.nextStep());
+  },
+
+  positionTooltip(step) {
+    if (!step.target || step.position === 'center') {
+      this.tooltip.style.top = '50%';
+      this.tooltip.style.left = '50%';
+      this.tooltip.style.transform = 'translate(-50%, -50%)';
+      return;
+    }
+
+    const target = document.querySelector(step.target);
+    if (!target) {
+      this.tooltip.style.top = '50%';
+      this.tooltip.style.left = '50%';
+      this.tooltip.style.transform = 'translate(-50%, -50%)';
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const tooltipRect = this.tooltip.getBoundingClientRect();
+
+    this.tooltip.style.transform = 'none';
+
+    switch (step.position) {
+      case 'top':
+        this.tooltip.style.top = `${rect.top - tooltipRect.height - 20}px`;
+        this.tooltip.style.left = `${rect.left + rect.width / 2 - tooltipRect.width / 2}px`;
+        break;
+      case 'bottom':
+        this.tooltip.style.top = `${rect.bottom + 20}px`;
+        this.tooltip.style.left = `${rect.left + rect.width / 2 - tooltipRect.width / 2}px`;
+        break;
+      case 'left':
+        this.tooltip.style.top = `${rect.top + rect.height / 2 - tooltipRect.height / 2}px`;
+        this.tooltip.style.left = `${rect.left - tooltipRect.width - 20}px`;
+        break;
+      case 'right':
+        this.tooltip.style.top = `${rect.top + rect.height / 2 - tooltipRect.height / 2}px`;
+        this.tooltip.style.left = `${rect.right + 20}px`;
+        break;
+    }
+  },
+
+  nextStep() {
+    this.clearHighlights();
+    this.currentStep++;
+    if (this.currentStep < this.steps.length) {
+      this.showStep(this.currentStep);
+    } else {
+      this.complete();
+    }
+  },
+
+  prevStep() {
+    this.clearHighlights();
+    this.currentStep = Math.max(0, this.currentStep - 1);
+    this.showStep(this.currentStep);
+  },
+
+  clearHighlights() {
+    document.querySelectorAll('[style*="z-index: 99999"]').forEach(el => {
+      el.style.zIndex = '';
+      el.style.boxShadow = '';
+    });
+  },
+
+  complete() {
+    this.clearHighlights();
+    this.overlay.style.display = 'none';
+    this.tooltip.style.display = 'none';
+    localStorage.setItem('matushka_onboarding_complete', 'true');
+    debug.log('Onboarding', 'Completed');
+
+    // Celebration for completing onboarding
+    celebrateSuccess();
+  }
+};
+
+// ============================================================================
+// ENHANCED DEBUG LOGGER
+// ============================================================================
+
+const debug = {
+  logs: [],
+  maxLogs: 1000,
+
+  formatTime() {
     const now = new Date();
+    return now.toLocaleTimeString('en-US', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+  },
 
-    DebugLogger.log('CITATION', `Generating citation data for: ${metadata.title || 'Untitled'}`);
+  createEntry(level, category, message, data) {
+    return {
+      timestamp: this.formatTime(),
+      level,
+      category,
+      message,
+      data: data ? JSON.stringify(data, null, 2) : null
+    };
+  },
 
-    const citation = {
-        // Core identification
-        id: generateCitationId(metadata),
-        source_url: metadata.source_url || '',
+  output(entry) {
+    if (!CONFIG.debug) return;
 
-        // Title and program information
-        title: metadata.title || 'Untitled',
-        program_name: metadata.program_name || '',
-        segment_title: metadata.segment_title || '',
-
-        // Publisher and author
-        publisher: metadata.publisher || 'Unknown Publisher',
-        author: metadata.author || '',
-
-        // Dates
-        publish_date: metadata.publish_date || null,
-        access_date: now.toISOString(),
-        download_timestamp: now.toISOString(),
-
-        // Technical metadata
-        duration_seconds: metadata.duration_seconds || null,
-        file_format: metadata.file_format || 'mp4',
-        thumbnail_url: metadata.thumbnail_url || '',
-
-        // Classification
-        category: metadata.category || '',
-
-        // Content description
-        description: metadata.description || '',
-        original_language: metadata.original_language || 'Russian',
-
-        // Legal and usage
-        license_reference: metadata.license_reference || 'Fair use for educational purposes',
-        educational_use_note: metadata.educational_use_note || 'For Russian language teaching and learning',
-
-        // Completeness flag
-        metadata_complete: Boolean(
-            metadata.title &&
-            metadata.publisher &&
-            metadata.source_url &&
-            metadata.publish_date
-        )
+    const style = {
+      log: 'color: #4a9eff',
+      info: 'color: #10b981',
+      warn: 'color: #f59e0b',
+      error: 'color: #ef4444'
     };
 
-    DebugLogger.log('CITATION', `Citation ID: ${citation.id}`, { complete: citation.metadata_complete });
+    const prefix = `[${entry.timestamp}] [${entry.category}]`;
 
-    return citation;
-}
-
-/**
- * Format citation in Chicago style
- *
- * Format: Publisher. "Title." Program. source_domain, Date. URL. Accessed Date.
- *
- * @param {Object} citation - Citation data object
- * @returns {string} Formatted citation
- */
-function formatChicagoCitation(citation) {
-    const parts = [];
-
-    // Publisher
-    if (citation.publisher) {
-        parts.push(citation.publisher + '.');
-    }
-
-    // Title in quotes
-    parts.push(`"${citation.title}."`);
-
-    // Program name (if different from title)
-    if (citation.program_name && citation.program_name !== citation.title) {
-        parts.push(citation.program_name + '.');
-    }
-
-    // Source domain
-    if (citation.source_url) {
-        try {
-            const domain = new URL(citation.source_url).hostname;
-            parts.push(domain + ',');
-        } catch (e) {
-            // Skip domain if URL is invalid
-        }
-    }
-
-    // Publish date
-    if (citation.publish_date) {
-        parts.push(formatCitationDate(citation.publish_date) + '.');
-    }
-
-    // URL
-    if (citation.source_url) {
-        parts.push(citation.source_url + '.');
-    }
-
-    // Access date
-    parts.push(`Accessed ${formatCitationDate(citation.access_date)}.`);
-
-    return parts.join(' ');
-}
-
-/**
- * Format citation in MLA style
- *
- * Format: Author. "Title." Program, Publisher, Date, URL. Accessed Date.
- *
- * @param {Object} citation - Citation data object
- * @returns {string} Formatted citation
- */
-function formatMLACitation(citation) {
-    const parts = [];
-
-    // Author (or publisher as corporate author)
-    const author = citation.author || citation.publisher || 'Unknown';
-    parts.push(author + '.');
-
-    // Title in quotes
-    parts.push(`"${citation.title}."`);
-
-    // Program name (italicized conceptually, using asterisks for plain text)
-    if (citation.program_name && citation.program_name !== citation.title) {
-        parts.push(`*${citation.program_name}*,`);
-    }
-
-    // Publisher
-    if (citation.publisher && citation.publisher !== author) {
-        parts.push(citation.publisher + ',');
-    }
-
-    // Publish date
-    if (citation.publish_date) {
-        parts.push(formatCitationDate(citation.publish_date) + ',');
-    }
-
-    // URL
-    if (citation.source_url) {
-        parts.push(citation.source_url + '.');
-    }
-
-    // Access date
-    parts.push(`Accessed ${formatCitationDate(citation.access_date)}.`);
-
-    return parts.join(' ');
-}
-
-/**
- * Format citation in APA style
- *
- * Format: Author (Year). Title [Audio file]. Program. Publisher. URL
- *
- * @param {Object} citation - Citation data object
- * @returns {string} Formatted citation
- */
-function formatAPACitation(citation) {
-    const parts = [];
-
-    // Author
-    const author = citation.author || citation.publisher || 'Unknown';
-    parts.push(author);
-
-    // Year in parentheses
-    const year = getYear(citation.publish_date);
-    parts.push(`(${year}).`);
-
-    // Title with format indicator
-    const formatIndicator = citation.file_format === 'mp3' ? 'Audio file' : 'Video file';
-    parts.push(`${citation.title} [${formatIndicator}].`);
-
-    // Program name
-    if (citation.program_name && citation.program_name !== citation.title) {
-        parts.push(`*${citation.program_name}*.`);
-    }
-
-    // Publisher
-    if (citation.publisher && citation.publisher !== author) {
-        parts.push(citation.publisher + '.');
-    }
-
-    // URL
-    if (citation.source_url) {
-        parts.push(citation.source_url);
-    }
-
-    return parts.join(' ');
-}
-
-/**
- * Format citation in BibTeX format
- *
- * @param {Object} citation - Citation data object
- * @returns {string} BibTeX formatted citation
- */
-function formatBibTeXCitation(citation) {
-    const key = citation.id.replace(/[^a-zA-Z0-9_]/g, '_');
-    const year = getYear(citation.publish_date);
-
-    // Escape special BibTeX characters
-    const escapeBibTeX = (str) => {
-        if (!str) return '';
-        return str
-            .replace(/[&]/g, '\\&')
-            .replace(/[%]/g, '\\%')
-            .replace(/[#]/g, '\\#')
-            .replace(/[_]/g, '\\_')
-            .replace(/[{]/g, '\\{')
-            .replace(/[}]/g, '\\}');
-    };
-
-    const lines = [
-        `@misc{${key},`,
-        `  author = {${escapeBibTeX(citation.author || citation.publisher || 'Unknown')}},`,
-        `  title = {${escapeBibTeX(citation.title)}},`,
-        `  year = {${year}},`,
-        `  howpublished = {${escapeBibTeX(citation.program_name || 'Online video')}},`,
-        `  organization = {${escapeBibTeX(citation.publisher)}},`,
-        `  url = {${citation.source_url || ''}},`,
-        `  urldate = {${citation.access_date ? citation.access_date.split('T')[0] : ''}},`,
-        `  note = {${escapeBibTeX(citation.educational_use_note || '')}},`,
-        `  language = {${escapeBibTeX(citation.original_language || 'Russian')}}`,
-        `}`
-    ];
-
-    return lines.join('\n');
-}
-
-/**
- * Format citation as JSON
- *
- * @param {Object} citation - Citation data object
- * @returns {string} JSON formatted citation
- */
-function formatJSONCitation(citation) {
-    return JSON.stringify(citation, null, 2);
-}
-
-/**
- * Format all citations in a specific style
- *
- * @param {string} style - Citation style ('chicago', 'mla', 'apa', 'bibtex', 'json')
- * @returns {string} All citations formatted in the specified style
- */
-function formatAllCitations(style) {
-    if (AppState.citations.length === 0) {
-        return 'No citations available.';
-    }
-
-    const formatters = {
-        chicago: formatChicagoCitation,
-        mla: formatMLACitation,
-        apa: formatAPACitation,
-        bibtex: formatBibTeXCitation,
-        json: formatJSONCitation
-    };
-
-    const formatter = formatters[style.toLowerCase()];
-    if (!formatter) {
-        return 'Unknown citation style.';
-    }
-
-    // For BibTeX and JSON, join with blank lines
-    const separator = (style === 'bibtex' || style === 'json') ? '\n\n' : '\n\n';
-
-    return AppState.citations.map(citation => formatter(citation)).join(separator);
-}
-
-/**
- * Update the citations panel with current citations
- */
-function updateCitationsPanel() {
-    const citationsSection = document.getElementById('citationsSection');
-    const citationsList = document.getElementById('citationsList');
-    const citationCount = document.getElementById('citationCount');
-
-    if (!citationsSection) return;
-
-    // Show section if there are citations
-    if (AppState.citations.length > 0) {
-        citationsSection.style.display = 'block';
-
-        if (citationCount) {
-            citationCount.textContent = `${AppState.citations.length} citation${AppState.citations.length !== 1 ? 's' : ''}`;
-        }
-
-        // Update citations list with current format
-        const currentFormat = document.getElementById('citationFormat')?.value || 'chicago';
-        displayCitationsInFormat(currentFormat);
-
-        // Scroll to citations
-        citationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (entry.data) {
+      console[entry.level](`%c${prefix} ${entry.message}`, style[entry.level], '\n', entry.data);
     } else {
-        citationsSection.style.display = 'none';
-    }
-}
-
-/**
- * Display citations in a specific format
- *
- * @param {string} format - Citation format to display
- */
-function displayCitationsInFormat(format) {
-    const citationsList = document.getElementById('citationsList');
-    if (!citationsList) return;
-
-    const formattedCitations = formatAllCitations(format);
-
-    // Use pre-formatted text for BibTeX and JSON
-    if (format === 'bibtex' || format === 'json') {
-        citationsList.innerHTML = `<pre class="citations-code">${escapeHtml(formattedCitations)}</pre>`;
-    } else {
-        // For other formats, display as paragraphs
-        const citationHtml = AppState.citations.map((citation, index) => {
-            const formatters = {
-                chicago: formatChicagoCitation,
-                mla: formatMLACitation,
-                apa: formatAPACitation
-            };
-            const formatted = formatters[format](citation);
-            return `<p class="citation-entry">${index + 1}. ${escapeHtml(formatted)}</p>`;
-        }).join('');
-
-        citationsList.innerHTML = citationHtml || '<p>No citations available.</p>';
-    }
-}
-
-/**
- * Copy citations to clipboard
- */
-async function copyCitationsToClipboard() {
-    const format = document.getElementById('citationFormat')?.value || 'chicago';
-    const formattedCitations = formatAllCitations(format);
-
-    DebugLogger.log('CITATION', `Copying ${AppState.citations.length} citations to clipboard in ${format} format`);
-
-    try {
-        await navigator.clipboard.writeText(formattedCitations);
-        DebugLogger.log('CITATION', 'Citations copied to clipboard successfully');
-        showSuccess('Citations copied to clipboard!');
-    } catch (error) {
-        DebugLogger.warn('copyCitationsToClipboard', 'Clipboard API failed, using fallback');
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = formattedCitations;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-9999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-
-        try {
-            document.execCommand('copy');
-            DebugLogger.log('CITATION', 'Citations copied via fallback method');
-            showSuccess('Citations copied to clipboard!');
-        } catch (e) {
-            DebugLogger.error('copyCitationsToClipboard', e);
-            showError('Failed to copy citations. Please select and copy manually.');
-        }
-
-        document.body.removeChild(textArea);
-    }
-}
-
-/**
- * Download citations as a file
- */
-function downloadCitationsAsFile() {
-    const format = document.getElementById('citationFormat')?.value || 'chicago';
-    const formattedCitations = formatAllCitations(format);
-
-    DebugLogger.log('CITATION', `Downloading ${AppState.citations.length} citations as ${format} file`);
-
-    // Determine file extension
-    let extension = '.txt';
-    let mimeType = 'text/plain';
-
-    if (format === 'bibtex') {
-        extension = '.bib';
-        mimeType = 'application/x-bibtex';
-    } else if (format === 'json') {
-        extension = '.json';
-        mimeType = 'application/json';
+      console[entry.level](`%c${prefix} ${entry.message}`, style[entry.level]);
     }
 
-    // Create and download file
-    const blob = new Blob([formattedCitations], { type: mimeType });
+    this.logs.push(entry);
+    if (this.logs.length > this.maxLogs) {
+      this.logs.shift();
+    }
+  },
+
+  log(category, message, data) {
+    this.output(this.createEntry('log', category, message, data));
+  },
+
+  info(category, message, data) {
+    this.output(this.createEntry('info', category, message, data));
+  },
+
+  warn(category, message, data) {
+    this.output(this.createEntry('warn', category, message, data));
+  },
+
+  error(category, message, data) {
+    this.output(this.createEntry('error', category, message, data));
+  },
+
+  group(label) {
+    if (CONFIG.debug) console.group(label);
+  },
+
+  groupEnd() {
+    if (CONFIG.debug) console.groupEnd();
+  },
+
+  table(data) {
+    if (CONFIG.debug) console.table(data);
+  },
+
+  exportLogs() {
+    const blob = new Blob([JSON.stringify(this.logs, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `matushka-logs-${new Date().toISOString()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `matushka_citations_${format}${extension}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  clearLogs() {
+    this.logs = [];
+    if (CONFIG.debug) console.clear();
+  }
+};
 
+// ============================================================================
+// API & CORE FUNCTIONALITY
+// ============================================================================
+
+let selectedItems = new Set();
+let currentResults = [];
+
+async function searchContent() {
+  const searchBtn = document.getElementById('searchBtn');
+  const resultsContainer = document.getElementById('results');
+  const loadingIndicator = document.getElementById('loading');
+
+  debug.group('Search Operation');
+  debug.log('Search', 'Starting search...');
+
+  // Update UI
+  if (searchBtn) {
+    searchBtn.disabled = true;
+    searchBtn.textContent = i18n.t('loading');
+  }
+  if (loadingIndicator) loadingIndicator.style.display = 'block';
+  if (resultsContainer) resultsContainer.innerHTML = '';
+
+  // Gather parameters
+  const params = {
+    minDuration: parseInt(document.getElementById('minDuration')?.value) || 0,
+    maxDuration: parseInt(document.getElementById('maxDuration')?.value) || 600,
+    daysBack: parseInt(document.getElementById('daysBack')?.value) || 7,
+    categories: getSelectedCategories(),
+    sources: getSelectedSources(),
+    maxItems: parseInt(document.getElementById('maxItems')?.value) || 50
+  };
+
+  debug.log('Search', 'Parameters:', params);
+
+  try {
+    const response = await fetch(`${WORKER_URL}/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    currentResults = data.results || [];
+
+    debug.info('Search', `Found ${currentResults.length} results`);
+
+    // Record search for gamification
+    GamificationManager.recordSearch();
+
+    // Render results
+    renderResults(currentResults);
+
+    if (currentResults.length > 0 && GamificationManager.state.totalSearches === 1) {
+      celebrateSuccess();
+    }
+
+  } catch (error) {
+    debug.error('Search', 'Search failed', error);
+    showError(i18n.t('error') + ': ' + error.message);
+  } finally {
+    if (searchBtn) {
+      searchBtn.disabled = false;
+      searchBtn.textContent = i18n.t('searchBtn');
+    }
+    if (loadingIndicator) loadingIndicator.style.display = 'none';
+    debug.groupEnd();
+  }
+}
+
+function renderResults(results) {
+  const container = document.getElementById('results');
+  if (!container) return;
+
+  if (results.length === 0) {
+    container.innerHTML = `
+      <div class="no-results" style="text-align: center; padding: 60px; color: #666;">
+        <div style="font-size: 48px; margin-bottom: 20px;">🔍</div>
+        <h3>${i18n.t('noResults')}</h3>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="results-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <span>${i18n.t('resultCount', { count: results.length })}</span>
+      <div>
+        <button onclick="selectAllResults()" class="btn btn-small">${i18n.t('selectAll')}</button>
+        <button onclick="deselectAllResults()" class="btn btn-small">${i18n.t('deselectAll')}</button>
+      </div>
+    </div>
+    <div class="results-grid" style="display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+      ${results.map((item, index) => renderResultCard(item, index)).join('')}
+    </div>
+  `;
+
+  // Initialize card interactions
+  initCardTilt();
+}
+
+function renderResultCard(item, index) {
+  const isSelected = selectedItems.has(item.id);
+  const isFavorite = GamificationManager.state.favorites.includes(item.id);
+
+  return `
+    <div class="result-card tilt-card" data-id="${item.id}" data-animate="fadeInUp" style="
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      border: 2px solid ${isSelected ? '#667eea' : 'transparent'};
+      animation-delay: ${index * 0.05}s;
+    ">
+      ${item.thumbnail ? `<img src="${item.thumbnail}" alt="" style="width: 100%; height: 160px; object-fit: cover;">` : ''}
+      <div style="padding: 20px;">
+        <h4 style="margin: 0 0 10px 0; font-size: 16px; line-height: 1.4;">${escapeHtml(item.title)}</h4>
+        <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">${escapeHtml(item.source)} • ${formatDuration(item.duration)}</p>
+        <div style="display: flex; gap: 10px;">
+          <button onclick="toggleItemSelection('${item.id}')" class="btn btn-small ${isSelected ? 'btn-primary' : 'btn-secondary'}">
+            ${isSelected ? '✓' : '○'}
+          </button>
+          <button onclick="toggleFavorite('${item.id}')" class="btn btn-small" title="${i18n.t(isFavorite ? 'removeFromFavorites' : 'addToFavorites')}">
+            ${isFavorite ? '★' : '☆'}
+          </button>
+          <button onclick="previewItem('${item.id}')" class="btn btn-small" title="${i18n.t('preview')}">
+            ▶
+          </button>
+          <a href="${item.url}" target="_blank" class="btn btn-small" title="${i18n.t('openExternal')}">↗</a>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleItemSelection(id) {
+  if (selectedItems.has(id)) {
+    selectedItems.delete(id);
+  } else {
+    selectedItems.add(id);
+  }
+
+  const card = document.querySelector(`[data-id="${id}"]`);
+  if (card) {
+    card.style.borderColor = selectedItems.has(id) ? '#667eea' : 'transparent';
+  }
+
+  updateSelectionCount();
+  playClickSound();
+}
+
+function selectAllResults() {
+  currentResults.forEach(item => selectedItems.add(item.id));
+  renderResults(currentResults);
+  updateSelectionCount();
+}
+
+function deselectAllResults() {
+  selectedItems.clear();
+  renderResults(currentResults);
+  updateSelectionCount();
+}
+
+function updateSelectionCount() {
+  const countEl = document.getElementById('selectionCount');
+  if (countEl) {
+    countEl.textContent = selectedItems.size;
+  }
+}
+
+function toggleFavorite(id) {
+  if (GamificationManager.state.favorites.includes(id)) {
+    GamificationManager.removeFavorite(id);
+  } else {
+    GamificationManager.addFavorite(id);
+  }
+  renderResults(currentResults);
+  playClickSound();
+}
+
+function previewItem(id) {
+  const item = currentResults.find(r => r.id === id);
+  if (!item) return;
+
+  // Create preview modal
+  const modal = document.createElement('div');
+  modal.className = 'preview-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+  `;
+
+  modal.innerHTML = `
+    <div style="max-width: 800px; width: 90%; background: white; border-radius: 16px; overflow: hidden;">
+      ${item.embedUrl ? `<iframe src="${item.embedUrl}" style="width: 100%; height: 450px; border: none;"></iframe>` :
+        item.thumbnail ? `<img src="${item.thumbnail}" style="width: 100%; height: auto;">` : ''}
+      <div style="padding: 20px;">
+        <h3 style="margin: 0 0 10px 0;">${escapeHtml(item.title)}</h3>
+        <p style="color: #666;">${escapeHtml(item.description || '')}</p>
+        <button onclick="this.closest('.preview-modal').remove()" class="btn btn-primary">${i18n.t('close')}</button>
+      </div>
+    </div>
+  `;
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+
+  document.body.appendChild(modal);
+}
+
+async function downloadSelected() {
+  if (selectedItems.size === 0) {
+    showNotification(i18n.t('noResults'), 'warning');
+    return;
+  }
+
+  const downloadBtn = document.getElementById('downloadBtn');
+  if (downloadBtn) {
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = i18n.t('downloading');
+  }
+
+  debug.log('Download', `Downloading ${selectedItems.size} items`);
+
+  try {
+    const items = currentResults.filter(r => selectedItems.has(r.id));
+
+    const response = await fetch(`${WORKER_URL}/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `matushka-content-${Date.now()}.zip`;
+    a.click();
     URL.revokeObjectURL(url);
 
-    DebugLogger.log('CITATION', `Citations file downloaded: ${link.download}`);
-    showSuccess(`Citations downloaded as ${link.download}`);
+    // Record download for gamification
+    GamificationManager.recordDownload();
+
+    showNotification(i18n.t('complete'), 'success');
+    celebrateSuccess();
+
+  } catch (error) {
+    debug.error('Download', 'Download failed', error);
+    showError(error.message);
+  } finally {
+    if (downloadBtn) {
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = i18n.t('download');
+    }
+  }
 }
 
-/**
- * Handle citation format change
- *
- * @param {Event} event - Change event from select element
- */
-function handleCitationFormatChange(event) {
-    const format = event.target.value;
-    displayCitationsInFormat(format);
+async function exportCitations() {
+  if (selectedItems.size === 0) {
+    showNotification(i18n.t('noResults'), 'warning');
+    return;
+  }
+
+  debug.log('Citations', `Exporting ${selectedItems.size} citations`);
+
+  const items = currentResults.filter(r => selectedItems.has(r.id));
+  const citations = items.map(item => formatCitation(item)).join('\n\n');
+
+  const blob = new Blob([citations], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `matushka-citations-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  showNotification(i18n.t('complete'), 'success');
 }
 
-// =============================================================================
-// UI INITIALIZATION
-// =============================================================================
+function formatCitation(item) {
+  const date = new Date(item.publishedAt || Date.now());
+  const dateStr = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-/**
- * Initialize all event listeners when DOM is ready
- */
-document.addEventListener('DOMContentLoaded', function() {
-    const initStartTime = performance.now();
+  return `${item.title}. (${dateStr}). ${item.source}. Retrieved from ${item.url}`;
+}
 
-    // Initialize debug panel first
-    initializeDebugPanel();
+function resetFilters() {
+  document.getElementById('minDuration')?.setAttribute('value', '0');
+  document.getElementById('maxDuration')?.setAttribute('value', '600');
+  document.getElementById('daysBack')?.setAttribute('value', '7');
+  document.getElementById('maxItems')?.setAttribute('value', '50');
 
-    DebugLogger.group('Application Initialization');
-    DebugLogger.init('Matushka Application', {
-        version: '2.0.0',
-        workerUrl: WORKER_URL,
-        debugEnabled: DEBUG.enabled,
-        logLevel: DEBUG.logLevel
-    });
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
 
-    // Log environment info
-    DebugLogger.init('Environment', DebugLogger.getEnvironmentInfo());
+  selectedItems.clear();
+  currentResults = [];
 
-    // Log configuration
-    DebugLogger.init('API Configuration', API_CONFIG);
+  const results = document.getElementById('results');
+  if (results) results.innerHTML = '';
 
-    initializeEventListeners();
-    DebugLogger.init('Event listeners registered');
+  debug.log('Filters', 'Reset complete');
+  showNotification(i18n.t('complete'), 'success');
+}
 
-    initializeCheckboxBehavior();
-    DebugLogger.init('Checkbox behavior initialized');
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
 
-    initializeResultsSection();
-    DebugLogger.init('Results section initialized');
+function getSelectedCategories() {
+  const checkboxes = document.querySelectorAll('input[name="category"]:checked');
+  return Array.from(checkboxes).map(cb => cb.value);
+}
 
-    initializeCitationsSection();
-    DebugLogger.init('Citations section initialized');
+function getSelectedSources() {
+  const checkboxes = document.querySelectorAll('input[name="source"]:checked');
+  return Array.from(checkboxes).map(cb => cb.value);
+}
 
-    DebugLogger.timing('Initialization complete', initStartTime);
-    DebugLogger.log('INIT', 'Application ready');
-    DebugLogger.groupEnd();
+function formatDuration(seconds) {
+  if (!seconds) return '--:--';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+
+  const colors = {
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    info: '#667eea'
+  };
+
+  notification.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: ${colors[type]};
+    color: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    z-index: 10000;
+    animation: slideInRight 0.3s ease-out;
+  `;
+  notification.textContent = message;
+
+  document.body.appendChild(notification);
+  setTimeout(() => {
+    notification.style.animation = 'slideOutRight 0.3s ease-out forwards';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+function showError(message) {
+  showNotification(message, 'error');
+}
+
+function toggleTheme() {
+  const body = document.body;
+  const isDark = body.classList.toggle('dark-theme');
+  localStorage.setItem('matushka_theme', isDark ? 'dark' : 'light');
+  debug.log('Theme', `Switched to ${isDark ? 'dark' : 'light'} theme`);
+}
+
+function loadTheme() {
+  const savedTheme = localStorage.getItem('matushka_theme');
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-theme');
+  }
+}
+
+function showFavorites() {
+  const favorites = currentResults.filter(r => GamificationManager.state.favorites.includes(r.id));
+  if (favorites.length === 0) {
+    showNotification(i18n.t('noResults'), 'info');
+    return;
+  }
+  renderResults(favorites);
+}
+
+function showHelp() {
+  const modal = document.createElement('div');
+  modal.className = 'help-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+  `;
+
+  modal.innerHTML = `
+    <div style="background: white; padding: 40px; border-radius: 20px; max-width: 600px; width: 90%;">
+      <h2>${i18n.t('help')}</h2>
+      <h4>${i18n.t('tooltipCommandPalette')}</h4>
+      <ul>
+        <li><kbd>/</kbd> - ${i18n.t('search')}</li>
+        <li><kbd>d</kbd> - ${i18n.t('download')}</li>
+        <li><kbd>c</kbd> - ${i18n.t('citations')}</li>
+        <li><kbd>t</kbd> - ${i18n.t('theme')}</li>
+        <li><kbd>l</kbd> - ${i18n.t('language')}</li>
+      </ul>
+      <button onclick="this.closest('.help-modal').remove()" class="btn btn-primary">${i18n.t('close')}</button>
+    </div>
+  `;
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+
+  document.body.appendChild(modal);
+}
+
+function showAchievements() {
+  const modal = document.createElement('div');
+  modal.className = 'achievements-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+  `;
+
+  const isRussian = i18n.currentLang === 'ru';
+  const achievements = Object.values(GamificationManager.ACHIEVEMENTS);
+
+  modal.innerHTML = `
+    <div style="background: white; padding: 40px; border-radius: 20px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto;">
+      <h2>${i18n.t('achievements')}</h2>
+      <p>${GamificationManager.state.achievements.length} / ${achievements.length}</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+        ${achievements.map(a => {
+          const unlocked = GamificationManager.state.achievements.includes(a.id);
+          return `
+            <div style="
+              padding: 20px;
+              border-radius: 12px;
+              background: ${unlocked ? 'linear-gradient(135deg, #667eea, #764ba2)' : '#f5f5f5'};
+              color: ${unlocked ? 'white' : '#999'};
+              text-align: center;
+            ">
+              <div style="font-size: 32px; margin-bottom: 10px;">${a.icon}</div>
+              <div style="font-weight: bold;">${isRussian ? a.titleRu : a.title}</div>
+              <div style="font-size: 12px; margin-top: 5px;">${isRussian ? a.descriptionRu : a.description}</div>
+              <div style="margin-top: 10px; font-size: 14px;">+${a.points} ${i18n.t('points')}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <button onclick="this.closest('.achievements-modal').remove()" class="btn btn-primary">${i18n.t('close')}</button>
+    </div>
+  `;
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+
+  document.body.appendChild(modal);
+}
+
+// ============================================================================
+// CSS ANIMATIONS (Injected)
+// ============================================================================
+
+function injectAnimationStyles() {
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOutRight {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100px); opacity: 0; }
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes pointsFloat {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+      20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+      100% { transform: translate(-50%, -150%) scale(1); opacity: 0; }
+    }
+
+    @keyframes streakBounce {
+      0% { transform: translateX(-50%) scale(0); opacity: 0; }
+      50% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+      70% { transform: translateX(-50%) scale(0.95); }
+      100% { transform: translateX(-50%) scale(1); opacity: 0; }
+    }
+
+    @keyframes levelUpScale {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
+    @keyframes rippleEffect {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    .animate-hidden {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    .animated {
+      animation-duration: 0.6s;
+      animation-fill-mode: both;
+    }
+
+    .animated.fadeInUp {
+      animation-name: fadeInUp;
+    }
+
+    .dark-theme {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --text-primary: #eee;
+      --text-secondary: #aaa;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .dark-theme .result-card,
+    .dark-theme .command-palette-modal,
+    .dark-theme .onboarding-tooltip {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    .dark-theme .command-palette-input {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-color: #333;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+
+    .level-up-content .level-up-icon {
+      font-size: 80px;
+      animation: levelUpScale 0.5s ease-out;
+    }
+
+    .level-up-content .level-up-text {
+      font-size: 24px;
+      margin: 20px 0 10px;
+    }
+
+    .level-up-content .level-up-number {
+      font-size: 72px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #ffd700, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .achievement-toast .achievement-icon {
+      font-size: 40px;
+    }
+
+    .achievement-toast .achievement-label {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .achievement-toast .achievement-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .achievement-toast .achievement-desc {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+
+    .achievement-toast .achievement-points {
+      font-size: 14px;
+      margin-top: 8px;
+      color: #ffd700;
+    }
+
+    .achievement-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+
+    .achievement-badge.unlocked {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .achievement-badge.locked {
+      background: #f0f0f0;
+      color: #999;
+      filter: grayscale(1);
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 30px;
+      padding: 15px 25px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  debug.log('App', 'Initializing Matushka Premium...');
+
+  // Inject styles
+  injectAnimationStyles();
+
+  // Load theme
+  loadTheme();
+
+  // Initialize systems
+  i18n.init();
+  GamificationManager.init();
+  CommandPalette.init();
+
+  // Check onboarding
+  if (!localStorage.getItem('matushka_onboarding_complete')) {
+    OnboardingManager.init();
+  }
+
+  // Initialize UI enhancements
+  if (CONFIG.enableCursor) {
+    initCustomCursor();
+  }
+
+  if (CONFIG.enableAnimations) {
+    initScrollAnimations();
+    initParallax();
+    initScrollProgress();
+    initCardTilt();
+    initMagneticButtons();
+  }
+
+  initButtonFeedback();
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    // Command palette
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      CommandPalette.open();
+      return;
+    }
+
+    // Don't process shortcuts if typing in input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    // Quick shortcuts
+    switch (e.key) {
+      case '/':
+        e.preventDefault();
+        document.getElementById('searchBtn')?.focus();
+        break;
+      case 'd':
+        downloadSelected();
+        break;
+      case 'c':
+        exportCitations();
+        break;
+      case 't':
+        toggleTheme();
+        break;
+      case 'l':
+        i18n.toggleLanguage();
+        break;
+      case 'r':
+        resetFilters();
+        break;
+      case 'Escape':
+        if (CommandPalette.isOpen) {
+          CommandPalette.close();
+        }
+        break;
+    }
+  });
+
+  // Bind button events
+  document.getElementById('searchBtn')?.addEventListener('click', searchContent);
+  document.getElementById('resetBtn')?.addEventListener('click', resetFilters);
+  document.getElementById('downloadBtn')?.addEventListener('click', downloadSelected);
+  document.getElementById('citationsBtn')?.addEventListener('click', exportCitations);
+  document.getElementById('languageSelector')?.addEventListener('change', (e) => {
+    i18n.setLanguage(e.target.value);
+  });
+
+  debug.info('App', 'Matushka Premium initialized successfully!');
+  debug.table(GamificationManager.getStats());
 });
 
-/**
- * Initialize event listeners for form controls
- */
-function initializeEventListeners() {
-    // Search button
-    const searchBtn = document.getElementById('searchBtn');
-    if (searchBtn) {
-        searchBtn.addEventListener('click', () => {
-            DebugLogger.ui('click', 'searchBtn');
-            executeSearch();
-        });
-    }
-
-    // Reset button
-    const resetBtn = document.getElementById('resetBtn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            DebugLogger.ui('click', 'resetBtn');
-            resetToDefaults();
-        });
-    }
-
-    // Select all checkbox
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', (e) => {
-            DebugLogger.ui('change', 'selectAllCheckbox', e.target.checked);
-            handleSelectAllToggle(e);
-        });
-    }
-
-    // Download selected button
-    const downloadBtn = document.getElementById('downloadSelectedBtn');
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', () => {
-            DebugLogger.ui('click', 'downloadSelectedBtn');
-            downloadSelectedItems();
-        });
-    }
-
-    // Citation format selector
-    const citationFormat = document.getElementById('citationFormat');
-    if (citationFormat) {
-        citationFormat.addEventListener('change', (e) => {
-            DebugLogger.ui('change', 'citationFormat', e.target.value);
-            handleCitationFormatChange(e);
-        });
-    }
-
-    // Copy citations button
-    const copyCitationsBtn = document.getElementById('copyCitationsBtn');
-    if (copyCitationsBtn) {
-        copyCitationsBtn.addEventListener('click', () => {
-            DebugLogger.ui('click', 'copyCitationsBtn');
-            copyCitationsToClipboard();
-        });
-    }
-
-    // Download citations button
-    const downloadCitationsBtn = document.getElementById('downloadCitationsBtn');
-    if (downloadCitationsBtn) {
-        downloadCitationsBtn.addEventListener('click', () => {
-            DebugLogger.ui('click', 'downloadCitationsBtn');
-            downloadCitationsAsFile();
-        });
-    }
-
-    // Enter key on form inputs should trigger search
-    const formInputs = document.querySelectorAll('#configForm input[type="number"]');
-    formInputs.forEach(input => {
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                DebugLogger.ui('keypress', `${input.id} (Enter)`);
-                e.preventDefault();
-                executeSearch();
-            }
-        });
-        // Log value changes on blur
-        input.addEventListener('blur', (e) => {
-            DebugLogger.ui('change', input.id, e.target.value);
-        });
-    });
-}
-
-/**
- * Initialize "All Categories" and "All Sources" checkbox behavior
- */
-function initializeCheckboxBehavior() {
-    // All Categories checkbox
-    const allCategoriesCheckbox = document.getElementById('allCategories');
-    if (allCategoriesCheckbox) {
-        allCategoriesCheckbox.addEventListener('change', handleAllCategoriesCheckbox);
-        // Initialize state
-        handleAllCategoriesCheckbox();
-    }
-
-    // All Sources checkbox
-    const allSourcesCheckbox = document.getElementById('allSources');
-    if (allSourcesCheckbox) {
-        allSourcesCheckbox.addEventListener('change', handleAllSourcesCheckbox);
-        // Initialize state
-        handleAllSourcesCheckbox();
-    }
-
-    // Individual category checkboxes
-    const categoryCheckboxes = document.querySelectorAll('input[name="categories"]');
-    categoryCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', handleIndividualCategoryChange);
-    });
-
-    // Individual source checkboxes
-    const sourceCheckboxes = document.querySelectorAll('input[name="sources"]');
-    sourceCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', handleIndividualSourceChange);
-    });
-}
-
-/**
- * Handle "All Categories" checkbox state change
- */
-function handleAllCategoriesCheckbox() {
-    const allCategoriesCheckbox = document.getElementById('allCategories');
-    const categoryCheckboxes = document.querySelectorAll('input[name="categories"]');
-
-    DebugLogger.ui('change', 'allCategories', allCategoriesCheckbox?.checked);
-
-    if (allCategoriesCheckbox?.checked) {
-        // Disable and uncheck individual category checkboxes
-        categoryCheckboxes.forEach(checkbox => {
-            checkbox.disabled = true;
-            checkbox.checked = false;
-        });
-        DebugLogger.log('UI', 'All individual category checkboxes disabled');
-    } else {
-        // Enable individual category checkboxes
-        categoryCheckboxes.forEach(checkbox => {
-            checkbox.disabled = false;
-        });
-        DebugLogger.log('UI', 'All individual category checkboxes enabled');
-    }
-}
-
-/**
- * Handle individual category checkbox change
- */
-function handleIndividualCategoryChange() {
-    const allCategoriesCheckbox = document.getElementById('allCategories');
-    const categoryCheckboxes = document.querySelectorAll('input[name="categories"]');
-    const checkedCategories = Array.from(categoryCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
-    const anyChecked = checkedCategories.length > 0;
-
-    DebugLogger.ui('change', 'categories', checkedCategories);
-
-    // Uncheck "All Categories" if any individual category is checked
-    if (anyChecked && allCategoriesCheckbox) {
-        allCategoriesCheckbox.checked = false;
-    }
-}
-
-/**
- * Handle "All Sources" checkbox state change
- */
-function handleAllSourcesCheckbox() {
-    const allSourcesCheckbox = document.getElementById('allSources');
-    const sourceCheckboxes = document.querySelectorAll('input[name="sources"]');
-
-    DebugLogger.ui('change', 'allSources', allSourcesCheckbox?.checked);
-
-    if (allSourcesCheckbox?.checked) {
-        // Disable and uncheck individual source checkboxes
-        sourceCheckboxes.forEach(checkbox => {
-            checkbox.disabled = true;
-            checkbox.checked = false;
-        });
-        DebugLogger.log('UI', 'All individual source checkboxes disabled');
-    } else {
-        // Enable individual source checkboxes
-        sourceCheckboxes.forEach(checkbox => {
-            checkbox.disabled = false;
-        });
-        DebugLogger.log('UI', 'All individual source checkboxes enabled');
-    }
-}
-
-/**
- * Handle individual source checkbox change
- */
-function handleIndividualSourceChange() {
-    const allSourcesCheckbox = document.getElementById('allSources');
-    const sourceCheckboxes = document.querySelectorAll('input[name="sources"]');
-    const checkedSources = Array.from(sourceCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
-    const anyChecked = checkedSources.length > 0;
-
-    DebugLogger.ui('change', 'sources', checkedSources);
-
-    // Uncheck "All Sources" if any individual source is checked
-    if (anyChecked && allSourcesCheckbox) {
-        allSourcesCheckbox.checked = false;
-    }
-}
-
-/**
- * Initialize the results section (hidden by default)
- */
-function initializeResultsSection() {
-    const resultsSection = document.getElementById('resultsSection');
-    if (resultsSection) {
-        resultsSection.style.display = 'none';
-    }
-
-    // Initialize download progress container
-    const downloadProgress = document.getElementById('downloadProgress');
-    if (downloadProgress) {
-        downloadProgress.style.display = 'none';
-    }
-}
-
-/**
- * Initialize the citations section (hidden by default)
- */
-function initializeCitationsSection() {
-    const citationsSection = document.getElementById('citationsSection');
-    if (citationsSection) {
-        citationsSection.style.display = 'none';
-    }
-}
-
-/**
- * Reset form to default values
- */
-function resetToDefaults() {
-    DebugLogger.group('Reset to Defaults');
-    DebugLogger.log('UI', 'Resetting form to default values');
-
-    clearMessages();
-
-    // Duration
-    const minDuration = document.getElementById('minDuration');
-    const maxDuration = document.getElementById('maxDuration');
-    if (minDuration) minDuration.value = 30;
-    if (maxDuration) maxDuration.value = 600;
-
-    // Date range
-    const daysBack = document.getElementById('daysBack');
-    if (daysBack) daysBack.value = 7;
-
-    // Categories - reset to "All"
-    const allCategoriesCheckbox = document.getElementById('allCategories');
-    if (allCategoriesCheckbox) {
-        allCategoriesCheckbox.checked = true;
-    }
-    const categoryCheckboxes = document.querySelectorAll('input[name="categories"]');
-    categoryCheckboxes.forEach(checkbox => {
-        checkbox.checked = false;
-        checkbox.disabled = true;
-    });
-
-    // Sources - reset to "All"
-    const allSourcesCheckbox = document.getElementById('allSources');
-    if (allSourcesCheckbox) {
-        allSourcesCheckbox.checked = true;
-    }
-    const sourceCheckboxes = document.querySelectorAll('input[name="sources"]');
-    sourceCheckboxes.forEach(checkbox => {
-        checkbox.checked = false;
-        checkbox.disabled = true;
-    });
-
-    // Max items
-    const maxItems = document.getElementById('maxItems');
-    if (maxItems) maxItems.value = 50;
-
-    // Clear results
-    DebugLogger.state('AppState.searchResults', AppState.searchResults, []);
-    AppState.searchResults = [];
-
-    DebugLogger.state('AppState.selectedItems', `Set(${AppState.selectedItems.size})`, 'Set(0)');
-    AppState.selectedItems.clear();
-
-    const resultsSection = document.getElementById('resultsSection');
-    if (resultsSection) {
-        resultsSection.style.display = 'none';
-    }
-
-    // Clear citations
-    DebugLogger.state('AppState.citations', AppState.citations, []);
-    AppState.citations = [];
-
-    DebugLogger.state('AppState.downloadedItems', `Map(${AppState.downloadedItems.size})`, 'Map(0)');
-    AppState.downloadedItems.clear();
-
-    const citationsSection = document.getElementById('citationsSection');
-    if (citationsSection) {
-        citationsSection.style.display = 'none';
-    }
-
-    DebugLogger.log('UI', 'Form reset complete');
-    DebugLogger.groupEnd();
-
-    showSuccess('Form reset to default values');
-}
-
-// =============================================================================
-// LEGACY SUPPORT - Config Generator Functions
-// =============================================================================
-
-/**
- * Generate configuration file (legacy support for config generator mode)
- *
- * This function is maintained for backward compatibility with the original
- * configuration generator functionality.
- */
-function generateConfig() {
-    clearMessages();
-
-    // Collect form values
-    const config = {
-        filters: {
-            duration: {
-                min_seconds: parseInt(document.getElementById('minDuration')?.value) || 30,
-                max_seconds: parseInt(document.getElementById('maxDuration')?.value) || 600
-            },
-            date_range: {
-                days_back: parseInt(document.getElementById('daysBack')?.value) || 7
-            },
-            categories: getSelectedCategories(),
-            sources: getSelectedSources()
-        },
-        collection: {
-            max_items: parseInt(document.getElementById('maxItems')?.value) || 50
-        },
-        output: {
-            citation_formats: getSelectedFormats()
-        }
-    };
-
-    // Validate configuration
-    const validationErrors = validateConfigLegacy(config);
-    if (validationErrors.length > 0) {
-        validationErrors.forEach(error => showError(error));
-        return;
-    }
-
-    // Download configuration file
-    downloadJSON(config, 'config.json');
-    showSuccess('Configuration generated successfully!');
-}
-
-/**
- * Get selected citation formats (legacy support)
- *
- * @returns {Array<string>} Array of selected format values
- */
-function getSelectedFormats() {
-    const formatCheckboxes = document.querySelectorAll('input[name="formats"]:checked');
-    return Array.from(formatCheckboxes).map(cb => cb.value);
-}
-
-/**
- * Validate configuration object (legacy support)
- *
- * @param {Object} config - Configuration object to validate
- * @returns {Array} Array of error messages
- */
-function validateConfigLegacy(config) {
-    const errors = [];
-
-    // Validate duration
-    const minDuration = config.filters.duration.min_seconds;
-    const maxDuration = config.filters.duration.max_seconds;
-
-    if (isNaN(minDuration) || minDuration < 0) {
-        errors.push('Minimum duration must be a positive number');
-    }
-
-    if (isNaN(maxDuration) || maxDuration < 0) {
-        errors.push('Maximum duration must be a positive number');
-    }
-
-    if (minDuration >= maxDuration) {
-        errors.push('Minimum duration must be less than maximum duration');
-    }
-
-    if (maxDuration > 3600) {
-        errors.push('Maximum duration cannot exceed 3600 seconds (1 hour)');
-    }
-
-    // Validate days back
-    const daysBack = config.filters.date_range.days_back;
-    if (isNaN(daysBack) || daysBack < 1) {
-        errors.push('Days back must be at least 1');
-    }
-
-    if (daysBack > 365) {
-        errors.push('Days back cannot exceed 365');
-    }
-
-    // Validate categories
-    if (!config.filters.categories || config.filters.categories.length === 0) {
-        errors.push('At least one category must be selected');
-    }
-
-    // Validate sources
-    if (!config.filters.sources || config.filters.sources.length === 0) {
-        errors.push('At least one source must be selected');
-    }
-
-    // Validate max items
-    const maxItems = config.collection.max_items;
-    if (isNaN(maxItems) || maxItems < 1) {
-        errors.push('Maximum items must be at least 1');
-    }
-
-    if (maxItems > 500) {
-        errors.push('Maximum items cannot exceed 500');
-    }
-
-    return errors;
-}
-
-/**
- * Download data as JSON file (legacy support)
- *
- * @param {Object} data - Data to download
- * @param {string} filename - Name of the file
- */
-function downloadJSON(data, filename) {
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Clean up the URL object
-    URL.revokeObjectURL(url);
-}
-
-// =============================================================================
-// EXPORT FOR TESTING (if needed)
-// =============================================================================
-
-// Expose key functions for testing purposes
-if (typeof window !== 'undefined') {
-    window.Matushka = {
-        // Configuration
-        WORKER_URL,
-        API_CONFIG,
-        DEBUG,
-
-        // State
-        AppState,
-
-        // Debug utilities
-        DebugLogger,
-        initializeDebugPanel,
-        withErrorBoundary,
-
-        // Utilities
-        formatDuration,
-        formatDate,
-        sanitizeFilename,
-        generateCitationId,
-        showError,
-        showSuccess,
-
-        // API functions
-        discoverContent,
-        scrapeMetadata,
-        getProxyUrl,
-
-        // Search and results
-        executeSearch,
-        displayResults,
-
-        // Downloads
-        downloadSelectedItems,
-
-        // Citations
-        formatChicagoCitation,
-        formatMLACitation,
-        formatAPACitation,
-        formatBibTeXCitation,
-        formatJSONCitation,
-        formatAllCitations,
-        copyCitationsToClipboard,
-        downloadCitationsAsFile,
-
-        // Form controls
-        resetToDefaults,
-        collectFilters
-    };
-
-    // Log that the application is available
-    DebugLogger.log('INIT', 'Matushka object exposed on window');
-}
+// ============================================================================
+// EXPORTS (for testing/debugging)
+// ============================================================================
+
+window.Matushka = {
+  CONFIG,
+  i18n,
+  GamificationManager,
+  CommandPalette,
+  OnboardingManager,
+  debug,
+  searchContent,
+  downloadSelected,
+  exportCitations,
+  resetFilters,
+  celebrateSuccess
+};
