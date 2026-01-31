@@ -1,13 +1,12 @@
 // ============================================================================
-// MATUSHKA PREMIUM - Russian Language Teaching Materials Collector
+// MATUSHKA - Russian Language Teaching Materials Collector
+// Professional Edition for Academic Researchers
 // ============================================================================
 
 const WORKER_URL = 'https://matushka-api.arwrubel.workers.dev';
 
 const CONFIG = {
   debug: true,
-  enableCursor: true,
-  enableSounds: true,
   enableAnimations: true
 };
 
@@ -59,26 +58,32 @@ const TRANSLATIONS = {
     startDate: "Start Date",
     endDate: "End Date",
 
-    // Categories
+    // Categories - News Categories
     categories: "Categories",
     allCategories: "All Categories",
-    news: "News",
-    entertainment: "Entertainment",
-    education: "Education",
-    music: "Music",
-    sports: "Sports",
-    culture: "Culture",
-    politics: "Politics",
-    science: "Science",
-    technology: "Technology",
-    cooking: "Cooking",
-    travel: "Travel",
-    children: "Children's Content",
+    catPolitics: "Politics",
+    catEconomy: "Economy",
+    catSociety: "Society",
+    catWorld: "World",
+    catSports: "Sports",
+    catCulture: "Culture",
+    catScience: "Science",
+    catTechnology: "Technology",
 
-    // Sources
+    // Sources - Real Russian News Sources
     sources: "Sources",
     allSources: "All Sources",
     selectSources: "Select Sources",
+    src1tv: "Channel One (Perviy Kanal)",
+    srcVesti: "Vesti (Russia 24)",
+    srcTass: "TASS",
+    srcRia: "RIA Novosti",
+    srcRt: "RT (Russia Today)",
+    srcRbc: "RBC",
+    srcKommersant: "Kommersant",
+    srcLenta: "Lenta",
+    srcGazeta: "Gazeta",
+    srcIzvestia: "Izvestia",
 
     // Results
     maxItems: "Maximum Items",
@@ -116,28 +121,6 @@ const TRANSLATIONS = {
     retry: "Retry",
     cancel: "Cancel",
 
-    // Gamification
-    points: "Points",
-    level: "Level",
-    streak: "Day Streak",
-    achievements: "Achievements",
-    progress: "Progress",
-    nextLevel: "Next Level",
-    pointsToNext: "{points} points to next level",
-
-    // Achievement Messages
-    achievementUnlocked: "Achievement Unlocked!",
-    newLevel: "Level Up!",
-    streakContinued: "Streak Continued!",
-
-    // Onboarding
-    welcomeTitle: "Welcome to Matushka",
-    welcomeMessage: "Let's take a quick tour of the features",
-    skipTour: "Skip Tour",
-    nextStep: "Next",
-    prevStep: "Previous",
-    finishTour: "Finish",
-
     // Command Palette
     commandPalette: "Command Palette",
     typeCommand: "Type a command...",
@@ -149,7 +132,6 @@ const TRANSLATIONS = {
     lightTheme: "Light",
     darkTheme: "Dark",
     autoTheme: "Auto",
-    soundEffects: "Sound Effects",
     animations: "Animations",
     notifications: "Notifications",
     clearHistory: "Clear History",
@@ -187,11 +169,6 @@ const TRANSLATIONS = {
     appTitle: "Matushka",
     appSubtitle: "Russian Language Teaching Materials Collector",
 
-    // Stats
-    streakLabel: "Day Streak",
-    pointsLabel: "Points",
-    levelLabel: "Level",
-
     // Configuration
     configTitle: "Search Configuration",
     durationTitle: "Duration",
@@ -205,21 +182,9 @@ const TRANSLATIONS = {
 
     // Categories
     categoriesTitle: "Categories",
-    catNews: "News",
-    catDocumentary: "Documentary",
-    catEntertainment: "Entertainment",
-    catSports: "Sports",
-    catCulture: "Culture",
-    catEducation: "Education",
 
     // Sources
     sourcesTitle: "Sources",
-    srcChannel1: "Channel One",
-    srcRussia1: "Russia 1",
-    srcNTV: "NTV",
-    srcCulture: "Culture",
-    srcRT: "RT",
-    srcArchive: "Archive",
 
     // Max Items
     maxItemsTitle: "Results Limit",
@@ -272,9 +237,6 @@ const TRANSLATIONS = {
     cmdNavigate: "Navigate",
     cmdSelect: "Select",
     cmdClose: "Close",
-
-    // Onboarding
-    onboardingTitle: "Welcome to Matushka",
 
     // Footer
     footerAboutTitle: "About",
@@ -336,26 +298,32 @@ const TRANSLATIONS = {
     startDate: "Начальная дата",
     endDate: "Конечная дата",
 
-    // Categories
+    // Categories - News Categories
     categories: "Категории",
     allCategories: "Все категории",
-    news: "Новости",
-    entertainment: "Развлечения",
-    education: "Образование",
-    music: "Музыка",
-    sports: "Спорт",
-    culture: "Культура",
-    politics: "Политика",
-    science: "Наука",
-    technology: "Технологии",
-    cooking: "Кулинария",
-    travel: "Путешествия",
-    children: "Детский контент",
+    catPolitics: "Политика",
+    catEconomy: "Экономика",
+    catSociety: "Общество",
+    catWorld: "В мире",
+    catSports: "Спорт",
+    catCulture: "Культура",
+    catScience: "Наука",
+    catTechnology: "Технологии",
 
-    // Sources
+    // Sources - Real Russian News Sources
     sources: "Источники",
     allSources: "Все источники",
     selectSources: "Выберите источники",
+    src1tv: "Первый канал",
+    srcVesti: "Вести (Россия 24)",
+    srcTass: "ТАСС",
+    srcRia: "РИА Новости",
+    srcRt: "RT (Russia Today)",
+    srcRbc: "РБК",
+    srcKommersant: "Коммерсантъ",
+    srcLenta: "Лента",
+    srcGazeta: "Газета",
+    srcIzvestia: "Известия",
 
     // Results
     maxItems: "Максимум материалов",
@@ -393,28 +361,6 @@ const TRANSLATIONS = {
     retry: "Повторить",
     cancel: "Отмена",
 
-    // Gamification
-    points: "Очки",
-    level: "Уровень",
-    streak: "Дней подряд",
-    achievements: "Достижения",
-    progress: "Прогресс",
-    nextLevel: "Следующий уровень",
-    pointsToNext: "{points} очков до следующего уровня",
-
-    // Achievement Messages
-    achievementUnlocked: "Достижение разблокировано!",
-    newLevel: "Новый уровень!",
-    streakContinued: "Серия продолжается!",
-
-    // Onboarding
-    welcomeTitle: "Добро пожаловать в Матушку",
-    welcomeMessage: "Давайте сделаем краткий обзор функций",
-    skipTour: "Пропустить",
-    nextStep: "Далее",
-    prevStep: "Назад",
-    finishTour: "Завершить",
-
     // Command Palette
     commandPalette: "Палитра команд",
     typeCommand: "Введите команду...",
@@ -426,7 +372,6 @@ const TRANSLATIONS = {
     lightTheme: "Светлая",
     darkTheme: "Тёмная",
     autoTheme: "Авто",
-    soundEffects: "Звуковые эффекты",
     animations: "Анимации",
     notifications: "Уведомления",
     clearHistory: "Очистить историю",
@@ -464,11 +409,6 @@ const TRANSLATIONS = {
     appTitle: "Матушка",
     appSubtitle: "Материалы для преподавания русского языка",
 
-    // Stats
-    streakLabel: "Дней подряд",
-    pointsLabel: "Очки",
-    levelLabel: "Уровень",
-
     // Configuration
     configTitle: "Настройки поиска",
     durationTitle: "Длительность",
@@ -482,21 +422,9 @@ const TRANSLATIONS = {
 
     // Categories
     categoriesTitle: "Категории",
-    catNews: "Новости",
-    catDocumentary: "Документальное",
-    catEntertainment: "Развлечения",
-    catSports: "Спорт",
-    catCulture: "Культура",
-    catEducation: "Образование",
 
     // Sources
     sourcesTitle: "Источники",
-    srcChannel1: "Первый канал",
-    srcRussia1: "Россия 1",
-    srcNTV: "НТВ",
-    srcCulture: "Культура",
-    srcRT: "RT",
-    srcArchive: "Архив",
 
     // Max Items
     maxItemsTitle: "Лимит результатов",
@@ -550,9 +478,6 @@ const TRANSLATIONS = {
     cmdSelect: "Выбрать",
     cmdClose: "Закрыть",
 
-    // Onboarding
-    onboardingTitle: "Добро пожаловать в Матушку",
-
     // Footer
     footerAboutTitle: "О проекте",
     footerAboutText: "Матушка помогает преподавателям находить аутентичный русскоязычный контент для занятий.",
@@ -605,7 +530,7 @@ const i18n = {
     const translations = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
     let text = translations[key] || TRANSLATIONS.en[key] || key;
 
-    // Replace parameters like {count}, {points}, {n}
+    // Replace parameters like {count}, {n}
     Object.keys(params).forEach(param => {
       text = text.replace(new RegExp(`\\{${param}\\}`, 'g'), params[param]);
     });
@@ -633,7 +558,6 @@ const i18n = {
   },
 
   updateLanguageSelector() {
-    // Update language toggle buttons (.lang-btn with .active class)
     const langButtons = document.querySelectorAll('.lang-btn');
     langButtons.forEach(btn => {
       if (btn.dataset.lang === this.currentLang) {
@@ -651,577 +575,95 @@ const i18n = {
 };
 
 // ============================================================================
-// GAMIFICATION MANAGER
+// ENHANCED DEBUG LOGGER
 // ============================================================================
 
-const GamificationManager = {
-  state: {
-    points: 0,
-    streak: 0,
-    lastActiveDate: null,
-    achievements: [],
-    level: 1,
-    totalSearches: 0,
-    totalDownloads: 0,
-    favorites: []
+const debug = {
+  logs: [],
+  maxLogs: 1000,
+
+  formatTime() {
+    const now = new Date();
+    return now.toLocaleTimeString('en-US', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
   },
 
-  ACHIEVEMENTS: {
-    FIRST_SEARCH: {
-      id: 'first_search',
-      title: 'First Steps',
-      titleRu: 'Первые шаги',
-      description: 'Complete your first search',
-      descriptionRu: 'Выполните первый поиск',
-      icon: '🔍',
-      points: 10
-    },
-    TEN_SEARCHES: {
-      id: 'ten_searches',
-      title: 'Explorer',
-      titleRu: 'Исследователь',
-      description: 'Complete 10 searches',
-      descriptionRu: 'Выполните 10 поисков',
-      icon: '🗺️',
-      points: 50
-    },
-    FIFTY_SEARCHES: {
-      id: 'fifty_searches',
-      title: 'Researcher',
-      titleRu: 'Исследователь',
-      description: 'Complete 50 searches',
-      descriptionRu: 'Выполните 50 поисков',
-      icon: '📚',
-      points: 150
-    },
-    HUNDRED_SEARCHES: {
-      id: 'hundred_searches',
-      title: 'Scholar',
-      titleRu: 'Учёный',
-      description: 'Complete 100 searches',
-      descriptionRu: 'Выполните 100 поисков',
-      icon: '🎓',
-      points: 300
-    },
-    FIRST_DOWNLOAD: {
-      id: 'first_download',
-      title: 'Collector',
-      titleRu: 'Коллекционер',
-      description: 'Download your first item',
-      descriptionRu: 'Скачайте первый материал',
-      icon: '📥',
-      points: 15
-    },
-    TEN_DOWNLOADS: {
-      id: 'ten_downloads',
-      title: 'Archivist',
-      titleRu: 'Архивариус',
-      description: 'Download 10 items',
-      descriptionRu: 'Скачайте 10 материалов',
-      icon: '🗄️',
-      points: 75
-    },
-    STREAK_3: {
-      id: 'streak_3',
-      title: '3-Day Streak',
-      titleRu: '3 дня подряд',
-      description: 'Use Matushka 3 days in a row',
-      descriptionRu: 'Используйте Матушку 3 дня подряд',
-      icon: '🔥',
-      points: 30
-    },
-    STREAK_7: {
-      id: 'streak_7',
-      title: 'Weekly Warrior',
-      titleRu: 'Недельный боец',
-      description: 'Use Matushka 7 days in a row',
-      descriptionRu: 'Используйте Матушку 7 дней подряд',
-      icon: '⚔️',
-      points: 100
-    },
-    STREAK_30: {
-      id: 'streak_30',
-      title: 'Monthly Master',
-      titleRu: 'Месячный мастер',
-      description: 'Use Matushka 30 days in a row',
-      descriptionRu: 'Используйте Матушку 30 дней подряд',
-      icon: '👑',
-      points: 500
-    },
-    FIRST_FAVORITE: {
-      id: 'first_favorite',
-      title: 'Bookmark Beginner',
-      titleRu: 'Начинающий собиратель',
-      description: 'Add your first favorite',
-      descriptionRu: 'Добавьте первое избранное',
-      icon: '⭐',
-      points: 10
-    },
-    NIGHT_OWL: {
-      id: 'night_owl',
-      title: 'Night Owl',
-      titleRu: 'Ночная сова',
-      description: 'Search after midnight',
-      descriptionRu: 'Выполните поиск после полуночи',
-      icon: '🦉',
-      points: 25
-    },
-    EARLY_BIRD: {
-      id: 'early_bird',
-      title: 'Early Bird',
-      titleRu: 'Ранняя пташка',
-      description: 'Search before 6 AM',
-      descriptionRu: 'Выполните поиск до 6 утра',
-      icon: '🐦',
-      points: 25
-    },
-    POLYGLOT: {
-      id: 'polyglot',
-      title: 'Polyglot',
-      titleRu: 'Полиглот',
-      description: 'Switch languages 5 times',
-      descriptionRu: 'Переключите язык 5 раз',
-      icon: '🌍',
-      points: 20
-    }
-  },
-
-  LEVEL_THRESHOLDS: [0, 100, 250, 500, 1000, 2000, 3500, 5500, 8000, 12000, 20000],
-
-  init() {
-    this.loadState();
-    this.checkStreak();
-    this.updateUI();
-    debug.log('Gamification', 'Initialized', this.state);
-  },
-
-  loadState() {
-    const saved = localStorage.getItem('matushka_gamification');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        this.state = { ...this.state, ...parsed };
-      } catch (e) {
-        debug.error('Gamification', 'Failed to load state', e);
-      }
-    }
-  },
-
-  saveState() {
-    try {
-      localStorage.setItem('matushka_gamification', JSON.stringify(this.state));
-    } catch (e) {
-      debug.error('Gamification', 'Failed to save state', e);
-    }
-  },
-
-  checkStreak() {
-    const today = new Date().toDateString();
-    const lastActive = this.state.lastActiveDate;
-
-    if (!lastActive) {
-      this.state.streak = 1;
-    } else if (lastActive === today) {
-      // Same day, no change
-    } else {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      if (lastActive === yesterday.toDateString()) {
-        this.state.streak++;
-        this.showStreakAnimation();
-
-        // Check streak achievements
-        if (this.state.streak >= 3) this.unlockAchievement('STREAK_3');
-        if (this.state.streak >= 7) this.unlockAchievement('STREAK_7');
-        if (this.state.streak >= 30) this.unlockAchievement('STREAK_30');
-      } else {
-        this.state.streak = 1;
-      }
-    }
-
-    this.state.lastActiveDate = today;
-    this.saveState();
-  },
-
-  addPoints(amount) {
-    const oldLevel = this.state.level;
-    this.state.points += amount;
-
-    // Calculate new level
-    let newLevel = 1;
-    for (let i = this.LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-      if (this.state.points >= this.LEVEL_THRESHOLDS[i]) {
-        newLevel = i + 1;
-        break;
-      }
-    }
-
-    if (newLevel > oldLevel) {
-      this.state.level = newLevel;
-      this.showLevelUpAnimation(newLevel);
-    }
-
-    this.showPointsAnimation(amount);
-    this.saveState();
-    this.updateUI();
-  },
-
-  recordSearch() {
-    this.state.totalSearches++;
-    this.addPoints(5);
-
-    // Check time-based achievements
-    const hour = new Date().getHours();
-    if (hour >= 0 && hour < 5) this.unlockAchievement('NIGHT_OWL');
-    if (hour >= 5 && hour < 6) this.unlockAchievement('EARLY_BIRD');
-
-    // Check search count achievements
-    if (this.state.totalSearches >= 1) this.unlockAchievement('FIRST_SEARCH');
-    if (this.state.totalSearches >= 10) this.unlockAchievement('TEN_SEARCHES');
-    if (this.state.totalSearches >= 50) this.unlockAchievement('FIFTY_SEARCHES');
-    if (this.state.totalSearches >= 100) this.unlockAchievement('HUNDRED_SEARCHES');
-
-    this.saveState();
-    debug.log('Gamification', `Search recorded. Total: ${this.state.totalSearches}`);
-  },
-
-  recordDownload() {
-    this.state.totalDownloads++;
-    this.addPoints(10);
-
-    if (this.state.totalDownloads >= 1) this.unlockAchievement('FIRST_DOWNLOAD');
-    if (this.state.totalDownloads >= 10) this.unlockAchievement('TEN_DOWNLOADS');
-
-    this.saveState();
-    debug.log('Gamification', `Download recorded. Total: ${this.state.totalDownloads}`);
-  },
-
-  addFavorite(itemId) {
-    if (!this.state.favorites.includes(itemId)) {
-      this.state.favorites.push(itemId);
-      this.addPoints(3);
-
-      if (this.state.favorites.length === 1) {
-        this.unlockAchievement('FIRST_FAVORITE');
-      }
-
-      this.saveState();
-    }
-  },
-
-  removeFavorite(itemId) {
-    const index = this.state.favorites.indexOf(itemId);
-    if (index > -1) {
-      this.state.favorites.splice(index, 1);
-      this.saveState();
-    }
-  },
-
-  unlockAchievement(key) {
-    const achievement = this.ACHIEVEMENTS[key];
-    if (!achievement) return;
-
-    if (this.state.achievements.includes(achievement.id)) {
-      return; // Already unlocked
-    }
-
-    this.state.achievements.push(achievement.id);
-    this.addPoints(achievement.points);
-    this.showAchievementToast(achievement);
-    celebrateSuccess();
-
-    this.saveState();
-    debug.log('Gamification', `Achievement unlocked: ${achievement.title}`);
-  },
-
-  showPointsAnimation(amount) {
-    if (!CONFIG.enableAnimations) return;
-
-    const popup = document.createElement('div');
-    popup.className = 'points-popup';
-    popup.textContent = `+${amount}`;
-    popup.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 48px;
-      font-weight: bold;
-      color: #ffd700;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-      pointer-events: none;
-      z-index: 10000;
-      animation: pointsFloat 1.5s ease-out forwards;
-    `;
-
-    document.body.appendChild(popup);
-    setTimeout(() => popup.remove(), 1500);
-  },
-
-  showStreakAnimation() {
-    if (!CONFIG.enableAnimations) return;
-
-    const popup = document.createElement('div');
-    popup.className = 'streak-popup';
-    popup.innerHTML = `🔥 ${this.state.streak} ${i18n.t('streak')}!`;
-    popup.style.cssText = `
-      position: fixed;
-      top: 20%;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 32px;
-      font-weight: bold;
-      color: #ff6b35;
-      background: linear-gradient(135deg, #fff5f0, #ffe0d0);
-      padding: 20px 40px;
-      border-radius: 20px;
-      box-shadow: 0 10px 40px rgba(255,107,53,0.3);
-      pointer-events: none;
-      z-index: 10000;
-      animation: streakBounce 2s ease-out forwards;
-    `;
-
-    document.body.appendChild(popup);
-    setTimeout(() => popup.remove(), 2000);
-  },
-
-  showLevelUpAnimation(level) {
-    if (!CONFIG.enableAnimations) return;
-
-    const overlay = document.createElement('div');
-    overlay.className = 'level-up-overlay';
-    overlay.innerHTML = `
-      <div class="level-up-content">
-        <div class="level-up-icon">🎉</div>
-        <div class="level-up-text">${i18n.t('newLevel')}</div>
-        <div class="level-up-number">${level}</div>
-      </div>
-    `;
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10001;
-      animation: fadeIn 0.3s ease-out;
-    `;
-
-    const content = overlay.querySelector('.level-up-content');
-    content.style.cssText = `
-      text-align: center;
-      color: white;
-      animation: levelUpScale 0.5s ease-out;
-    `;
-
-    document.body.appendChild(overlay);
-    celebrateSuccess();
-
-    setTimeout(() => {
-      overlay.style.animation = 'fadeOut 0.3s ease-out forwards';
-      setTimeout(() => overlay.remove(), 300);
-    }, 2500);
-  },
-
-  showAchievementToast(achievement) {
-    const isRussian = i18n.currentLang === 'ru';
-    const title = isRussian ? achievement.titleRu : achievement.title;
-    const description = isRussian ? achievement.descriptionRu : achievement.description;
-
-    const toast = document.createElement('div');
-    toast.className = 'achievement-toast';
-    toast.innerHTML = `
-      <div class="achievement-icon">${achievement.icon}</div>
-      <div class="achievement-info">
-        <div class="achievement-label">${i18n.t('achievementUnlocked')}</div>
-        <div class="achievement-title">${title}</div>
-        <div class="achievement-desc">${description}</div>
-        <div class="achievement-points">+${achievement.points} ${i18n.t('points')}</div>
-      </div>
-    `;
-    toast.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      padding: 20px;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      box-shadow: 0 10px 40px rgba(102,126,234,0.4);
-      z-index: 10000;
-      animation: slideInRight 0.5s ease-out;
-      max-width: 350px;
-    `;
-
-    if (CONFIG.enableSounds) {
-      playSuccessSound();
-    }
-
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.style.animation = 'slideOutRight 0.5s ease-out forwards';
-      setTimeout(() => toast.remove(), 500);
-    }, 4000);
-  },
-
-  updateUI() {
-    // Update stats bar
-    const pointsEl = document.getElementById('pointsCount');
-    const levelEl = document.getElementById('levelCount');
-    const streakEl = document.getElementById('streakCount');
-    const progressEl = document.getElementById('levelProgressFill');
-
-    if (pointsEl) pointsEl.textContent = this.state.points;
-    if (levelEl) levelEl.textContent = this.state.level;
-    if (streakEl) streakEl.textContent = this.state.streak;
-
-    if (progressEl) {
-      const currentThreshold = this.LEVEL_THRESHOLDS[this.state.level - 1] || 0;
-      const nextThreshold = this.LEVEL_THRESHOLDS[this.state.level] || this.state.points;
-      const progress = ((this.state.points - currentThreshold) / (nextThreshold - currentThreshold)) * 100;
-      progressEl.style.width = `${Math.min(progress, 100)}%`;
-    }
-  },
-
-  getStats() {
+  createEntry(level, category, message, data) {
     return {
-      points: this.state.points,
-      level: this.state.level,
-      streak: this.state.streak,
-      totalSearches: this.state.totalSearches,
-      totalDownloads: this.state.totalDownloads,
-      achievementsUnlocked: this.state.achievements.length,
-      totalAchievements: Object.keys(this.ACHIEVEMENTS).length
+      timestamp: this.formatTime(),
+      level,
+      category,
+      message,
+      data: data ? JSON.stringify(data, null, 2) : null
     };
+  },
+
+  output(entry) {
+    if (!CONFIG.debug) return;
+
+    const style = {
+      log: 'color: #4a9eff',
+      info: 'color: #10b981',
+      warn: 'color: #f59e0b',
+      error: 'color: #ef4444'
+    };
+
+    const prefix = `[${entry.timestamp}] [${entry.category}]`;
+
+    if (entry.data) {
+      console[entry.level](`%c${prefix} ${entry.message}`, style[entry.level], '\n', entry.data);
+    } else {
+      console[entry.level](`%c${prefix} ${entry.message}`, style[entry.level]);
+    }
+
+    this.logs.push(entry);
+    if (this.logs.length > this.maxLogs) {
+      this.logs.shift();
+    }
+  },
+
+  log(category, message, data) {
+    this.output(this.createEntry('log', category, message, data));
+  },
+
+  info(category, message, data) {
+    this.output(this.createEntry('info', category, message, data));
+  },
+
+  warn(category, message, data) {
+    this.output(this.createEntry('warn', category, message, data));
+  },
+
+  error(category, message, data) {
+    this.output(this.createEntry('error', category, message, data));
+  },
+
+  group(label) {
+    if (CONFIG.debug) console.group(label);
+  },
+
+  groupEnd() {
+    if (CONFIG.debug) console.groupEnd();
+  },
+
+  table(data) {
+    if (CONFIG.debug) console.table(data);
+  },
+
+  exportLogs() {
+    const blob = new Blob([JSON.stringify(this.logs, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `matushka-logs-${new Date().toISOString()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  clearLogs() {
+    this.logs = [];
+    if (CONFIG.debug) console.clear();
   }
 };
-
-// ============================================================================
-// CELEBRATION EFFECTS
-// ============================================================================
-
-function celebrateSuccess() {
-  if (!CONFIG.enableAnimations) return;
-
-  createConfetti();
-  if (CONFIG.enableSounds) {
-    playSuccessSound();
-  }
-}
-
-function createConfetti() {
-  const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dfe6e9', '#fd79a8', '#a29bfe'];
-  const confettiCount = 150;
-
-  const container = document.createElement('div');
-  container.className = 'confetti-container';
-  container.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 9999;
-    overflow: hidden;
-  `;
-
-  for (let i = 0; i < confettiCount; i++) {
-    const confetti = document.createElement('div');
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const size = Math.random() * 10 + 5;
-    const left = Math.random() * 100;
-    const animationDuration = Math.random() * 3 + 2;
-    const animationDelay = Math.random() * 0.5;
-
-    confetti.style.cssText = `
-      position: absolute;
-      width: ${size}px;
-      height: ${size}px;
-      background: ${color};
-      left: ${left}%;
-      top: -20px;
-      opacity: ${Math.random() * 0.5 + 0.5};
-      transform: rotate(${Math.random() * 360}deg);
-      animation: confettiFall ${animationDuration}s ease-out ${animationDelay}s forwards;
-    `;
-
-    if (Math.random() > 0.5) {
-      confetti.style.borderRadius = '50%';
-    }
-
-    container.appendChild(confetti);
-  }
-
-  document.body.appendChild(container);
-  setTimeout(() => container.remove(), 5000);
-}
-
-function playSuccessSound() {
-  if (!CONFIG.enableSounds) return;
-
-  try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-    // Create a pleasant chime sound
-    const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-
-    frequencies.forEach((freq, index) => {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.frequency.value = freq;
-      oscillator.type = 'sine';
-
-      const startTime = audioContext.currentTime + (index * 0.1);
-      const endTime = startTime + 0.5;
-
-      gainNode.gain.setValueAtTime(0, startTime);
-      gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, endTime);
-
-      oscillator.start(startTime);
-      oscillator.stop(endTime);
-    });
-  } catch (e) {
-    debug.warn('Audio', 'Could not play sound', e);
-  }
-}
-
-function playClickSound() {
-  if (!CONFIG.enableSounds) return;
-
-  try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = 800;
-    oscillator.type = 'sine';
-
-    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.1);
-  } catch (e) {
-    // Silently fail
-  }
-}
 
 // ============================================================================
 // MICRO-INTERACTIONS
@@ -1258,24 +700,6 @@ function createRipple(event) {
   setTimeout(() => ripple.remove(), 600);
 }
 
-function initMagneticButtons() {
-  if (!CONFIG.enableAnimations) return;
-
-  document.querySelectorAll('.magnetic-btn, .btn-primary, .btn-secondary').forEach(button => {
-    button.addEventListener('mousemove', (e) => {
-      const rect = button.getBoundingClientRect();
-      const x = e.clientX - rect.left - rect.width / 2;
-      const y = e.clientY - rect.top - rect.height / 2;
-
-      button.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
-    });
-
-    button.addEventListener('mouseleave', () => {
-      button.style.transform = 'translate(0, 0)';
-    });
-  });
-}
-
 function initCardTilt() {
   if (!CONFIG.enableAnimations) return;
 
@@ -1304,7 +728,6 @@ function initButtonFeedback() {
   document.querySelectorAll('button, .btn').forEach(button => {
     button.addEventListener('click', (e) => {
       createRipple(e);
-      playClickSound();
     });
 
     button.addEventListener('mousedown', () => {
@@ -1318,97 +741,6 @@ function initButtonFeedback() {
         button.style.transform = 'scale(1)';
       }
     });
-  });
-}
-
-// ============================================================================
-// CUSTOM CURSOR
-// ============================================================================
-
-function initCustomCursor() {
-  if (!CONFIG.enableCursor) return;
-
-  // Disable on touch devices
-  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-    return;
-  }
-
-  const cursorRing = document.createElement('div');
-  cursorRing.className = 'cursor-ring';
-  cursorRing.style.cssText = `
-    position: fixed;
-    width: 40px;
-    height: 40px;
-    border: 2px solid rgba(102, 126, 234, 0.5);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 99999;
-    transition: transform 0.15s ease-out, width 0.2s, height 0.2s, border-color 0.2s;
-    transform: translate(-50%, -50%);
-  `;
-
-  const cursorDot = document.createElement('div');
-  cursorDot.className = 'cursor-dot';
-  cursorDot.style.cssText = `
-    position: fixed;
-    width: 8px;
-    height: 8px;
-    background: rgba(102, 126, 234, 0.8);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 99999;
-    transform: translate(-50%, -50%);
-  `;
-
-  document.body.appendChild(cursorRing);
-  document.body.appendChild(cursorDot);
-
-  let mouseX = 0, mouseY = 0;
-  let ringX = 0, ringY = 0;
-
-  document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-
-    cursorDot.style.left = mouseX + 'px';
-    cursorDot.style.top = mouseY + 'px';
-  });
-
-  // Smooth ring following
-  function animateRing() {
-    ringX += (mouseX - ringX) * 0.15;
-    ringY += (mouseY - ringY) * 0.15;
-
-    cursorRing.style.left = ringX + 'px';
-    cursorRing.style.top = ringY + 'px';
-
-    requestAnimationFrame(animateRing);
-  }
-  animateRing();
-
-  // Hover states
-  const hoverElements = 'a, button, .btn, input, select, textarea, .clickable, .result-card';
-
-  document.querySelectorAll(hoverElements).forEach(el => {
-    el.addEventListener('mouseenter', () => {
-      cursorRing.style.width = '60px';
-      cursorRing.style.height = '60px';
-      cursorRing.style.borderColor = 'rgba(102, 126, 234, 0.8)';
-      cursorDot.style.transform = 'translate(-50%, -50%) scale(1.5)';
-    });
-
-    el.addEventListener('mouseleave', () => {
-      cursorRing.style.width = '40px';
-      cursorRing.style.height = '40px';
-      cursorRing.style.borderColor = 'rgba(102, 126, 234, 0.5)';
-      cursorDot.style.transform = 'translate(-50%, -50%) scale(1)';
-    });
-  });
-
-  // Hide default cursor
-  document.body.style.cursor = 'none';
-  document.querySelectorAll('*').forEach(el => {
-    el.style.cursor = 'none';
   });
 }
 
@@ -1436,21 +768,6 @@ function initScrollAnimations() {
   document.querySelectorAll('[data-animate]').forEach(el => {
     el.classList.add('animate-hidden');
     observer.observe(el);
-  });
-}
-
-function initParallax() {
-  if (!CONFIG.enableAnimations) return;
-
-  const parallaxElements = document.querySelectorAll('[data-parallax]');
-
-  window.addEventListener('scroll', () => {
-    const scrollY = window.scrollY;
-
-    parallaxElements.forEach(el => {
-      const speed = parseFloat(el.dataset.parallax) || 0.5;
-      el.style.transform = `translateY(${scrollY * speed}px)`;
-    });
   });
 }
 
@@ -1488,19 +805,18 @@ const CommandPalette = {
   list: null,
   selectedIndex: 0,
   filteredCommands: [],
-  languageSwitchCount: 0,
 
   commands: [
-    { id: 'search', label: 'Search', labelRu: 'Поиск', shortcut: '/', icon: '🔍', action: () => document.getElementById('searchBtn')?.click() },
-    { id: 'download', label: 'Download Citations', labelRu: 'Скачать цитаты', shortcut: 'd', icon: '📥', action: () => document.getElementById('downloadCitationBtn')?.click() },
-    { id: 'citations', label: 'Copy Citations', labelRu: 'Копировать цитаты', shortcut: 'c', icon: '📝', action: () => document.getElementById('copyCitationBtn')?.click() },
-    { id: 'theme', label: 'Toggle Theme', labelRu: 'Сменить тему', shortcut: 't', icon: '🌓', action: () => toggleTheme() },
-    { id: 'lang', label: 'Switch Language', labelRu: 'Сменить язык', shortcut: 'l', icon: '🌍', action: () => { i18n.toggleLanguage(); CommandPalette.trackLanguageSwitch(); } },
-    { id: 'reset', label: 'Reset Filters', labelRu: 'Сбросить фильтры', shortcut: 'r', icon: '🔄', action: () => document.getElementById('resetBtn')?.click() },
-    { id: 'selectAll', label: 'Select All Results', labelRu: 'Выбрать все результаты', shortcut: 'a', icon: '☑️', action: () => selectAllResults() },
-    { id: 'favorites', label: 'View Favorites', labelRu: 'Просмотр избранного', shortcut: 'f', icon: '⭐', action: () => showFavorites() },
-    { id: 'help', label: 'Show Help', labelRu: 'Показать справку', shortcut: '?', icon: '❓', action: () => showHelp() },
-    { id: 'achievements', label: 'View Achievements', labelRu: 'Просмотр достижений', shortcut: 'g', icon: '🏆', action: () => showAchievements() },
+    { id: 'search', label: 'Search', labelRu: 'Поиск', shortcut: '/', icon: 'S', action: () => document.getElementById('searchBtn')?.click() },
+    { id: 'download', label: 'Download Citations', labelRu: 'Скачать цитаты', shortcut: 'd', icon: 'D', action: () => document.getElementById('downloadCitationBtn')?.click() },
+    { id: 'citations', label: 'Copy Citations', labelRu: 'Копировать цитаты', shortcut: 'c', icon: 'C', action: () => document.getElementById('copyCitationBtn')?.click() },
+    { id: 'theme', label: 'Toggle Theme', labelRu: 'Сменить тему', shortcut: 't', icon: 'T', action: () => toggleTheme() },
+    { id: 'lang', label: 'Switch Language', labelRu: 'Сменить язык', shortcut: 'l', icon: 'L', action: () => i18n.toggleLanguage() },
+    { id: 'reset', label: 'Reset Filters', labelRu: 'Сбросить фильтры', shortcut: 'r', icon: 'R', action: () => document.getElementById('resetBtn')?.click() },
+    { id: 'selectAll', label: 'Select All Results', labelRu: 'Выбрать все результаты', shortcut: 'a', icon: 'A', action: () => selectAllResults() },
+    { id: 'favorites', label: 'View Favorites', labelRu: 'Просмотр избранного', shortcut: 'f', icon: 'F', action: () => showFavorites() },
+    { id: 'help', label: 'Show Help', labelRu: 'Показать справку', shortcut: '?', icon: '?', action: () => showHelp() },
+    { id: 'sources', label: 'List Available Sources', labelRu: 'Список источников', shortcut: 's', icon: 'S', action: () => listAvailableSources() },
   ],
 
   init() {
@@ -1548,6 +864,7 @@ const CommandPalette = {
       font-size: 18px;
       outline: none;
       border-bottom: 1px solid #eee;
+      box-sizing: border-box;
     `;
 
     this.list = document.createElement('div');
@@ -1647,7 +964,7 @@ const CommandPalette = {
           background: ${isSelected ? '#f0f4ff' : 'transparent'};
           border-left: 3px solid ${isSelected ? '#667eea' : 'transparent'};
         ">
-          <span style="font-size: 20px;">${cmd.icon}</span>
+          <span style="font-size: 16px; font-weight: bold; width: 24px; text-align: center;">${cmd.icon}</span>
           <span style="flex: 1;">${label}</span>
           <kbd style="
             background: #eee;
@@ -1679,371 +996,6 @@ const CommandPalette = {
       cmd.action();
       debug.log('CommandPalette', `Executed command: ${id}`);
     }
-  },
-
-  trackLanguageSwitch() {
-    this.languageSwitchCount++;
-    if (this.languageSwitchCount >= 5) {
-      GamificationManager.unlockAchievement('POLYGLOT');
-    }
-  }
-};
-
-// ============================================================================
-// ONBOARDING MANAGER
-// ============================================================================
-
-const OnboardingManager = {
-  currentStep: 0,
-  overlay: null,
-  tooltip: null,
-
-  steps: [
-    {
-      id: 'welcome',
-      title: 'Welcome to Matushka',
-      titleRu: 'Добро пожаловать в Матушку',
-      message: 'Your tool for finding authentic Russian content for language teaching.',
-      messageRu: 'Ваш инструмент для поиска аутентичного русского контента для преподавания языка.',
-      target: null,
-      position: 'center'
-    },
-    {
-      id: 'search',
-      title: 'Configure Search',
-      titleRu: 'Настройте поиск',
-      message: 'Set your filters for duration, date range, categories, and sources.',
-      messageRu: 'Установите фильтры длительности, периода, категорий и источников.',
-      target: '.config-panel',
-      position: 'right'
-    },
-    {
-      id: 'searchBtn',
-      title: 'Start Searching',
-      titleRu: 'Начните поиск',
-      message: 'Click here to find content matching your criteria.',
-      messageRu: 'Нажмите здесь, чтобы найти контент по вашим критериям.',
-      target: '#searchBtn',
-      position: 'bottom'
-    },
-    {
-      id: 'results',
-      title: 'Browse Results',
-      titleRu: 'Просмотр результатов',
-      message: 'Your search results will appear here. Select items to download.',
-      messageRu: 'Здесь появятся результаты поиска. Выберите материалы для скачивания.',
-      target: '#resultsSection',
-      position: 'left'
-    },
-    {
-      id: 'citations',
-      title: 'Export Citations',
-      titleRu: 'Экспорт цитат',
-      message: 'Copy or download citations for your selected videos in various formats.',
-      messageRu: 'Копируйте или скачивайте цитаты для выбранных видео в различных форматах.',
-      target: '.citations-panel',
-      position: 'top'
-    },
-    {
-      id: 'gamification',
-      title: 'Track Your Progress',
-      titleRu: 'Отслеживайте прогресс',
-      message: 'Earn points and achievements as you use Matushka!',
-      messageRu: 'Зарабатывайте очки и достижения, используя Матушку!',
-      target: '.stats-bar',
-      position: 'bottom'
-    },
-    {
-      id: 'complete',
-      title: 'You\'re Ready!',
-      titleRu: 'Вы готовы!',
-      message: 'Press Ctrl+K anytime to open the command palette. Happy teaching!',
-      messageRu: 'Нажмите Ctrl+K для открытия палитры команд. Удачного преподавания!',
-      target: null,
-      position: 'center'
-    }
-  ],
-
-  init() {
-    this.createOverlay();
-    this.start();
-  },
-
-  createOverlay() {
-    this.overlay = document.createElement('div');
-    this.overlay.className = 'onboarding-overlay';
-    this.overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 99998;
-      display: none;
-    `;
-
-    this.tooltip = document.createElement('div');
-    this.tooltip.className = 'onboarding-tooltip';
-    this.tooltip.style.cssText = `
-      position: fixed;
-      background: white;
-      padding: 25px;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      z-index: 99999;
-      max-width: 400px;
-      animation: fadeIn 0.3s ease-out;
-    `;
-
-    document.body.appendChild(this.overlay);
-    document.body.appendChild(this.tooltip);
-  },
-
-  start() {
-    this.currentStep = 0;
-    this.overlay.style.display = 'block';
-    this.showStep(0);
-    debug.log('Onboarding', 'Started');
-  },
-
-  showStep(index) {
-    const step = this.steps[index];
-    if (!step) {
-      this.complete();
-      return;
-    }
-
-    const isRussian = i18n.currentLang === 'ru';
-    const title = isRussian ? step.titleRu : step.title;
-    const message = isRussian ? step.messageRu : step.message;
-
-    // Highlight target element
-    if (step.target) {
-      const target = document.querySelector(step.target);
-      if (target) {
-        target.style.position = 'relative';
-        target.style.zIndex = '99999';
-        target.style.boxShadow = '0 0 0 4px #667eea, 0 0 20px rgba(102,126,234,0.5)';
-        target.style.borderRadius = '8px';
-      }
-    }
-
-    this.tooltip.innerHTML = `
-      <h3 style="margin: 0 0 10px 0; font-size: 20px; color: #333;">${title}</h3>
-      <p style="margin: 0 0 20px 0; color: #666; line-height: 1.6;">${message}</p>
-      <div style="display: flex; gap: 10px; justify-content: space-between;">
-        <button class="onboarding-skip" style="
-          padding: 10px 20px;
-          border: none;
-          background: #eee;
-          border-radius: 8px;
-          cursor: pointer;
-        ">${i18n.t('skipTour')}</button>
-        <div style="display: flex; gap: 10px;">
-          ${index > 0 ? `<button class="onboarding-prev" style="
-            padding: 10px 20px;
-            border: 1px solid #667eea;
-            background: white;
-            color: #667eea;
-            border-radius: 8px;
-            cursor: pointer;
-          ">${i18n.t('prevStep')}</button>` : ''}
-          <button class="onboarding-next" style="
-            padding: 10px 20px;
-            border: none;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 8px;
-            cursor: pointer;
-          ">${index < this.steps.length - 1 ? i18n.t('nextStep') : i18n.t('finishTour')}</button>
-        </div>
-      </div>
-      <div style="display: flex; gap: 6px; justify-content: center; margin-top: 15px;">
-        ${this.steps.map((_, i) => `
-          <div style="
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: ${i === index ? '#667eea' : '#ddd'};
-          "></div>
-        `).join('')}
-      </div>
-    `;
-
-    // Position tooltip
-    this.positionTooltip(step);
-
-    // Bind events
-    this.tooltip.querySelector('.onboarding-skip')?.addEventListener('click', () => this.complete());
-    this.tooltip.querySelector('.onboarding-prev')?.addEventListener('click', () => this.prevStep());
-    this.tooltip.querySelector('.onboarding-next')?.addEventListener('click', () => this.nextStep());
-  },
-
-  positionTooltip(step) {
-    if (!step.target || step.position === 'center') {
-      this.tooltip.style.top = '50%';
-      this.tooltip.style.left = '50%';
-      this.tooltip.style.transform = 'translate(-50%, -50%)';
-      return;
-    }
-
-    const target = document.querySelector(step.target);
-    if (!target) {
-      this.tooltip.style.top = '50%';
-      this.tooltip.style.left = '50%';
-      this.tooltip.style.transform = 'translate(-50%, -50%)';
-      return;
-    }
-
-    const rect = target.getBoundingClientRect();
-    const tooltipRect = this.tooltip.getBoundingClientRect();
-
-    this.tooltip.style.transform = 'none';
-
-    switch (step.position) {
-      case 'top':
-        this.tooltip.style.top = `${rect.top - tooltipRect.height - 20}px`;
-        this.tooltip.style.left = `${rect.left + rect.width / 2 - tooltipRect.width / 2}px`;
-        break;
-      case 'bottom':
-        this.tooltip.style.top = `${rect.bottom + 20}px`;
-        this.tooltip.style.left = `${rect.left + rect.width / 2 - tooltipRect.width / 2}px`;
-        break;
-      case 'left':
-        this.tooltip.style.top = `${rect.top + rect.height / 2 - tooltipRect.height / 2}px`;
-        this.tooltip.style.left = `${rect.left - tooltipRect.width - 20}px`;
-        break;
-      case 'right':
-        this.tooltip.style.top = `${rect.top + rect.height / 2 - tooltipRect.height / 2}px`;
-        this.tooltip.style.left = `${rect.right + 20}px`;
-        break;
-    }
-  },
-
-  nextStep() {
-    this.clearHighlights();
-    this.currentStep++;
-    if (this.currentStep < this.steps.length) {
-      this.showStep(this.currentStep);
-    } else {
-      this.complete();
-    }
-  },
-
-  prevStep() {
-    this.clearHighlights();
-    this.currentStep = Math.max(0, this.currentStep - 1);
-    this.showStep(this.currentStep);
-  },
-
-  clearHighlights() {
-    document.querySelectorAll('[style*="z-index: 99999"]').forEach(el => {
-      el.style.zIndex = '';
-      el.style.boxShadow = '';
-    });
-  },
-
-  complete() {
-    this.clearHighlights();
-    this.overlay.style.display = 'none';
-    this.tooltip.style.display = 'none';
-    localStorage.setItem('matushka_onboarding_complete', 'true');
-    debug.log('Onboarding', 'Completed');
-
-    // Celebration for completing onboarding
-    celebrateSuccess();
-  }
-};
-
-// ============================================================================
-// ENHANCED DEBUG LOGGER
-// ============================================================================
-
-const debug = {
-  logs: [],
-  maxLogs: 1000,
-
-  formatTime() {
-    const now = new Date();
-    return now.toLocaleTimeString('en-US', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
-  },
-
-  createEntry(level, category, message, data) {
-    return {
-      timestamp: this.formatTime(),
-      level,
-      category,
-      message,
-      data: data ? JSON.stringify(data, null, 2) : null
-    };
-  },
-
-  output(entry) {
-    if (!CONFIG.debug) return;
-
-    const style = {
-      log: 'color: #4a9eff',
-      info: 'color: #10b981',
-      warn: 'color: #f59e0b',
-      error: 'color: #ef4444'
-    };
-
-    const prefix = `[${entry.timestamp}] [${entry.category}]`;
-
-    if (entry.data) {
-      console[entry.level](`%c${prefix} ${entry.message}`, style[entry.level], '\n', entry.data);
-    } else {
-      console[entry.level](`%c${prefix} ${entry.message}`, style[entry.level]);
-    }
-
-    this.logs.push(entry);
-    if (this.logs.length > this.maxLogs) {
-      this.logs.shift();
-    }
-  },
-
-  log(category, message, data) {
-    this.output(this.createEntry('log', category, message, data));
-  },
-
-  info(category, message, data) {
-    this.output(this.createEntry('info', category, message, data));
-  },
-
-  warn(category, message, data) {
-    this.output(this.createEntry('warn', category, message, data));
-  },
-
-  error(category, message, data) {
-    this.output(this.createEntry('error', category, message, data));
-  },
-
-  group(label) {
-    if (CONFIG.debug) console.group(label);
-  },
-
-  groupEnd() {
-    if (CONFIG.debug) console.groupEnd();
-  },
-
-  table(data) {
-    if (CONFIG.debug) console.table(data);
-  },
-
-  exportLogs() {
-    const blob = new Blob([JSON.stringify(this.logs, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `matushka-logs-${new Date().toISOString()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  },
-
-  clearLogs() {
-    this.logs = [];
-    if (CONFIG.debug) console.clear();
   }
 };
 
@@ -2053,6 +1005,24 @@ const debug = {
 
 let selectedItems = new Set();
 let currentResults = [];
+let favoriteItems = JSON.parse(localStorage.getItem('matushka_favorites') || '[]');
+
+// Fetch available sources from API
+async function listAvailableSources() {
+  debug.log('API', 'Fetching available sources...');
+  try {
+    const response = await fetch(`${WORKER_URL}/api/sources`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const data = await response.json();
+    debug.info('API', 'Available sources:', data);
+    showNotification(`Available sources: ${JSON.stringify(data)}`, 'info');
+  } catch (error) {
+    debug.error('API', 'Failed to fetch sources', error);
+    showError(error.message);
+  }
+}
 
 async function searchContent() {
   const searchBtn = document.getElementById('searchBtn');
@@ -2073,51 +1043,82 @@ async function searchContent() {
   if (emptyState) emptyState.hidden = true;
   if (resultsContainer) resultsContainer.innerHTML = '';
 
-  // Gather parameters - use date inputs instead of daysBack
-  const startDate = document.getElementById('startDate')?.value;
-  const endDate = document.getElementById('endDate')?.value;
-  const params = {
-    minDuration: parseInt(document.getElementById('minDuration')?.value) || 0,
-    maxDuration: parseInt(document.getElementById('maxDuration')?.value) || 60,
-    startDate: startDate || null,
-    endDate: endDate || null,
-    categories: getSelectedCategories(),
-    sources: getSelectedSources(),
-    maxItems: parseInt(document.getElementById('maxItems')?.value) || 20
-  };
+  // Gather parameters
+  const daysBack = parseInt(document.getElementById('daysBack')?.value) || 7;
+  const maxItems = parseInt(document.getElementById('maxItems')?.value) || 20;
+  const sources = getSelectedSources();
 
-  debug.log('Search', 'Parameters:', params);
+  // Build query parameters for GET request
+  const params = new URLSearchParams();
+  if (sources.length > 0) {
+    params.append('sources', sources.join(','));
+  }
+  params.append('days_back', daysBack);
+  params.append('max_items', maxItems);
+
+  debug.log('Search', 'Parameters:', { sources, daysBack, maxItems });
 
   try {
-    const response = await fetch(`${WORKER_URL}/search`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params)
-    });
+    // Step 1: Discover URLs using GET /api/discover
+    const discoverUrl = `${WORKER_URL}/api/discover?${params.toString()}`;
+    debug.log('Search', `Calling: ${discoverUrl}`);
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const discoverResponse = await fetch(discoverUrl);
+
+    if (!discoverResponse.ok) {
+      throw new Error(`HTTP ${discoverResponse.status}: ${discoverResponse.statusText}`);
     }
 
-    const data = await response.json();
-    currentResults = data.results || [];
+    const discoverData = await discoverResponse.json();
+    const urls = discoverData.urls || [];
 
-    debug.info('Search', `Found ${currentResults.length} results`);
+    debug.info('Search', `Discovered ${urls.length} URLs`);
 
-    // Record search for gamification
-    GamificationManager.recordSearch();
+    if (urls.length === 0) {
+      currentResults = [];
+      renderResults([]);
+      debug.groupEnd();
+      return;
+    }
+
+    // Step 2: Scrape metadata for each URL using GET /api/scrape
+    const results = [];
+    for (const url of urls.slice(0, maxItems)) {
+      try {
+        const scrapeUrl = `${WORKER_URL}/api/scrape?url=${encodeURIComponent(url)}`;
+        debug.log('Search', `Scraping: ${url}`);
+
+        const scrapeResponse = await fetch(scrapeUrl);
+        if (scrapeResponse.ok) {
+          const scrapeData = await scrapeResponse.json();
+          if (scrapeData.metadata) {
+            results.push({
+              id: btoa(url).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16),
+              url: url,
+              title: scrapeData.metadata.title || 'Untitled',
+              description: scrapeData.metadata.description || '',
+              source: extractSourceFromUrl(url),
+              m3u8_url: scrapeData.metadata.m3u8_url || null,
+              thumbnail: scrapeData.metadata.thumbnail || null,
+              duration: scrapeData.metadata.duration || null,
+              publishedAt: scrapeData.metadata.published_at || new Date().toISOString()
+            });
+          }
+        }
+      } catch (scrapeError) {
+        debug.warn('Search', `Failed to scrape ${url}`, scrapeError);
+      }
+    }
+
+    currentResults = results;
+    debug.info('Search', `Scraped ${currentResults.length} items with metadata`);
 
     // Render results
     renderResults(currentResults);
 
-    if (currentResults.length > 0 && GamificationManager.state.totalSearches === 1) {
-      celebrateSuccess();
-    }
-
   } catch (error) {
     debug.error('Search', 'Search failed', error);
     showError(i18n.t('error') + ': ' + error.message);
-    // Show empty state on error
     if (emptyState) emptyState.hidden = false;
   } finally {
     if (searchBtn) {
@@ -2130,6 +1131,27 @@ async function searchContent() {
   }
 }
 
+function extractSourceFromUrl(url) {
+  try {
+    const hostname = new URL(url).hostname.replace('www.', '');
+    const sourceMap = {
+      '1tv.ru': 'Первый канал',
+      'vesti.ru': 'Вести',
+      'tass.com': 'ТАСС',
+      'ria.ru': 'РИА Новости',
+      'rt.com': 'RT',
+      'rbc.ru': 'РБК',
+      'kommersant.ru': 'Коммерсантъ',
+      'lenta.ru': 'Лента',
+      'gazeta.ru': 'Газета',
+      'iz.ru': 'Известия'
+    };
+    return sourceMap[hostname] || hostname;
+  } catch {
+    return 'Unknown';
+  }
+}
+
 function renderResults(results) {
   const container = document.getElementById('resultsGrid');
   const emptyState = document.getElementById('emptyState');
@@ -2137,7 +1159,6 @@ function renderResults(results) {
 
   if (!container) return;
 
-  // Update results count display
   if (resultsCount) {
     resultsCount.textContent = `(${results.length})`;
   }
@@ -2148,19 +1169,16 @@ function renderResults(results) {
     return;
   }
 
-  // Hide empty state when we have results
   if (emptyState) emptyState.hidden = true;
 
-  // Render results directly into the grid container
   container.innerHTML = results.map((item, index) => renderResultCard(item, index)).join('');
 
-  // Initialize card interactions
   initCardTilt();
 }
 
 function renderResultCard(item, index) {
   const isSelected = selectedItems.has(item.id);
-  const isFavorite = GamificationManager.state.favorites.includes(item.id);
+  const isFavorite = favoriteItems.includes(item.id);
 
   return `
     <div class="result-card tilt-card" data-id="${item.id}" data-animate="fadeInUp" style="
@@ -2172,21 +1190,22 @@ function renderResultCard(item, index) {
       border: 2px solid ${isSelected ? '#667eea' : 'transparent'};
       animation-delay: ${index * 0.05}s;
     ">
-      ${item.thumbnail ? `<img src="${item.thumbnail}" alt="" style="width: 100%; height: 160px; object-fit: cover;">` : ''}
+      ${item.thumbnail ? `<img src="${item.thumbnail}" alt="" style="width: 100%; height: 160px; object-fit: cover;">` : '<div style="width: 100%; height: 160px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">No thumbnail</div>'}
       <div style="padding: 20px;">
         <h4 style="margin: 0 0 10px 0; font-size: 16px; line-height: 1.4;">${escapeHtml(item.title)}</h4>
-        <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">${escapeHtml(item.source)} • ${formatDuration(item.duration)}</p>
-        <div style="display: flex; gap: 10px;">
+        <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">${escapeHtml(item.source)} ${item.duration ? '| ' + formatDuration(item.duration) : ''}</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <button onclick="toggleItemSelection('${item.id}')" class="btn btn-small ${isSelected ? 'btn-primary' : 'btn-secondary'}">
-            ${isSelected ? '✓' : '○'}
+            ${isSelected ? 'Selected' : 'Select'}
           </button>
           <button onclick="toggleFavorite('${item.id}')" class="btn btn-small" title="${i18n.t(isFavorite ? 'removeFromFavorites' : 'addToFavorites')}">
-            ${isFavorite ? '★' : '☆'}
+            ${isFavorite ? 'Unfavorite' : 'Favorite'}
           </button>
           <button onclick="previewItem('${item.id}')" class="btn btn-small" title="${i18n.t('preview')}">
-            ▶
+            Preview
           </button>
-          <a href="${item.url}" target="_blank" class="btn btn-small" title="${i18n.t('openExternal')}">↗</a>
+          ${item.m3u8_url ? `<button onclick="downloadItem('${item.id}')" class="btn btn-small btn-primary" title="Download">Download</button>` : ''}
+          <a href="${item.url}" target="_blank" class="btn btn-small" title="${i18n.t('openExternal')}">Open</a>
         </div>
       </div>
     </div>
@@ -2206,7 +1225,7 @@ function toggleItemSelection(id) {
   }
 
   updateSelectionCount();
-  playClickSound();
+  renderResults(currentResults);
 }
 
 function selectAllResults() {
@@ -2222,25 +1241,24 @@ function deselectAllResults() {
 }
 
 function updateSelectionCount() {
-  // Selection count is shown via results count - no separate element needed
   debug.log('Selection', `Selected items: ${selectedItems.size}`);
 }
 
 function toggleFavorite(id) {
-  if (GamificationManager.state.favorites.includes(id)) {
-    GamificationManager.removeFavorite(id);
+  const index = favoriteItems.indexOf(id);
+  if (index > -1) {
+    favoriteItems.splice(index, 1);
   } else {
-    GamificationManager.addFavorite(id);
+    favoriteItems.push(id);
   }
+  localStorage.setItem('matushka_favorites', JSON.stringify(favoriteItems));
   renderResults(currentResults);
-  playClickSound();
 }
 
 function previewItem(id) {
   const item = currentResults.find(r => r.id === id);
   if (!item) return;
 
-  // Create preview modal
   const modal = document.createElement('div');
   modal.className = 'preview-modal';
   modal.style.cssText = `
@@ -2258,12 +1276,15 @@ function previewItem(id) {
 
   modal.innerHTML = `
     <div style="max-width: 800px; width: 90%; background: white; border-radius: 16px; overflow: hidden;">
-      ${item.embedUrl ? `<iframe src="${item.embedUrl}" style="width: 100%; height: 450px; border: none;"></iframe>` :
-        item.thumbnail ? `<img src="${item.thumbnail}" style="width: 100%; height: auto;">` : ''}
+      ${item.thumbnail ? `<img src="${item.thumbnail}" style="width: 100%; height: auto;">` : ''}
       <div style="padding: 20px;">
         <h3 style="margin: 0 0 10px 0;">${escapeHtml(item.title)}</h3>
-        <p style="color: #666;">${escapeHtml(item.description || '')}</p>
-        <button onclick="this.closest('.preview-modal').remove()" class="btn btn-primary">${i18n.t('close')}</button>
+        <p style="color: #666; margin-bottom: 10px;">${escapeHtml(item.description || '')}</p>
+        <p style="color: #999; font-size: 12px;">Source: ${escapeHtml(item.source)} | URL: ${escapeHtml(item.url)}</p>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button onclick="this.closest('.preview-modal').remove()" class="btn btn-primary">${i18n.t('close')}</button>
+          <a href="${item.url}" target="_blank" class="btn btn-secondary">Open Original</a>
+        </div>
       </div>
     </div>
   `;
@@ -2273,6 +1294,42 @@ function previewItem(id) {
   });
 
   document.body.appendChild(modal);
+}
+
+async function downloadItem(id) {
+  const item = currentResults.find(r => r.id === id);
+  if (!item || !item.m3u8_url) {
+    showNotification('No downloadable stream found', 'warning');
+    return;
+  }
+
+  debug.log('Download', `Downloading item: ${item.title}`);
+
+  try {
+    // Use the proxy endpoint to download the m3u8 stream
+    const proxyUrl = `${WORKER_URL}/api/proxy?url=${encodeURIComponent(item.m3u8_url)}`;
+
+    showNotification(i18n.t('downloading'), 'info');
+
+    const response = await fetch(proxyUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${item.title.replace(/[^a-zA-Z0-9]/g, '_')}.m3u8`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showNotification(i18n.t('complete'), 'success');
+
+  } catch (error) {
+    debug.error('Download', 'Download failed', error);
+    showError(error.message);
+  }
 }
 
 async function downloadSelected() {
@@ -2293,29 +1350,30 @@ async function downloadSelected() {
   try {
     const items = currentResults.filter(r => selectedItems.has(r.id));
 
-    const response = await fetch(`${WORKER_URL}/download`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+    // Download items that have m3u8_url one by one
+    let downloadedCount = 0;
+    for (const item of items) {
+      if (item.m3u8_url) {
+        try {
+          const proxyUrl = `${WORKER_URL}/api/proxy?url=${encodeURIComponent(item.m3u8_url)}`;
+          const response = await fetch(proxyUrl);
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${item.title.replace(/[^a-zA-Z0-9]/g, '_')}.m3u8`;
+            a.click();
+            URL.revokeObjectURL(url);
+            downloadedCount++;
+          }
+        } catch (e) {
+          debug.warn('Download', `Failed to download ${item.title}`, e);
+        }
+      }
     }
 
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `matushka-content-${Date.now()}.zip`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    // Record download for gamification
-    GamificationManager.recordDownload();
-
-    showNotification(i18n.t('complete'), 'success');
-    celebrateSuccess();
+    showNotification(`Downloaded ${downloadedCount} items`, 'success');
 
   } catch (error) {
     debug.error('Download', 'Download failed', error);
@@ -2335,7 +1393,6 @@ async function exportCitations() {
     return;
   }
 
-  // Get current citation format from active tab
   const activeTab = document.querySelector('.citation-tab.active');
   const format = activeTab?.dataset.format || 'apa';
 
@@ -2344,12 +1401,10 @@ async function exportCitations() {
   const items = currentResults.filter(r => selectedItems.has(r.id));
   const citations = items.map(item => formatCitation(item, format)).join('\n\n');
 
-  // Copy to clipboard
   try {
     await navigator.clipboard.writeText(citations);
     showNotification(i18n.t('complete'), 'success');
   } catch (e) {
-    // Fallback: show in citation preview
     const citationText = document.getElementById('citationText');
     if (citationText) {
       citationText.innerHTML = `<code>${escapeHtml(citations)}</code>`;
@@ -2362,18 +1417,19 @@ function formatCitation(item, format = 'apa') {
   const date = new Date(item.publishedAt || Date.now());
   const year = date.getFullYear();
   const dateStr = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const accessDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   switch (format) {
     case 'mla':
-      return `"${item.title}." ${item.source}, ${dateStr}. ${item.url}.`;
+      return `"${item.title}." ${item.source}, ${dateStr}. Web. ${accessDate}. <${item.url}>.`;
     case 'chicago':
-      return `${item.source}. "${item.title}." Accessed ${dateStr}. ${item.url}.`;
+      return `${item.source}. "${item.title}." Accessed ${accessDate}. ${item.url}.`;
     case 'bibtex':
       const key = item.title.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20);
-      return `@online{${key}${year},\n  title = {${item.title}},\n  author = {${item.source}},\n  year = {${year}},\n  url = {${item.url}}\n}`;
+      return `@online{${key}${year},\n  title = {${item.title}},\n  author = {${item.source}},\n  year = {${year}},\n  url = {${item.url}},\n  urldate = {${accessDate}}\n}`;
     case 'apa':
     default:
-      return `${item.title}. (${dateStr}). ${item.source}. Retrieved from ${item.url}`;
+      return `${item.source}. (${year}, ${dateStr}). ${item.title}. Retrieved ${accessDate}, from ${item.url}`;
   }
 }
 
@@ -2388,22 +1444,15 @@ function updateCitationPreview(format = 'apa') {
 
   const items = currentResults.filter(r => selectedItems.has(r.id));
   const citations = items.map(item => formatCitation(item, format)).join('\n\n');
-  citationText.innerHTML = `<code>${escapeHtml(citations)}</code>`;
+  citationText.innerHTML = `<code style="white-space: pre-wrap;">${escapeHtml(citations)}</code>`;
 }
 
 function resetFilters() {
-  // Reset duration inputs
-  const minDuration = document.getElementById('minDuration');
-  const maxDuration = document.getElementById('maxDuration');
+  const daysBack = document.getElementById('daysBack');
   const maxItems = document.getElementById('maxItems');
-  const startDate = document.getElementById('startDate');
-  const endDate = document.getElementById('endDate');
 
-  if (minDuration) minDuration.value = '0';
-  if (maxDuration) maxDuration.value = '60';
+  if (daysBack) daysBack.value = '7';
   if (maxItems) maxItems.value = '20';
-  if (startDate) startDate.value = '';
-  if (endDate) endDate.value = '';
 
   // Reset checkboxes to their default state (first two checked in each group)
   document.querySelectorAll('input[name="category"]').forEach((cb, index) => {
@@ -2507,7 +1556,7 @@ function loadTheme() {
 }
 
 function showFavorites() {
-  const favorites = currentResults.filter(r => GamificationManager.state.favorites.includes(r.id));
+  const favorites = currentResults.filter(r => favoriteItems.includes(r.id));
   if (favorites.length === 0) {
     showNotification(i18n.t('noResults'), 'info');
     return;
@@ -2534,68 +1583,30 @@ function showHelp() {
   modal.innerHTML = `
     <div style="background: white; padding: 40px; border-radius: 20px; max-width: 600px; width: 90%;">
       <h2>${i18n.t('help')}</h2>
-      <h4>${i18n.t('tooltipCommandPalette')}</h4>
+      <h4>Keyboard Shortcuts</h4>
       <ul>
+        <li><kbd>Ctrl+K</kbd> - ${i18n.t('commandPalette')}</li>
         <li><kbd>/</kbd> - ${i18n.t('search')}</li>
         <li><kbd>d</kbd> - ${i18n.t('download')}</li>
         <li><kbd>c</kbd> - ${i18n.t('citations')}</li>
         <li><kbd>t</kbd> - ${i18n.t('theme')}</li>
         <li><kbd>l</kbd> - ${i18n.t('language')}</li>
+        <li><kbd>r</kbd> - ${i18n.t('resetBtn')}</li>
+      </ul>
+      <h4>Available Sources</h4>
+      <ul>
+        <li>1tv.ru - ${i18n.t('src1tv')}</li>
+        <li>vesti.ru - ${i18n.t('srcVesti')}</li>
+        <li>tass.com - ${i18n.t('srcTass')}</li>
+        <li>ria.ru - ${i18n.t('srcRia')}</li>
+        <li>rt.com - ${i18n.t('srcRt')}</li>
+        <li>rbc.ru - ${i18n.t('srcRbc')}</li>
+        <li>kommersant.ru - ${i18n.t('srcKommersant')}</li>
+        <li>lenta.ru - ${i18n.t('srcLenta')}</li>
+        <li>gazeta.ru - ${i18n.t('srcGazeta')}</li>
+        <li>iz.ru - ${i18n.t('srcIzvestia')}</li>
       </ul>
       <button onclick="this.closest('.help-modal').remove()" class="btn btn-primary">${i18n.t('close')}</button>
-    </div>
-  `;
-
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.remove();
-  });
-
-  document.body.appendChild(modal);
-}
-
-function showAchievements() {
-  const modal = document.createElement('div');
-  modal.className = 'achievements-modal';
-  modal.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100000;
-  `;
-
-  const isRussian = i18n.currentLang === 'ru';
-  const achievements = Object.values(GamificationManager.ACHIEVEMENTS);
-
-  modal.innerHTML = `
-    <div style="background: white; padding: 40px; border-radius: 20px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto;">
-      <h2>${i18n.t('achievements')}</h2>
-      <p>${GamificationManager.state.achievements.length} / ${achievements.length}</p>
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
-        ${achievements.map(a => {
-          const unlocked = GamificationManager.state.achievements.includes(a.id);
-          return `
-            <div style="
-              padding: 20px;
-              border-radius: 12px;
-              background: ${unlocked ? 'linear-gradient(135deg, #667eea, #764ba2)' : '#f5f5f5'};
-              color: ${unlocked ? 'white' : '#999'};
-              text-align: center;
-            ">
-              <div style="font-size: 32px; margin-bottom: 10px;">${a.icon}</div>
-              <div style="font-weight: bold;">${isRussian ? a.titleRu : a.title}</div>
-              <div style="font-size: 12px; margin-top: 5px;">${isRussian ? a.descriptionRu : a.description}</div>
-              <div style="margin-top: 10px; font-size: 14px;">+${a.points} ${i18n.t('points')}</div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-      <button onclick="this.closest('.achievements-modal').remove()" class="btn btn-primary">${i18n.t('close')}</button>
     </div>
   `;
 
@@ -2643,30 +1654,6 @@ function injectAnimationStyles() {
       to { transform: translateY(0); opacity: 1; }
     }
 
-    @keyframes pointsFloat {
-      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-      20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-      100% { transform: translate(-50%, -150%) scale(1); opacity: 0; }
-    }
-
-    @keyframes streakBounce {
-      0% { transform: translateX(-50%) scale(0); opacity: 0; }
-      50% { transform: translateX(-50%) scale(1.1); opacity: 1; }
-      70% { transform: translateX(-50%) scale(0.95); }
-      100% { transform: translateX(-50%) scale(1); opacity: 0; }
-    }
-
-    @keyframes levelUpScale {
-      0% { transform: scale(0); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes confettiFall {
-      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-    }
-
     @keyframes rippleEffect {
       to { transform: scale(4); opacity: 0; }
     }
@@ -2695,8 +1682,7 @@ function injectAnimationStyles() {
     }
 
     .dark-theme .result-card,
-    .dark-theme .command-palette-modal,
-    .dark-theme .onboarding-tooltip {
+    .dark-theme .command-palette-modal {
       background: var(--bg-secondary);
       color: var(--text-primary);
     }
@@ -2736,93 +1722,10 @@ function injectAnimationStyles() {
       box-shadow: 0 5px 20px rgba(0,0,0,0.15);
     }
 
-    .level-up-content .level-up-icon {
-      font-size: 80px;
-      animation: levelUpScale 0.5s ease-out;
-    }
-
-    .level-up-content .level-up-text {
-      font-size: 24px;
-      margin: 20px 0 10px;
-    }
-
-    .level-up-content .level-up-number {
-      font-size: 72px;
-      font-weight: bold;
-      background: linear-gradient(135deg, #ffd700, #ff6b6b);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .achievement-toast .achievement-icon {
-      font-size: 40px;
-    }
-
-    .achievement-toast .achievement-label {
-      font-size: 12px;
-      opacity: 0.8;
-    }
-
-    .achievement-toast .achievement-title {
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .achievement-toast .achievement-desc {
-      font-size: 12px;
-      opacity: 0.9;
-      margin-top: 4px;
-    }
-
-    .achievement-toast .achievement-points {
-      font-size: 14px;
-      margin-top: 8px;
-      color: #ffd700;
-    }
-
-    .achievement-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 14px;
-    }
-
-    .achievement-badge.unlocked {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-    }
-
-    .achievement-badge.locked {
-      background: #f0f0f0;
-      color: #999;
-      filter: grayscale(1);
-    }
-
-    .stats-bar {
-      display: flex;
-      gap: 30px;
-      padding: 15px 25px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-
-    .stat-item {
-      text-align: center;
-    }
-
-    .stat-value {
-      font-size: 24px;
-      font-weight: bold;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      opacity: 0.8;
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
     }
   `;
 
@@ -2834,7 +1737,7 @@ function injectAnimationStyles() {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-  debug.log('App', 'Initializing Matushka Premium...');
+  debug.log('App', 'Initializing Matushka...');
 
   // Inject styles
   injectAnimationStyles();
@@ -2844,25 +1747,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize systems
   i18n.init();
-  GamificationManager.init();
   CommandPalette.init();
 
-  // Check onboarding
-  if (!localStorage.getItem('matushka_onboarding_complete')) {
-    OnboardingManager.init();
-  }
-
   // Initialize UI enhancements
-  if (CONFIG.enableCursor) {
-    initCustomCursor();
-  }
-
   if (CONFIG.enableAnimations) {
     initScrollAnimations();
-    initParallax();
     initScrollProgress();
     initCardTilt();
-    initMagneticButtons();
   }
 
   initButtonFeedback();
@@ -2916,13 +1807,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('downloadCitationBtn')?.addEventListener('click', downloadSelected);
   document.getElementById('copyCitationBtn')?.addEventListener('click', exportCitations);
 
-  // Language toggle buttons (.lang-btn with data-lang attribute)
+  // Language toggle buttons
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const lang = btn.dataset.lang;
       if (lang) {
         i18n.setLanguage(lang);
-        CommandPalette.trackLanguageSwitch();
       }
     });
   });
@@ -2965,7 +1855,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       tab.classList.add('active');
       tab.setAttribute('aria-selected', 'true');
-      // Update citation preview based on format
       updateCitationPreview(tab.dataset.format);
     });
   });
@@ -2977,8 +1866,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (debugContent) debugContent.textContent = '';
   });
 
-  debug.info('App', 'Matushka Premium initialized successfully!');
-  debug.table(GamificationManager.getStats());
+  debug.info('App', 'Matushka initialized successfully!');
 });
 
 // ============================================================================
@@ -2988,13 +1876,11 @@ document.addEventListener('DOMContentLoaded', () => {
 window.Matushka = {
   CONFIG,
   i18n,
-  GamificationManager,
   CommandPalette,
-  OnboardingManager,
   debug,
   searchContent,
   downloadSelected,
   exportCitations,
   resetFilters,
-  celebrateSuccess
+  listAvailableSources
 };

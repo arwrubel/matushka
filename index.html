@@ -78,28 +78,6 @@
                 <h1 class="app-title" data-i18n="appTitle">Матушка</h1>
                 <p class="app-subtitle" data-i18n="appSubtitle">Premium Video Archive Search</p>
             </div>
-
-            <!-- Stats Bar -->
-            <div class="stats-bar" role="status" aria-live="polite" aria-label="User statistics">
-                <div class="stat-item" title="Current streak">
-                    <span class="stat-icon" aria-hidden="true">&#128293;</span>
-                    <span class="stat-value" id="streakCount" data-i18n-dynamic="streak">0</span>
-                    <span class="stat-label" data-i18n="streakLabel">streak</span>
-                </div>
-                <div class="stat-item" title="Total points">
-                    <span class="stat-icon" aria-hidden="true">&#11088;</span>
-                    <span class="stat-value" id="pointsCount" data-i18n-dynamic="points">0</span>
-                    <span class="stat-label" data-i18n="pointsLabel">points</span>
-                </div>
-                <div class="stat-item stat-level" title="Current level">
-                    <span class="stat-icon" aria-hidden="true">&#128202;</span>
-                    <span class="stat-value" id="levelCount" data-i18n-dynamic="level">1</span>
-                    <span class="stat-label" data-i18n="levelLabel">level</span>
-                    <div class="level-progress" role="progressbar" aria-label="Level progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                        <div class="level-progress-fill" id="levelProgressFill"></div>
-                    </div>
-                </div>
-            </div>
         </div>
     </header>
 
@@ -158,19 +136,24 @@
                     </div>
                     <div class="checkbox-grid" role="group" aria-label="Category selection">
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="news" checked>
+                            <input type="checkbox" name="category" value="politics" checked>
                             <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catNews">News</span>
+                            <span class="checkbox-label" data-i18n="catPolitics">Politics</span>
                         </label>
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="documentary" checked>
+                            <input type="checkbox" name="category" value="economy" checked>
                             <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catDocumentary">Documentary</span>
+                            <span class="checkbox-label" data-i18n="catEconomy">Economy</span>
                         </label>
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="entertainment">
+                            <input type="checkbox" name="category" value="society" checked>
                             <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catEntertainment">Entertainment</span>
+                            <span class="checkbox-label" data-i18n="catSociety">Society</span>
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="category" value="world" checked>
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label" data-i18n="catWorld">World</span>
                         </label>
                         <label class="custom-checkbox">
                             <input type="checkbox" name="category" value="sports">
@@ -183,9 +166,14 @@
                             <span class="checkbox-label" data-i18n="catCulture">Culture</span>
                         </label>
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="category" value="education">
+                            <input type="checkbox" name="category" value="science">
                             <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="catEducation">Education</span>
+                            <span class="checkbox-label" data-i18n="catScience">Science</span>
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="category" value="tech">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label" data-i18n="catTech">Technology</span>
                         </label>
                     </div>
                 </div>
@@ -198,34 +186,54 @@
                     </div>
                     <div class="checkbox-grid" role="group" aria-label="Source selection">
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="channel1" checked>
+                            <input type="checkbox" name="source" value="1tv" checked>
                             <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcChannel1">Channel One</span>
+                            <span class="checkbox-label" data-i18n="src1tv">Channel One</span>
                         </label>
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="russia1" checked>
+                            <input type="checkbox" name="source" value="vesti" checked>
                             <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcRussia1">Russia 1</span>
+                            <span class="checkbox-label" data-i18n="srcVesti">Vesti</span>
                         </label>
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="ntv">
+                            <input type="checkbox" name="source" value="tass" checked>
                             <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcNTV">NTV</span>
+                            <span class="checkbox-label" data-i18n="srcTass">TASS</span>
                         </label>
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="culture">
+                            <input type="checkbox" name="source" value="ria" checked>
                             <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcCulture">Culture</span>
+                            <span class="checkbox-label" data-i18n="srcRia">RIA Novosti</span>
                         </label>
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="rt">
+                            <input type="checkbox" name="source" value="rt" checked>
                             <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcRT">RT</span>
+                            <span class="checkbox-label" data-i18n="srcRt">RT</span>
                         </label>
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="source" value="archive">
+                            <input type="checkbox" name="source" value="rbc">
                             <span class="checkmark"></span>
-                            <span class="checkbox-label" data-i18n="srcArchive">Archive</span>
+                            <span class="checkbox-label" data-i18n="srcRbc">RBC</span>
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="source" value="kommersant">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label" data-i18n="srcKommersant">Kommersant</span>
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="source" value="lenta">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label" data-i18n="srcLenta">Lenta</span>
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="source" value="gazeta">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label" data-i18n="srcGazeta">Gazeta</span>
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="source" value="izvestia">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label" data-i18n="srcIzvestia">Izvestia</span>
                         </label>
                     </div>
                 </div>
@@ -464,21 +472,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Onboarding Container -->
-    <div class="onboarding-container" id="onboarding" hidden role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
-        <h2 id="onboardingTitle" class="visually-hidden" data-i18n="onboardingTitle">Welcome Tour</h2>
-        <!-- Onboarding steps dynamically populated by JS -->
-    </div>
-
-    <!-- Celebration Container -->
-    <div class="celebration-container" id="celebrations" aria-live="polite" aria-label="Celebration notifications">
-        <!-- Confetti and toasts injected here -->
-    </div>
-
-    <!-- Custom Cursor Elements -->
-    <div class="custom-cursor" id="customCursor" aria-hidden="true"></div>
-    <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
 
     <!-- Footer -->
     <footer class="app-footer glass-card" role="contentinfo">
