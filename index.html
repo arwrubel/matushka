@@ -109,11 +109,15 @@
             <fieldset class="filter-group filter-group-wide">
                 <legend data-i18n="sourcesTitle">Sources</legend>
                 <div class="checkbox-group">
-                    <label><input type="checkbox" name="source" value="1tv" checked> <span data-i18n="src1tv">Channel One</span></label>
-                    <label><input type="checkbox" name="source" value="smotrim" checked> <span data-i18n="srcSmotrim">Smotrim</span></label>
-                    <label><input type="checkbox" name="source" value="rt" checked> <span data-i18n="srcRt">RT</span></label>
-                    <label><input type="checkbox" name="source" value="rutube"> <span data-i18n="srcRutube">Rutube</span></label>
-                    <label><input type="checkbox" name="source" value="izvestia"> <span data-i18n="srcIzvestia">Izvestia</span></label>
+                    <label><input type="checkbox" name="source" value="1tv:news" checked> <span data-i18n="src1tv">Channel One News</span></label>
+                    <label><input type="checkbox" name="source" value="1tv:vremya"> <span data-i18n="src1tvVremya">Vremya</span></label>
+                    <label><input type="checkbox" name="source" value="smotrim:news" checked> <span data-i18n="srcSmotrim">Smotrim</span></label>
+                    <label><input type="checkbox" name="source" value="rt:news"> <span data-i18n="srcRt">RT News</span></label>
+                    <label><input type="checkbox" name="source" value="izvestia:video"> <span data-i18n="srcIzvestia">Izvestia</span></label>
+                    <label><input type="checkbox" name="source" value="ntv:video"> <span data-i18n="srcNtv">NTV</span></label>
+                    <label><input type="checkbox" name="source" value="ria:video"> <span data-i18n="srcRia">RIA Novosti</span></label>
+                    <label><input type="checkbox" name="source" value="tass:video"> <span data-i18n="srcTass">TASS</span></label>
+                    <label><input type="checkbox" name="source" value="kommersant:video"> <span data-i18n="srcKommersant">Kommersant</span></label>
                 </div>
             </fieldset>
 
@@ -125,9 +129,15 @@
         </form>
 
         <!-- Loading Indicator -->
-        <div id="loadingIndicator" class="loading" role="status" aria-live="polite" hidden>
-            <span class="spinner" aria-hidden="true"></span>
-            <span data-i18n="loadingText">Loading...</span>
+        <div id="loadingIndicator" class="loading-container" role="status" aria-live="polite" hidden>
+            <div class="loading-content">
+                <span class="spinner" aria-hidden="true"></span>
+                <span class="loading-text" data-i18n="loadingText">Loading...</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <span class="loading-status" id="loadingStatus"></span>
         </div>
 
         <!-- Results Section -->
@@ -137,17 +147,26 @@
                     <span data-i18n="resultsTitle">Results</span>
                     <span id="resultsCount" class="results-count">(0)</span>
                 </h2>
-                <div class="sort-controls">
-                    <label for="sortSelect" class="visually-hidden" data-i18n="sortLabel">Sort by</label>
-                    <select id="sortSelect" class="sort-select">
-                        <option value="relevance" data-i18n="sortRelevance">Relevance</option>
-                        <option value="date-desc" data-i18n="sortDateDesc">Date (newest)</option>
-                        <option value="date-asc" data-i18n="sortDateAsc">Date (oldest)</option>
-                        <option value="duration-desc" data-i18n="sortDurationDesc">Duration (longest)</option>
-                        <option value="duration-asc" data-i18n="sortDurationAsc">Duration (shortest)</option>
-                        <option value="title-asc" data-i18n="sortTitleAsc">Title (A-Z)</option>
-                        <option value="title-desc" data-i18n="sortTitleDesc">Title (Z-A)</option>
-                    </select>
+                <div class="results-actions">
+                    <div class="selection-info" id="selectionInfo" hidden>
+                        <span class="selection-badge">
+                            <span id="selectionCount">0</span>
+                            <span data-i18n="selectedVideos">selected</span>
+                        </span>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="downloadAudioBtn" data-i18n="downloadBtn">Download Audio</button>
+                    <div class="sort-controls">
+                        <label for="sortSelect" class="visually-hidden" data-i18n="sortLabel">Sort by</label>
+                        <select id="sortSelect" class="sort-select">
+                            <option value="relevance" data-i18n="sortRelevance">Relevance</option>
+                            <option value="date-desc" data-i18n="sortDateDesc">Date (newest)</option>
+                            <option value="date-asc" data-i18n="sortDateAsc">Date (oldest)</option>
+                            <option value="duration-desc" data-i18n="sortDurationDesc">Duration (longest)</option>
+                            <option value="duration-asc" data-i18n="sortDurationAsc">Duration (shortest)</option>
+                            <option value="title-asc" data-i18n="sortTitleAsc">Title (A-Z)</option>
+                            <option value="title-desc" data-i18n="sortTitleDesc">Title (Z-A)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -184,24 +203,18 @@
 
         <!-- Citations Panel -->
         <aside id="citationsPanel" class="citations-panel" aria-labelledby="citationsHeading">
-            <button type="button" class="panel-toggle" aria-expanded="false" aria-controls="citationsContent">
-                <span id="citationsHeading" data-i18n="citationsTitle">Citations</span>
-                <span class="toggle-indicator" aria-hidden="true">[+]</span>
-            </button>
-            <div id="citationsContent" class="panel-content" hidden>
-                <div class="citation-formats" role="tablist" aria-label="Citation format">
-                    <button type="button" role="tab" aria-selected="true" data-format="apa" id="tabApa" aria-controls="citationOutput">APA</button>
-                    <button type="button" role="tab" aria-selected="false" data-format="mla" id="tabMla" aria-controls="citationOutput">MLA</button>
-                    <button type="button" role="tab" aria-selected="false" data-format="chicago" id="tabChicago" aria-controls="citationOutput">Chicago</button>
-                    <button type="button" role="tab" aria-selected="false" data-format="bibtex" id="tabBibtex" aria-controls="citationOutput">BibTeX</button>
-                </div>
-                <div id="citationOutput" class="citation-output" role="tabpanel" aria-labelledby="tabApa">
-                    <pre id="citationText"><code data-i18n="citationPlaceholder">Select videos to generate citations...</code></pre>
-                </div>
-                <div class="citation-actions">
-                    <button type="button" class="btn btn-secondary" id="copyCitationBtn" data-i18n="copyBtn">Copy</button>
-                    <button type="button" class="btn btn-primary" id="downloadCitationBtn" data-i18n="downloadBtn">Download Audio</button>
-                </div>
+            <div class="citations-header">
+                <h3 id="citationsHeading" data-i18n="citationsTitle">Citations</h3>
+                <button type="button" class="btn btn-secondary btn-sm" id="copyCitationBtn" data-i18n="copyBtn">Copy Citations</button>
+            </div>
+            <div class="citation-formats" role="tablist" aria-label="Citation format">
+                <button type="button" role="tab" aria-selected="true" data-format="apa" id="tabApa" aria-controls="citationOutput">APA</button>
+                <button type="button" role="tab" aria-selected="false" data-format="mla" id="tabMla" aria-controls="citationOutput">MLA</button>
+                <button type="button" role="tab" aria-selected="false" data-format="chicago" id="tabChicago" aria-controls="citationOutput">Chicago</button>
+                <button type="button" role="tab" aria-selected="false" data-format="bibtex" id="tabBibtex" aria-controls="citationOutput">BibTeX</button>
+            </div>
+            <div id="citationOutput" class="citation-output" role="tabpanel" aria-labelledby="tabApa">
+                <pre id="citationText"><code data-i18n="citationPlaceholder">Select videos to generate citations...</code></pre>
             </div>
         </aside>
     </main>

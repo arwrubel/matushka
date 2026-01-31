@@ -56,11 +56,15 @@ const TRANSLATIONS = {
     catTechnology: 'Technology',
 
     // Sources
-    src1tv: 'Channel One',
+    src1tv: 'Channel One News',
+    src1tvVremya: 'Vremya',
     srcSmotrim: 'Smotrim',
-    srcRt: 'RT',
-    srcRutube: 'Rutube',
+    srcRt: 'RT News',
     srcIzvestia: 'Izvestia',
+    srcNtv: 'NTV',
+    srcRia: 'RIA Novosti',
+    srcTass: 'TASS',
+    srcKommersant: 'Kommersant',
 
     // Results
     resultsTitle: 'Results',
@@ -76,10 +80,11 @@ const TRANSLATIONS = {
     selectForCitation: 'Select',
     watchVideo: 'Watch',
 
-    // Citations
+    // Citations & Actions
+    selectedVideos: 'selected',
     citationsTitle: 'Citations',
     citationPlaceholder: 'Select videos to generate citations...',
-    copyBtn: 'Copy',
+    copyBtn: 'Copy Citations',
     downloadBtn: 'Download Audio',
 
     // Status
@@ -141,11 +146,15 @@ const TRANSLATIONS = {
     catTechnology: 'Технологии',
 
     // Sources
-    src1tv: 'Первый канал',
+    src1tv: 'Первый канал - Новости',
+    src1tvVremya: 'Время',
     srcSmotrim: 'Смотрим',
-    srcRt: 'RT',
-    srcRutube: 'Рутуб',
+    srcRt: 'RT - Новости',
     srcIzvestia: 'Известия',
+    srcNtv: 'НТВ',
+    srcRia: 'РИА Новости',
+    srcTass: 'ТАСС',
+    srcKommersant: 'Коммерсантъ',
 
     // Results
     resultsTitle: 'Результаты',
@@ -161,10 +170,11 @@ const TRANSLATIONS = {
     selectForCitation: 'Выбрать',
     watchVideo: 'Смотреть',
 
-    // Citations
+    // Citations & Actions
+    selectedVideos: 'выбрано',
     citationsTitle: 'Цитаты',
     citationPlaceholder: 'Выберите видео для цитат...',
-    copyBtn: 'Копировать',
+    copyBtn: 'Копировать цитаты',
     downloadBtn: 'Скачать аудио',
 
     // Status
@@ -280,9 +290,10 @@ async function apiDiscover(params) {
     }
   });
 
-  log('API discover:', url.toString());
+  console.log('[Matushka] API discover:', url.toString());
 
   const response = await fetch(url);
+  console.log('[Matushka] API response status:', response.status);
   if (!response.ok) {
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }
@@ -430,15 +441,31 @@ function setLoading(loading, progress = null) {
   state.isLoading = loading;
 
   const indicator = document.getElementById('loadingIndicator');
+  const progressBar = document.getElementById('progressBar');
+  const loadingStatus = document.getElementById('loadingStatus');
   const submitBtns = document.querySelectorAll('button[type="submit"]');
 
   if (indicator) {
     indicator.hidden = !loading;
-    const textEl = indicator.querySelector('[data-i18n]');
-    if (textEl) {
-      textEl.textContent = progress
-        ? t('loadingProgress', { current: progress.current, total: progress.total })
-        : t('loading');
+  }
+
+  if (progressBar && progress) {
+    const percent = Math.round((progress.current / progress.total) * 100);
+    progressBar.style.width = `${percent}%`;
+  } else if (progressBar && loading) {
+    // Indeterminate - animate
+    progressBar.style.width = '30%';
+  } else if (progressBar) {
+    progressBar.style.width = '0%';
+  }
+
+  if (loadingStatus) {
+    if (progress) {
+      loadingStatus.textContent = t('loadingProgress', { current: progress.current, total: progress.total });
+    } else if (loading) {
+      loadingStatus.textContent = t('loading');
+    } else {
+      loadingStatus.textContent = '';
     }
   }
 
@@ -464,6 +491,16 @@ function updateResultsCount() {
 
 function updateSelectionCount() {
   const count = state.selectedItems.size;
+  const countEl = document.getElementById('selectionCount');
+  const selectionInfo = document.getElementById('selectionInfo');
+
+  if (countEl) {
+    countEl.textContent = count;
+  }
+  if (selectionInfo) {
+    selectionInfo.hidden = count === 0;
+  }
+
   announce(t('selected', { count }));
   updateCitationPreview();
 }
@@ -590,11 +627,12 @@ function getFilterValues() {
 }
 
 async function performSearch(e) {
+  console.log('[Matushka] performSearch called');
   if (e) e.preventDefault();
   if (state.isLoading) return;
 
   const filters = getFilterValues();
-  log('Search filters:', filters);
+  console.log('[Matushka] Search filters:', filters);
 
   // Validate
   if (filters.sources.length === 0) {
@@ -686,7 +724,7 @@ async function performSearch(e) {
     renderResults(filtered);
 
   } catch (error) {
-    logError('Search failed:', error);
+    console.error('[Matushka] Search failed:', error);
     showError(error.message);
     renderResults([]);
   } finally {
@@ -846,34 +884,16 @@ function handleReset() {
   // Clear UI
   const grid = document.getElementById('resultsGrid');
   const emptyState = document.getElementById('emptyState');
+  const selectionInfo = document.getElementById('selectionInfo');
   if (grid) grid.innerHTML = '';
   if (emptyState) emptyState.hidden = false;
+  if (selectionInfo) selectionInfo.hidden = true;
 
   updateResultsCount();
   updateCitationPreview();
 
   showSuccess(t('complete'));
   log('Form reset');
-}
-
-// =============================================================================
-// PANEL TOGGLE
-// =============================================================================
-
-function initPanelToggle() {
-  const toggle = document.querySelector('.panel-toggle');
-  if (!toggle) return;
-
-  toggle.addEventListener('click', () => {
-    const expanded = toggle.getAttribute('aria-expanded') === 'true';
-    toggle.setAttribute('aria-expanded', !expanded);
-
-    const content = document.getElementById('citationsContent');
-    if (content) content.hidden = expanded;
-
-    const indicator = toggle.querySelector('.toggle-indicator');
-    if (indicator) indicator.textContent = expanded ? '[+]' : '[-]';
-  });
 }
 
 // =============================================================================
@@ -936,7 +956,7 @@ function injectStyles() {
 // =============================================================================
 
 function init() {
-  log('Initializing Matushka...');
+  console.log('[Matushka] Initializing...');
 
   // Inject additional styles
   injectStyles();
@@ -953,9 +973,6 @@ function init() {
 
   // Set default dates
   setDefaultDates();
-
-  // Initialize panel toggle
-  initPanelToggle();
 
   // === EVENT LISTENERS ===
 
@@ -989,8 +1006,8 @@ function init() {
   // Copy citations button
   document.getElementById('copyCitationBtn')?.addEventListener('click', handleCopyCitations);
 
-  // Download audio button
-  document.getElementById('downloadCitationBtn')?.addEventListener('click', handleDownloadAudio);
+  // Download audio button (in results header)
+  document.getElementById('downloadAudioBtn')?.addEventListener('click', handleDownloadAudio);
 
   log('Matushka initialized');
 }

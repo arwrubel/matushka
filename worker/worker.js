@@ -120,6 +120,46 @@ const SITES = {
       'video': { categories: ['politics', 'society', 'world'] },
     }
   },
+  'ntv': {
+    name: 'NTV',
+    nameRu: 'НТВ',
+    domain: 'ntv.ru',
+    xmlApi: 'http://www.ntv.ru/vi',  // Legacy XML API: /vi{video_id}/
+    sitemap: 'https://www.ntv.ru/exp/yandex/sitemap_last.jsp',
+    sources: {
+      'video': { url: 'https://ntv.ru/video/', categories: ['politics', 'society', 'world'] },
+      'news': { url: 'https://ntv.ru/novosti/', categories: ['politics', 'society'] },
+    }
+  },
+  'ria': {
+    name: 'RIA Novosti',
+    nameRu: 'РИА Новости',
+    domain: 'ria.ru',
+    videoApi: 'https://nfw.ria.ru/flv/file/id',  // /id/{video_id}/type/mp4/nolog/1/
+    sources: {
+      'video': { url: 'https://ria.ru/video/', categories: ['politics', 'society', 'world'] },
+    }
+  },
+  'tass': {
+    name: 'TASS',
+    nameRu: 'ТАСС',
+    domain: 'tass.ru',
+    usesRutube: true,
+    rutubeChannelId: 23950585,  // TASS Rutube channel (29k+ videos)
+    sources: {
+      'video': { categories: ['politics', 'society', 'world'] },
+    }
+  },
+  'kommersant': {
+    name: 'Kommersant',
+    nameRu: 'Коммерсантъ',
+    domain: 'kommersant.ru',
+    usesRutube: true,
+    rutubeChannelId: 23923011,  // Kommersant Rutube channel (2k+ videos)
+    sources: {
+      'video': { categories: ['politics', 'economy', 'society'] },
+    }
+  },
 };
 
 // ============================================================================
@@ -1195,6 +1235,436 @@ async function extractIzvestia(url) {
   return extractRutubeFromPage(url);
 }
 
+// --- NTV.RU ---
+
+async function discoverNtv(sourceKey = 'video', maxItems = 20) {
+  log('Discovering from NTV:', sourceKey);
+  const results = [];
+
+  // Strategy 1: Use sitemap for recent videos
+  try {
+    const sitemapUrl = SITES['ntv'].sitemap;
+    log('Fetching NTV sitemap:', sitemapUrl);
+
+    const response = await fetchWithHeaders(sitemapUrl, {
+      headers: { 'Accept': 'application/xml, text/xml' }
+    });
+
+    if (response.ok) {
+      const xml = await response.text();
+
+      // Parse video URLs from sitemap
+      const urlMatches = xml.matchAll(/<loc>(https?:\/\/(?:www\.)?ntv\.ru\/video\/(\d+)[^<]*)<\/loc>/gi);
+
+      for (const match of urlMatches) {
+        const url = match[1];
+        const videoId = match[2];
+
+        results.push({
+          url,
+          source: 'ntv',
+          sourceKey,
+          videoId,
+          categories: SITES['ntv'].sources[sourceKey]?.categories || ['politics', 'society'],
+        });
+
+        if (results.length >= maxItems) break;
+      }
+      log('Found', results.length, 'videos from NTV sitemap');
+    }
+  } catch (e) {
+    log('NTV sitemap error:', e.message);
+  }
+
+  // Strategy 2: Scrape video listing page
+  if (results.length < maxItems) {
+    try {
+      const source = SITES['ntv'].sources[sourceKey];
+      if (source?.url) {
+        const response = await fetchWithHeaders(source.url);
+
+        if (response.ok) {
+          const html = await response.text();
+
+          // Extract video IDs from the page
+          const videoMatches = html.matchAll(/href=["'](?:https?:\/\/(?:www\.)?ntv\.ru)?\/video\/(\d+)\/?["']/gi);
+
+          for (const match of videoMatches) {
+            const videoId = match[1];
+            const url = `https://ntv.ru/video/${videoId}/`;
+
+            if (!results.find(r => r.videoId === videoId)) {
+              results.push({
+                url,
+                source: 'ntv',
+                sourceKey,
+                videoId,
+                categories: source.categories,
+              });
+            }
+
+            if (results.length >= maxItems) break;
+          }
+          log('Found', results.length, 'videos total from NTV');
+        }
+      }
+    } catch (e) {
+      log('NTV page scrape error:', e.message);
+    }
+  }
+
+  return results.slice(0, maxItems);
+}
+
+async function extractNtv(url) {
+  log('Extracting from NTV:', url);
+
+  // Extract video ID from URL
+  const idMatch = url.match(/\/video\/(\d+)/);
+  if (!idMatch) throw new Error('Could not extract NTV video ID');
+  const videoId = idMatch[1];
+
+  // Use legacy XML API - most reliable method
+  try {
+    const apiUrl = `${SITES['ntv'].xmlApi}${videoId}/`;
+    log('Fetching NTV XML API:', apiUrl);
+
+    const response = await fetchWithHeaders(apiUrl);
+    if (response.ok) {
+      const xml = await response.text();
+
+      // Parse XML response
+      const title = xml.match(/<title>([^<]+)<\/title>/)?.[1] || '';
+      const description = xml.match(/<description>([^<]+)<\/description>/)?.[1] || '';
+      const duration = parseInt(xml.match(/<duration>(\d+)<\/duration>/)?.[1] || '0');
+      const thumbnail = xml.match(/<image>([^<]+)<\/image>/)?.[1] || '';
+      const views = parseInt(xml.match(/<views>(\d+)<\/views>/)?.[1] || '0');
+
+      // Extract MP4 URLs
+      let mp4Url = null;
+      let mp4UrlHd = null;
+
+      // Standard quality
+      const fileMatch = xml.match(/<file>([^<]+)<\/file>/);
+      if (fileMatch) {
+        mp4Url = fileMatch[1];
+        if (mp4Url.startsWith('//')) mp4Url = 'https:' + mp4Url;
+      }
+
+      // HD quality
+      const fileHdMatch = xml.match(/<filehires>[\s\S]*?<file>([^<]+)<\/file>[\s\S]*?<\/filehires>/);
+      if (fileHdMatch) {
+        mp4UrlHd = fileHdMatch[1];
+        if (mp4UrlHd.startsWith('//')) mp4UrlHd = 'https:' + mp4UrlHd;
+      }
+
+      return {
+        source: 'ntv',
+        sourceUrl: url,
+        videoId,
+        title: decodeHtmlEntities(title),
+        description: decodeHtmlEntities(description),
+        thumbnail: thumbnail.startsWith('http') ? thumbnail : `https://ntv.ru${thumbnail}`,
+        duration,
+        views,
+        mp4Url: mp4UrlHd || mp4Url,
+        mp4UrlSd: mp4Url,
+        streamType: 'mp4',
+      };
+    }
+  } catch (e) {
+    log('NTV XML API error:', e.message);
+  }
+
+  // Fallback: Parse page for metadata
+  try {
+    const response = await fetchWithHeaders(url);
+    if (response.ok) {
+      const html = await response.text();
+      const og = extractOpenGraph(html);
+      const jsonLd = extractJsonLd(html);
+
+      return {
+        source: 'ntv',
+        sourceUrl: url,
+        videoId,
+        title: og.title || (jsonLd?.name) || 'NTV Video',
+        description: og.description || (jsonLd?.description) || null,
+        thumbnail: og.image || null,
+        duration: null,
+        streamType: 'mp4',
+      };
+    }
+  } catch (e) {
+    log('NTV page parse error:', e.message);
+  }
+
+  throw new Error('Could not extract NTV video');
+}
+
+// --- RIA.RU (RIA Novosti) ---
+
+async function discoverRia(sourceKey = 'video', maxItems = 20) {
+  log('Discovering from RIA Novosti:', sourceKey);
+  const results = [];
+
+  try {
+    const response = await fetchWithHeaders('https://ria.ru/video/', {
+      headers: { 'Accept-Language': 'ru-RU,ru;q=0.9' }
+    });
+
+    if (response.ok) {
+      const html = await response.text();
+
+      // Extract article URLs from video listing
+      const urlMatches = html.matchAll(/href=["'](https:\/\/ria\.ru\/\d{8}\/[^"']+\.html)["']/gi);
+
+      for (const match of urlMatches) {
+        const url = match[1];
+
+        // Extract date from URL
+        const dateMatch = url.match(/\/(\d{4})(\d{2})(\d{2})\//);
+
+        results.push({
+          url,
+          source: 'ria',
+          sourceKey,
+          publishDate: dateMatch ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}` : null,
+          categories: SITES['ria'].sources[sourceKey]?.categories || ['politics', 'society'],
+        });
+
+        if (results.length >= maxItems) break;
+      }
+      log('Found', results.length, 'videos from RIA');
+    }
+  } catch (e) {
+    log('RIA discovery error:', e.message);
+  }
+
+  return results.slice(0, maxItems);
+}
+
+async function extractRia(url) {
+  log('Extracting from RIA Novosti:', url);
+
+  const response = await fetchWithHeaders(url, {
+    headers: { 'Accept-Language': 'ru-RU,ru;q=0.9' }
+  });
+
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const html = await response.text();
+
+  // Extract JSON-LD VideoObject schema
+  const jsonLdMatch = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+  let videoObject = null;
+
+  if (jsonLdMatch) {
+    for (const match of jsonLdMatch) {
+      try {
+        const jsonContent = match.replace(/<script[^>]*>|<\/script>/gi, '');
+        const data = JSON.parse(jsonContent);
+        if (data['@type'] === 'VideoObject') {
+          videoObject = data;
+          break;
+        }
+      } catch (e) { /* continue */ }
+    }
+  }
+
+  if (!videoObject) {
+    // Fallback to OpenGraph
+    const og = extractOpenGraph(html);
+    return {
+      source: 'ria',
+      sourceUrl: url,
+      title: og.title || 'RIA Video',
+      description: og.description || null,
+      thumbnail: og.image || null,
+      streamType: null,
+    };
+  }
+
+  // Parse ISO 8601 duration (PT1M30S -> seconds)
+  let duration = null;
+  if (videoObject.duration) {
+    const durMatch = videoObject.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/i);
+    if (durMatch) {
+      duration = (parseInt(durMatch[1] || 0) * 3600) +
+                 (parseInt(durMatch[2] || 0) * 60) +
+                 parseInt(durMatch[3] || 0);
+    }
+  }
+
+  // Extract video ID from contentUrl
+  let videoId = null;
+  let mp4Url = videoObject.contentUrl || null;
+  if (mp4Url) {
+    const idMatch = mp4Url.match(/\/id\/(\d+)\//);
+    videoId = idMatch ? idMatch[1] : null;
+  }
+
+  return {
+    source: 'ria',
+    sourceUrl: url,
+    videoId,
+    title: videoObject.name || '',
+    description: videoObject.description || '',
+    thumbnail: videoObject.thumbnailUrl || '',
+    publishDate: videoObject.uploadDate || null,
+    duration,
+    mp4Url,
+    streamType: 'mp4',
+  };
+}
+
+// --- TASS (via Rutube) ---
+
+async function discoverTass(sourceKey = 'video', maxItems = 20) {
+  const channelId = SITES['tass'].rutubeChannelId;
+  log('Discovering from TASS via Rutube channel:', channelId);
+  const results = [];
+
+  try {
+    const apiUrl = `https://rutube.ru/api/video/person/${channelId}/?format=json&page=1&page_size=${maxItems}`;
+    log('Fetching TASS Rutube channel:', apiUrl);
+
+    const response = await fetchWithHeaders(apiUrl, {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data?.results && Array.isArray(data.results)) {
+        for (const item of data.results) {
+          results.push({
+            url: `https://rutube.ru/video/${item.id}/`,
+            source: 'tass',
+            sourceKey,
+            videoId: item.id,
+            title: item.title || null,
+            description: item.description || null,
+            thumbnail: item.thumbnail_url || null,
+            publishDate: item.created_ts || null,
+            duration: item.duration || null,
+            categories: SITES['tass'].sources[sourceKey]?.categories || ['politics', 'society'],
+          });
+        }
+        log('Found', results.length, 'videos from TASS Rutube channel');
+      }
+    }
+  } catch (e) {
+    log('TASS discovery error:', e.message);
+  }
+
+  return results.slice(0, maxItems);
+}
+
+async function extractTass(url) {
+  log('Extracting from TASS:', url);
+
+  // TASS uses Rutube - delegate extraction
+  if (url.includes('rutube.ru')) {
+    const result = await extractRutube(url);
+    result.source = 'tass';
+    return result;
+  }
+
+  // If it's a tass.ru URL, look for Rutube embed
+  try {
+    const response = await fetchWithHeaders(url);
+    if (response.ok) {
+      const html = await response.text();
+
+      // Look for Rutube embed
+      const rutubeMatch = html.match(/rutube\.ru\/(?:video|play\/embed)\/([a-f0-9]{32})/i);
+      if (rutubeMatch) {
+        const result = await extractRutube(`https://rutube.ru/video/${rutubeMatch[1]}/`);
+        result.source = 'tass';
+        return result;
+      }
+    }
+  } catch (e) {
+    log('TASS page parse error:', e.message);
+  }
+
+  throw new Error('Could not extract TASS video - no Rutube embed found');
+}
+
+// --- KOMMERSANT (via Rutube) ---
+
+async function discoverKommersant(sourceKey = 'video', maxItems = 20) {
+  const channelId = SITES['kommersant'].rutubeChannelId;
+  log('Discovering from Kommersant via Rutube channel:', channelId);
+  const results = [];
+
+  try {
+    const apiUrl = `https://rutube.ru/api/video/person/${channelId}/?format=json&page=1&page_size=${maxItems}`;
+    log('Fetching Kommersant Rutube channel:', apiUrl);
+
+    const response = await fetchWithHeaders(apiUrl, {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data?.results && Array.isArray(data.results)) {
+        for (const item of data.results) {
+          results.push({
+            url: `https://rutube.ru/video/${item.id}/`,
+            source: 'kommersant',
+            sourceKey,
+            videoId: item.id,
+            title: item.title || null,
+            description: item.description || null,
+            thumbnail: item.thumbnail_url || null,
+            publishDate: item.created_ts || null,
+            duration: item.duration || null,
+            categories: SITES['kommersant'].sources[sourceKey]?.categories || ['politics', 'economy'],
+          });
+        }
+        log('Found', results.length, 'videos from Kommersant Rutube channel');
+      }
+    }
+  } catch (e) {
+    log('Kommersant discovery error:', e.message);
+  }
+
+  return results.slice(0, maxItems);
+}
+
+async function extractKommersant(url) {
+  log('Extracting from Kommersant:', url);
+
+  // Kommersant uses Rutube - delegate extraction
+  if (url.includes('rutube.ru')) {
+    const result = await extractRutube(url);
+    result.source = 'kommersant';
+    return result;
+  }
+
+  // If it's a kommersant.ru URL, look for Rutube embed
+  try {
+    const response = await fetchWithHeaders(url);
+    if (response.ok) {
+      const html = await response.text();
+
+      // Look for Rutube embed
+      const rutubeMatch = html.match(/rutube\.ru\/(?:video|play\/embed)\/([a-f0-9]{32})/i);
+      if (rutubeMatch) {
+        const result = await extractRutube(`https://rutube.ru/video/${rutubeMatch[1]}/`);
+        result.source = 'kommersant';
+        return result;
+      }
+    }
+  } catch (e) {
+    log('Kommersant page parse error:', e.message);
+  }
+
+  throw new Error('Could not extract Kommersant video - no Rutube embed found');
+}
+
 // ============================================================================
 // UNIFIED EXTRACTION
 // ============================================================================
@@ -1206,6 +1676,9 @@ function detectSite(url) {
   if (urlLower.includes('rt.com') || urlLower.includes('rttv.com')) return 'rt';
   if (urlLower.includes('rutube.ru')) return 'rutube';
   if (urlLower.includes('iz.ru')) return 'izvestia';
+  if (urlLower.includes('ntv.ru')) return 'ntv';
+  if (urlLower.includes('ria.ru')) return 'ria';
+  if (urlLower.includes('tass.ru') || urlLower.includes('tass.com')) return 'tass';
   if (urlLower.includes('kommersant.ru')) return 'kommersant';
   return null;
 }
@@ -1224,8 +1697,14 @@ async function extractMetadata(url) {
       return extractRutube(url);
     case 'izvestia':
       return extractIzvestia(url);
+    case 'ntv':
+      return extractNtv(url);
+    case 'ria':
+      return extractRia(url);
+    case 'tass':
+      return extractTass(url);
     case 'kommersant':
-      return extractRutubeFromPage(url);
+      return extractKommersant(url);
     default:
       throw new Error(`Unsupported site: ${url}`);
   }
@@ -1396,8 +1875,11 @@ async function handleDiscover(url) {
     // Multiple sources specified
     sourcesToDiscover = sourcesParam.split(',').map(s => s.trim());
   } else {
-    // Default: discover from main sources of each site
-    sourcesToDiscover = ['1tv:news', 'smotrim:news', 'rt:news', 'rutube:news', 'izvestia:video'];
+    // Default: discover from main sources of each site (9 sources)
+    sourcesToDiscover = [
+      '1tv:news', 'smotrim:news', 'rt:news', 'rutube:news', 'izvestia:video',
+      'ntv:video', 'ria:video', 'tass:video', 'kommersant:video'
+    ];
   }
 
   // Calculate items per source
@@ -1429,6 +1911,22 @@ async function handleDiscover(url) {
 
         case 'izvestia':
           items = await discoverIzvestia(sourceId || 'video', itemsPerSource);
+          break;
+
+        case 'ntv':
+          items = await discoverNtv(sourceId || 'video', itemsPerSource);
+          break;
+
+        case 'ria':
+          items = await discoverRia(sourceId || 'video', itemsPerSource);
+          break;
+
+        case 'tass':
+          items = await discoverTass(sourceId || 'video', itemsPerSource);
+          break;
+
+        case 'kommersant':
+          items = await discoverKommersant(sourceId || 'video', itemsPerSource);
           break;
 
         default:
