@@ -1,481 +1,220 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matushka - Russian Language Teaching Materials Collector</title>
-    <meta name="description" content="Free browser-based Russian language teaching materials collector for educators. Search, filter, and download video content with automatic citation generation.">
-    <meta name="keywords" content="Russian language, teaching materials, education, video collector, citations">
+    <title data-i18n="pageTitle">Matushka - Russian Language Teaching Materials</title>
+    <meta name="description" content="Discover, download, and cite authentic Russian media content for language education">
+    <meta name="theme-color" content="#4f46e5">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%234f46e5'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23g)'/%3E%3Ctext x='50' y='68' font-size='50' text-anchor='middle' fill='white' font-family='system-ui' font-weight='700'%3EM%3C/text%3E%3C/svg%3E">
+
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Header Section -->
-        <header role="banner">
-            <h1 id="app-title">Matushka</h1>
-            <p class="subtitle" id="app-subtitle">Russian Language Teaching Materials Collector</p>
-            <p class="description" id="app-description">
-                A free, browser-based tool for educators to discover, organize, and cite Russian language video content for classroom use.
-            </p>
-        </header>
+    <a href="#main-content" class="skip-link" data-i18n="skipToMain">Skip to main content</a>
 
-        <main role="main">
-            <!-- Configuration Panel -->
-            <section class="config-panel" id="config-panel" aria-labelledby="config-heading">
-                <h2 id="config-heading">Search Configuration</h2>
-                <p class="section-description">Customize your search filters to find the perfect teaching materials.</p>
-
-                <form id="configForm" aria-label="Search configuration form">
-                    <!-- Duration Filter -->
-                    <div class="form-section" id="duration-section">
-                        <h3 id="duration-heading">Duration Filter</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="minDuration">Minimum Seconds:</label>
-                                <input type="number"
-                                       id="minDuration"
-                                       name="minDuration"
-                                       value="30"
-                                       min="0"
-                                       max="3600"
-                                       aria-describedby="duration-hint"
-                                       required>
-                            </div>
-                            <div class="form-group">
-                                <label for="maxDuration">Maximum Seconds:</label>
-                                <input type="number"
-                                       id="maxDuration"
-                                       name="maxDuration"
-                                       value="600"
-                                       min="0"
-                                       max="3600"
-                                       aria-describedby="duration-hint"
-                                       required>
-                            </div>
-                        </div>
-                        <p class="hint" id="duration-hint">Filter videos by length (e.g., 30-600 seconds for clips between 30 seconds and 10 minutes)</p>
-                    </div>
-
-                    <!-- Date Range -->
-                    <div class="form-section" id="date-section">
-                        <h3 id="date-heading">Date Range</h3>
-                        <div class="form-group">
-                            <label for="daysBack">Days Back:</label>
-                            <input type="number"
-                                   id="daysBack"
-                                   name="daysBack"
-                                   value="7"
-                                   min="1"
-                                   max="365"
-                                   aria-describedby="date-hint"
-                                   required>
-                        </div>
-                        <p class="hint" id="date-hint">Search for content published within the specified number of days (1-365)</p>
-                    </div>
-
-                    <!-- Categories -->
-                    <div class="form-section" id="categories-section">
-                        <h3 id="categories-heading">Categories</h3>
-                        <fieldset aria-labelledby="categories-heading">
-                            <legend class="visually-hidden">Select content categories</legend>
-                            <div class="checkbox-group" id="categories-group" role="group">
-                                <div class="checkbox-item checkbox-item-all">
-                                    <input type="checkbox"
-                                           id="allCategories"
-                                           name="allCategories"
-                                           checked
-                                           aria-controls="category-checkboxes">
-                                    <label for="allCategories"><strong>All Categories</strong></label>
-                                </div>
-                                <div class="checkbox-grid" id="category-checkboxes">
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catNews" name="categories" value="news">
-                                        <label for="catNews">News</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catInterviews" name="categories" value="interviews">
-                                        <label for="catInterviews">Interviews</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catCulture" name="categories" value="culture">
-                                        <label for="catCulture">Culture</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catSports" name="categories" value="sports">
-                                        <label for="catSports">Sports</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catPolitics" name="categories" value="politics">
-                                        <label for="catPolitics">Politics</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catEconomics" name="categories" value="economics">
-                                        <label for="catEconomics">Economics</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catScience" name="categories" value="science">
-                                        <label for="catScience">Science</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catWeather" name="categories" value="weather">
-                                        <label for="catWeather">Weather</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="catEntertainment" name="categories" value="entertainment">
-                                        <label for="catEntertainment">Entertainment</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                    </div>
-
-                    <!-- Sources -->
-                    <div class="form-section" id="sources-section">
-                        <h3 id="sources-heading">Sources</h3>
-                        <fieldset aria-labelledby="sources-heading">
-                            <legend class="visually-hidden">Select content sources</legend>
-                            <div class="checkbox-group" id="sources-group" role="group">
-                                <div class="checkbox-item checkbox-item-all">
-                                    <input type="checkbox"
-                                           id="allSources"
-                                           name="allSources"
-                                           checked
-                                           aria-controls="source-checkboxes">
-                                    <label for="allSources"><strong>All Sources</strong></label>
-                                </div>
-                                <div class="checkbox-grid" id="source-checkboxes">
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcMainNews" name="sources" value="main_news">
-                                        <label for="srcMainNews">Main News</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcVremya" name="sources" value="vremya">
-                                        <label for="srcVremya">Vremya</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcPozner" name="sources" value="pozner">
-                                        <label for="srcPozner">Pozner</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcCulture" name="sources" value="culture_section">
-                                        <label for="srcCulture">Culture</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcSportsNews" name="sources" value="sports_news">
-                                        <label for="srcSportsNews">Sports</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcDobroeUtro" name="sources" value="dobroe_utro">
-                                        <label for="srcDobroeUtro">Dobroe Utro</label>
-                                    </div>
-                                    <div class="checkbox-item">
-                                        <input type="checkbox" id="srcSegodnyaVecherom" name="sources" value="segodnya_vecherom">
-                                        <label for="srcSegodnyaVecherom">Segodnya Vecherom</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                    </div>
-
-                    <!-- Max Items -->
-                    <div class="form-section" id="max-items-section">
-                        <h3 id="max-items-heading">Maximum Items</h3>
-                        <div class="form-group">
-                            <label for="maxItems">Maximum number of results:</label>
-                            <input type="number"
-                                   id="maxItems"
-                                   name="maxItems"
-                                   value="20"
-                                   min="1"
-                                   max="100"
-                                   aria-describedby="max-items-hint"
-                                   required>
-                        </div>
-                        <p class="hint" id="max-items-hint">Limit the number of search results (1-100)</p>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="form-actions" id="search-actions">
-                        <button type="button"
-                                id="searchBtn"
-                                class="btn btn-primary btn-large"
-                                aria-describedby="search-btn-desc">
-                            <span class="btn-icon" aria-hidden="true">&#128269;</span>
-                            Search for Content
-                        </button>
-                        <button type="button"
-                                id="resetBtn"
-                                class="btn btn-secondary"
-                                aria-label="Reset all filters to default values">
-                            Reset Filters
-                        </button>
-                    </div>
-                    <p class="visually-hidden" id="search-btn-desc">Begin searching for Russian language video content based on your filter settings</p>
-
-                    <!-- Error/Validation Messages -->
-                    <div id="validationMessages"
-                         class="validation-messages"
-                         role="alert"
-                         aria-live="polite"
-                         aria-atomic="true"></div>
-                </form>
-            </section>
-
-            <!-- Status/Progress Section -->
-            <section class="status-section"
-                     id="status-section"
-                     aria-labelledby="status-heading"
-                     aria-live="polite"
-                     hidden>
-                <h2 id="status-heading" class="visually-hidden">Operation Status</h2>
-
-                <!-- Loading Spinner -->
-                <div class="loading-container" id="loading-container" hidden>
-                    <div class="spinner" id="spinner" role="status" aria-label="Loading">
-                        <div class="spinner-circle"></div>
-                    </div>
-                    <p class="loading-text" id="loading-text">Searching for content...</p>
-                </div>
-
-                <!-- Progress Bar -->
-                <div class="progress-container" id="progress-container" hidden>
-                    <div class="progress-header">
-                        <span class="progress-label" id="progress-label">Downloading...</span>
-                        <span class="progress-percentage" id="progress-percentage">0%</span>
-                    </div>
-                    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-                    </div>
-                    <p class="progress-detail" id="progress-detail">Preparing download...</p>
-                </div>
-
-                <!-- Status Messages -->
-                <div class="status-messages" id="status-messages">
-                    <!-- Success/error messages will be inserted here -->
-                </div>
-            </section>
-
-            <!-- Results Section -->
-            <section class="results-section"
-                     id="results-section"
-                     aria-labelledby="results-heading"
-                     hidden>
-                <h2 id="results-heading">Search Results</h2>
-
-                <!-- Results Header -->
-                <div class="results-header" id="results-header">
-                    <div class="results-count">
-                        <span id="results-count-text">0 items found</span>
-                    </div>
-                    <div class="results-view-toggle" role="group" aria-label="View options">
-                        <button type="button"
-                                id="viewGrid"
-                                class="view-btn active"
-                                aria-pressed="true"
-                                aria-label="Grid view">
-                            <span aria-hidden="true">&#9638;</span>
-                        </button>
-                        <button type="button"
-                                id="viewList"
-                                class="view-btn"
-                                aria-pressed="false"
-                                aria-label="List view">
-                            <span aria-hidden="true">&#9776;</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Selection Controls -->
-                <div class="selection-controls" id="selection-controls">
-                    <button type="button" id="selectAllBtn" class="btn btn-small btn-outline">
-                        Select All
-                    </button>
-                    <button type="button" id="deselectAllBtn" class="btn btn-small btn-outline">
-                        Deselect All
-                    </button>
-                    <span class="selection-count" id="selection-count">0 selected</span>
-                </div>
-
-                <!-- Results Grid/List Container -->
-                <div class="results-container" id="results-container" role="list" aria-label="Search results">
-                    <!-- Video cards will be dynamically inserted here -->
-                </div>
-
-                <!-- Results Actions -->
-                <div class="results-actions" id="results-actions">
-                    <button type="button"
-                            id="downloadSelectedBtn"
-                            class="btn btn-primary"
-                            disabled
-                            aria-describedby="download-desc">
-                        <span class="btn-icon" aria-hidden="true">&#8681;</span>
-                        Download Selected
-                    </button>
-                    <button type="button"
-                            id="exportCitationsBtn"
-                            class="btn btn-secondary"
-                            disabled
-                            aria-describedby="citations-desc">
-                        <span class="btn-icon" aria-hidden="true">&#128196;</span>
-                        Export Citations
-                    </button>
-                </div>
-                <p class="visually-hidden" id="download-desc">Download selected video files</p>
-                <p class="visually-hidden" id="citations-desc">Generate and export citations for selected items</p>
-
-                <!-- Empty State -->
-                <div class="empty-state" id="empty-state" hidden>
-                    <div class="empty-state-icon" aria-hidden="true">&#128269;</div>
-                    <h3>No Results Found</h3>
-                    <p>Try adjusting your search filters or expanding your date range.</p>
-                </div>
-            </section>
-
-            <!-- Citations Panel -->
-            <section class="citations-panel"
-                     id="citations-panel"
-                     aria-labelledby="citations-heading"
-                     hidden>
-                <div class="citations-header">
-                    <h2 id="citations-heading">Generated Citations</h2>
-                    <button type="button"
-                            id="toggleCitationsBtn"
-                            class="btn btn-icon-only"
-                            aria-expanded="true"
-                            aria-controls="citations-content"
-                            aria-label="Collapse citations panel">
-                        <span class="toggle-icon" aria-hidden="true">&#9650;</span>
-                    </button>
-                </div>
-
-                <div class="citations-content" id="citations-content">
-                    <!-- Format Selector -->
-                    <div class="format-selector" id="format-selector">
-                        <label for="citationFormat" id="format-label">Citation Format:</label>
-                        <select id="citationFormat"
-                                name="citationFormat"
-                                aria-labelledby="format-label">
-                            <option value="chicago" selected>Chicago Style</option>
-                            <option value="mla">MLA</option>
-                            <option value="apa">APA</option>
-                            <option value="bibtex">BibTeX</option>
-                            <option value="json">JSON</option>
-                        </select>
-                    </div>
-
-                    <!-- Citations Display -->
-                    <div class="citations-display" id="citations-display">
-                        <textarea id="citationsText"
-                                  class="citations-textarea"
-                                  readonly
-                                  aria-label="Generated citations"
-                                  placeholder="Citations will appear here after export..."></textarea>
-                    </div>
-
-                    <!-- Citations Actions -->
-                    <div class="citations-actions" id="citations-actions">
-                        <button type="button"
-                                id="copyAllCitationsBtn"
-                                class="btn btn-secondary btn-small"
-                                aria-label="Copy all citations to clipboard">
-                            <span class="btn-icon" aria-hidden="true">&#128203;</span>
-                            Copy All
-                        </button>
-                        <button type="button"
-                                id="downloadCitationsBtn"
-                                class="btn btn-secondary btn-small"
-                                aria-label="Download citations as file">
-                            <span class="btn-icon" aria-hidden="true">&#8681;</span>
-                            Download File
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Legal Disclaimer (Brief) -->
-            <section class="legal-notice" id="legal-notice" aria-labelledby="legal-heading">
-                <h2 id="legal-heading">Important Notice</h2>
-                <div class="notice-content">
-                    <p>
-                        <strong>Educational Use Only:</strong> Matushka is designed exclusively for educational purposes to help Russian language educators discover and organize teaching materials.
-                    </p>
-                    <p>
-                        Users are responsible for ensuring compliance with all applicable laws and terms of service. All materials remain the property of their original creators.
-                    </p>
-                    <p>
-                        <a href="legal.html" id="legal-link">Read the full legal disclaimer and terms of use</a>
-                    </p>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer role="contentinfo" id="app-footer">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <p class="footer-brand">Matushka</p>
-                    <p class="footer-tagline">Free Russian language teaching materials for educators worldwide.</p>
-                </div>
-
-                <div class="footer-section">
-                    <p class="footer-links">
-                        <a href="legal.html" aria-label="Legal information and disclaimer">Legal</a>
-                        <span class="separator" aria-hidden="true">|</span>
-                        <a href="https://github.com/yourusername/matushka"
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           aria-label="View Matushka on GitHub (opens in new tab)">
-                            GitHub
-                        </a>
-                    </p>
-                </div>
-
-                <div class="footer-section">
-                    <p class="footer-license">
-                        Released under the <a href="https://opensource.org/licenses/MIT"
-                                              target="_blank"
-                                              rel="noopener noreferrer">MIT License</a>
-                    </p>
-                    <p class="footer-copyright">
-                        <span id="copyright-year"></span> Matushka Project
-                    </p>
-                </div>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Video Card Template (hidden, used by JavaScript) -->
-    <template id="video-card-template">
-        <article class="video-card" role="listitem">
-            <div class="video-card-select">
-                <input type="checkbox"
-                       class="video-select-checkbox"
-                       aria-label="Select this video">
-            </div>
-            <div class="video-card-thumbnail">
-                <img src="" alt="" class="video-thumbnail" loading="lazy">
-                <span class="video-duration-badge"></span>
-            </div>
-            <div class="video-card-content">
-                <h3 class="video-title"></h3>
-                <p class="video-program"></p>
-                <div class="video-meta">
-                    <span class="video-date"></span>
-                    <span class="video-category-badge"></span>
-                </div>
-            </div>
-        </article>
-    </template>
-
-    <!-- Status Message Template -->
-    <template id="status-message-template">
-        <div class="status-message" role="status">
-            <span class="status-icon" aria-hidden="true"></span>
-            <span class="status-text"></span>
-            <button type="button" class="status-dismiss" aria-label="Dismiss message">&times;</button>
+    <!-- Header -->
+    <header class="site-header">
+        <h1 class="site-title" data-i18n="appTitle">Matushka</h1>
+        <div class="lang-toggle" role="group" aria-label="Language selection">
+            <button type="button" class="lang-btn active" data-lang="en" aria-pressed="true">EN</button>
+            <button type="button" class="lang-btn" data-lang="ru" aria-pressed="false">RU</button>
         </div>
-    </template>
+    </header>
 
-    <script src="app.js"></script>
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Hero Section -->
+        <section class="hero" aria-labelledby="heroHeading">
+            <h2 id="heroHeading" class="hero-title" data-i18n="heroTitle">Russian Language Teaching Materials</h2>
+            <p class="hero-subtitle" data-i18n="heroSubtitle">Discover authentic Russian media content from trusted sources. Download audio files and generate proper academic citations.</p>
+        </section>
+
+        <!-- Error Messages -->
+        <div id="errorContainer" class="error-container" role="alert" aria-live="assertive" hidden></div>
+
+        <!-- Search Form -->
+        <form id="searchForm" class="search-form" aria-label="Video search">
+            <!-- Keyword Search -->
+            <div class="search-bar">
+                <label for="searchQuery" class="visually-hidden" data-i18n="searchLabel">Search keywords</label>
+                <input type="search" id="searchQuery" name="query" placeholder="Search videos..." data-i18n-placeholder="searchPlaceholder" autocomplete="off">
+                <button type="submit" class="btn btn-primary" data-i18n="searchBtn">Search</button>
+            </div>
+
+            <!-- Filters Grid -->
+            <div class="filters-grid">
+                <!-- Duration Filter -->
+                <fieldset class="filter-group">
+                    <legend data-i18n="durationTitle">Duration (seconds)</legend>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="minDuration" data-i18n="minDuration">Min</label>
+                            <input type="number" id="minDuration" name="minDuration" min="0" value="0">
+                        </div>
+                        <div class="field">
+                            <label for="maxDuration" data-i18n="maxDuration">Max</label>
+                            <input type="number" id="maxDuration" name="maxDuration" min="0" value="3600">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Date Range Filter -->
+                <fieldset class="filter-group">
+                    <legend data-i18n="dateRangeTitle">Date Range</legend>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="startDate" data-i18n="startDate">Start</label>
+                            <input type="date" id="startDate" name="startDate">
+                        </div>
+                        <div class="field">
+                            <label for="endDate" data-i18n="endDate">End</label>
+                            <input type="date" id="endDate" name="endDate">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Max Results -->
+                <fieldset class="filter-group">
+                    <legend data-i18n="maxResultsTitle">Max Results</legend>
+                    <div class="field">
+                        <label for="maxResults" class="visually-hidden" data-i18n="maxResultsLabel">Number of results</label>
+                        <input type="number" id="maxResults" name="maxResults" min="1" max="100" value="20">
+                    </div>
+                </fieldset>
+            </div>
+
+            <!-- Categories Filter -->
+            <fieldset class="filter-group filter-group-wide">
+                <legend data-i18n="categoriesTitle">Categories</legend>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="category" value="politics" checked> <span data-i18n="catPolitics">Politics</span></label>
+                    <label><input type="checkbox" name="category" value="economy" checked> <span data-i18n="catEconomy">Economy</span></label>
+                    <label><input type="checkbox" name="category" value="society" checked> <span data-i18n="catSociety">Society</span></label>
+                    <label><input type="checkbox" name="category" value="world" checked> <span data-i18n="catWorld">World</span></label>
+                    <label><input type="checkbox" name="category" value="sports"> <span data-i18n="catSports">Sports</span></label>
+                    <label><input type="checkbox" name="category" value="culture"> <span data-i18n="catCulture">Culture</span></label>
+                    <label><input type="checkbox" name="category" value="science"> <span data-i18n="catScience">Science</span></label>
+                    <label><input type="checkbox" name="category" value="technology"> <span data-i18n="catTechnology">Technology</span></label>
+                </div>
+            </fieldset>
+
+            <!-- Sources Filter -->
+            <fieldset class="filter-group filter-group-wide">
+                <legend data-i18n="sourcesTitle">Sources</legend>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="source" value="1tv" checked> <span data-i18n="src1tv">Channel One</span></label>
+                    <label><input type="checkbox" name="source" value="smotrim" checked> <span data-i18n="srcSmotrim">Smotrim</span></label>
+                    <label><input type="checkbox" name="source" value="rt" checked> <span data-i18n="srcRt">RT</span></label>
+                    <label><input type="checkbox" name="source" value="rutube"> <span data-i18n="srcRutube">Rutube</span></label>
+                    <label><input type="checkbox" name="source" value="izvestia"> <span data-i18n="srcIzvestia">Izvestia</span></label>
+                </div>
+            </fieldset>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" data-i18n="searchBtn">Search</button>
+                <button type="reset" class="btn btn-secondary" data-i18n="resetBtn">Reset</button>
+            </div>
+        </form>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading" role="status" aria-live="polite" hidden>
+            <span class="spinner" aria-hidden="true"></span>
+            <span data-i18n="loadingText">Loading...</span>
+        </div>
+
+        <!-- Results Section -->
+        <section id="resultsSection" class="results-section" aria-labelledby="resultsHeading">
+            <div class="results-header">
+                <h2 id="resultsHeading">
+                    <span data-i18n="resultsTitle">Results</span>
+                    <span id="resultsCount" class="results-count">(0)</span>
+                </h2>
+                <div class="sort-controls">
+                    <label for="sortSelect" class="visually-hidden" data-i18n="sortLabel">Sort by</label>
+                    <select id="sortSelect" class="sort-select">
+                        <option value="relevance" data-i18n="sortRelevance">Relevance</option>
+                        <option value="date-desc" data-i18n="sortDateDesc">Date (newest)</option>
+                        <option value="date-asc" data-i18n="sortDateAsc">Date (oldest)</option>
+                        <option value="duration-desc" data-i18n="sortDurationDesc">Duration (longest)</option>
+                        <option value="duration-asc" data-i18n="sortDurationAsc">Duration (shortest)</option>
+                        <option value="title-asc" data-i18n="sortTitleAsc">Title (A-Z)</option>
+                        <option value="title-desc" data-i18n="sortTitleDesc">Title (Z-A)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="resultsGrid" class="results-grid" role="list" aria-label="Search results"></div>
+
+            <p id="emptyState" class="empty-state" data-i18n="emptyStateDesc">Enter search terms and click Search to find videos.</p>
+        </section>
+
+        <!-- Video Card Template -->
+        <template id="videoCardTemplate">
+            <article class="video-card" role="listitem">
+                <div class="video-thumbnail">
+                    <img src="" alt="" loading="lazy">
+                    <span class="video-duration"></span>
+                </div>
+                <div class="video-info">
+                    <h3 class="video-title"></h3>
+                    <p class="video-program"></p>
+                    <p class="video-meta">
+                        <time class="video-date"></time>
+                        <span class="video-source"></span>
+                        <span class="video-category"></span>
+                    </p>
+                </div>
+                <div class="video-actions">
+                    <label class="select-video">
+                        <input type="checkbox" class="video-select">
+                        <span data-i18n="selectForCitation">Select</span>
+                    </label>
+                    <a href="#" class="video-link" target="_blank" rel="noopener" data-i18n="watchVideo">Watch</a>
+                </div>
+            </article>
+        </template>
+
+        <!-- Citations Panel -->
+        <aside id="citationsPanel" class="citations-panel" aria-labelledby="citationsHeading">
+            <button type="button" class="panel-toggle" aria-expanded="false" aria-controls="citationsContent">
+                <span id="citationsHeading" data-i18n="citationsTitle">Citations</span>
+                <span class="toggle-indicator" aria-hidden="true">[+]</span>
+            </button>
+            <div id="citationsContent" class="panel-content" hidden>
+                <div class="citation-formats" role="tablist" aria-label="Citation format">
+                    <button type="button" role="tab" aria-selected="true" data-format="apa" id="tabApa" aria-controls="citationOutput">APA</button>
+                    <button type="button" role="tab" aria-selected="false" data-format="mla" id="tabMla" aria-controls="citationOutput">MLA</button>
+                    <button type="button" role="tab" aria-selected="false" data-format="chicago" id="tabChicago" aria-controls="citationOutput">Chicago</button>
+                    <button type="button" role="tab" aria-selected="false" data-format="bibtex" id="tabBibtex" aria-controls="citationOutput">BibTeX</button>
+                </div>
+                <div id="citationOutput" class="citation-output" role="tabpanel" aria-labelledby="tabApa">
+                    <pre id="citationText"><code data-i18n="citationPlaceholder">Select videos to generate citations...</code></pre>
+                </div>
+                <div class="citation-actions">
+                    <button type="button" class="btn btn-secondary" id="copyCitationBtn" data-i18n="copyBtn">Copy</button>
+                    <button type="button" class="btn btn-primary" id="downloadCitationBtn" data-i18n="downloadBtn">Download Audio</button>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <p data-i18n="footerCopyright">Matushka 2024</p>
+        <p class="version"><span data-i18n="versionLabel">Version</span> <span id="appVersion">2.0.0</span></p>
+    </footer>
+
+    <!-- Screen Reader Announcements -->
+    <div id="announcer" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="app.js" defer></script>
 </body>
 </html>

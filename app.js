@@ -16,11 +16,19 @@ const DEBUG = new URLSearchParams(window.location.search).has('debug');
 
 const TRANSLATIONS = {
   en: {
+    // Page
+    pageTitle: 'Matushka - Russian Language Teaching Materials',
+
     // Header
     appTitle: 'Matushka',
     skipToMain: 'Skip to main content',
 
+    // Hero
+    heroTitle: 'Russian Language Teaching Materials',
+    heroSubtitle: 'Discover authentic Russian media content from trusted sources. Download audio files and generate proper academic citations.',
+
     // Search
+    searchLabel: 'Search keywords',
     searchPlaceholder: 'Search videos...',
     searchBtn: 'Search',
     resetBtn: 'Reset',
@@ -45,7 +53,7 @@ const TRANSLATIONS = {
     catSports: 'Sports',
     catCulture: 'Culture',
     catScience: 'Science',
-    catTech: 'Technology',
+    catTechnology: 'Technology',
 
     // Sources
     src1tv: 'Channel One',
@@ -56,7 +64,7 @@ const TRANSLATIONS = {
 
     // Results
     resultsTitle: 'Results',
-    sortLabel: 'Sort by:',
+    sortLabel: 'Sort by',
     sortRelevance: 'Relevance',
     sortDateDesc: 'Date (newest)',
     sortDateAsc: 'Date (oldest)',
@@ -75,6 +83,7 @@ const TRANSLATIONS = {
     downloadBtn: 'Download Audio',
 
     // Status
+    loadingText: 'Loading...',
     loading: 'Loading...',
     loadingProgress: 'Loading {current} of {total}...',
     downloading: 'Downloading...',
@@ -92,11 +101,19 @@ const TRANSLATIONS = {
   },
 
   ru: {
+    // Page
+    pageTitle: 'Матушка - Материалы для изучения русского языка',
+
     // Header
     appTitle: 'Матушка',
     skipToMain: 'Перейти к содержанию',
 
+    // Hero
+    heroTitle: 'Материалы для изучения русского языка',
+    heroSubtitle: 'Находите аутентичный русскоязычный медиаконтент из надежных источников. Скачивайте аудиофайлы и создавайте академические ссылки.',
+
     // Search
+    searchLabel: 'Поисковый запрос',
     searchPlaceholder: 'Поиск видео...',
     searchBtn: 'Поиск',
     resetBtn: 'Сброс',
@@ -121,7 +138,7 @@ const TRANSLATIONS = {
     catSports: 'Спорт',
     catCulture: 'Культура',
     catScience: 'Наука',
-    catTech: 'Технологии',
+    catTechnology: 'Технологии',
 
     // Sources
     src1tv: 'Первый канал',
@@ -132,7 +149,7 @@ const TRANSLATIONS = {
 
     // Results
     resultsTitle: 'Результаты',
-    sortLabel: 'Сортировка:',
+    sortLabel: 'Сортировка',
     sortRelevance: 'Релевантность',
     sortDateDesc: 'Дата (новые)',
     sortDateAsc: 'Дата (старые)',
@@ -151,6 +168,7 @@ const TRANSLATIONS = {
     downloadBtn: 'Скачать аудио',
 
     // Status
+    loadingText: 'Загрузка...',
     loading: 'Загрузка...',
     loadingProgress: 'Загрузка {current} из {total}...',
     downloading: 'Скачивание...',
@@ -360,32 +378,38 @@ function showNotification(message, type = 'info') {
   notification.className = `notification notification-${type}`;
   notification.setAttribute('role', 'alert');
 
-  const colors = {
-    error: '#ef4444',
-    success: '#10b981',
-    info: '#3b82f6'
+  const configs = {
+    error: { bg: '#dc2626', icon: '\u2716' },
+    success: { bg: '#059669', icon: '\u2714' },
+    info: { bg: '#4f46e5', icon: '\u2139' }
   };
+
+  const config = configs[type] || configs.info;
 
   notification.style.cssText = `
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 12px 20px;
-    background: ${colors[type] || colors.info};
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: ${config.bg};
     color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
     z-index: 10000;
     font-size: 14px;
-    max-width: 300px;
-    animation: slideInNotification 0.3s ease;
+    font-weight: 500;
+    max-width: 360px;
+    animation: slideInNotification 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   `;
 
-  notification.textContent = message;
+  notification.innerHTML = `<span style="font-size: 16px;">${config.icon}</span><span>${escapeHtml(message)}</span>`;
   document.body.appendChild(notification);
 
   setTimeout(() => {
-    notification.style.animation = 'slideOutNotification 0.3s ease';
+    notification.style.animation = 'slideOutNotification 0.3s cubic-bezier(0.65, 0, 0.35, 1)';
     setTimeout(() => notification.remove(), 300);
   }, type === 'error' ? 5000 : 3000);
 }
@@ -872,28 +896,36 @@ function setDefaultDates() {
 }
 
 function injectStyles() {
+  // Check if styles already injected
+  if (document.getElementById('matushka-dynamic-styles')) return;
+
   const style = document.createElement('style');
+  style.id = 'matushka-dynamic-styles';
   style.textContent = `
-    @keyframes slideInNotification {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+    /* Button press feedback */
+    .btn:active {
+      transform: translateY(0) scale(0.98) !important;
     }
-    @keyframes slideOutNotification {
-      from { transform: translateX(0); opacity: 1; }
-      to { transform: translateX(100%); opacity: 0; }
+
+    /* Checkbox animation */
+    .checkbox-group input[type="checkbox"]:checked {
+      animation: checkPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .thumbnail-placeholder {
-      width: 100%;
-      height: 100%;
-      min-height: 100px;
-      background: linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%);
+
+    @keyframes checkPop {
+      0% { transform: scale(0.8); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
     }
-    .video-card {
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    /* Selection pulse for video cards */
+    .video-card:has(.video-select:checked) {
+      animation: selectionPulse 0.3s ease;
     }
-    .video-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+    @keyframes selectionPulse {
+      0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+      100% { box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1); }
     }
   `;
   document.head.appendChild(style);
