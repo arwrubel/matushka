@@ -46,6 +46,7 @@ const SITES = {
     nameRu: 'Первый канал',
     domain: '1tv.ru',
     scheduleApi: 'https://stream.1tv.ru/api/schedule.json',
+    sitemapBase: 'https://www.1tv.ru/sitemap-news-',  // + YYYY.xml
     sources: {
       'news': { url: 'https://www.1tv.ru/news', categories: ['politics', 'society', 'world'] },
       'politics': { url: 'https://www.1tv.ru/news/politika', categories: ['politics'] },
@@ -124,7 +125,7 @@ const SITES = {
     name: 'NTV',
     nameRu: 'НТВ',
     domain: 'ntv.ru',
-    xmlApi: 'http://www.ntv.ru/vi',  // Legacy XML API: /vi{video_id}/
+    xmlApi: 'https://www.ntv.ru/vi',  // Legacy XML API: /vi{video_id}/
     sitemap: 'https://www.ntv.ru/exp/yandex/sitemap_last.jsp',
     sources: {
       'video': { url: 'https://ntv.ru/video/', categories: ['politics', 'society', 'world'] },
@@ -566,8 +567,75 @@ async function discover1tv(sourceKey, maxItems = 20) {
   log('Discovering from 1tv:', sourceKey);
   const results = [];
 
-  // Strategy 1: Try the schedule API for program-based content (vremya, news)
-  if (sourceKey === 'vremya' || sourceKey === 'news') {
+  // Strategy 1: Try sitemap for news (most reliable for 1tv since pages are client-side rendered)
+  try {
+    const currentYear = new Date().getFullYear();
+    // Try current year first, then previous year if empty
+    for (const year of [currentYear, currentYear - 1]) {
+      if (results.length >= maxItems) break;
+
+      const sitemapUrl = `${SITES['1tv'].sitemapBase}${year}.xml`;
+      log('Trying 1tv sitemap:', sitemapUrl);
+
+      const response = await fetchWithHeaders(sitemapUrl);
+      if (response.ok) {
+        const xml = await response.text();
+
+        // Extract URLs from sitemap
+        const urlMatches = xml.matchAll(/<loc>([^<]+)<\/loc>/g);
+        const lastmodMatches = xml.matchAll(/<lastmod>([^<]+)<\/lastmod>/g);
+
+        const urls = [...urlMatches].map(m => m[1]);
+        const dates = [...lastmodMatches].map(m => m[1]);
+
+        // Filter for news URLs with video feeds (those with ovs:feed)
+        const videoFeedPattern = /<url>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<ovs:feed>([^<]+)<\/ovs:feed>[\s\S]*?<lastmod>([^<]+)<\/lastmod>[\s\S]*?<\/url>/g;
+        const videoMatches = [...xml.matchAll(videoFeedPattern)];
+
+        // Get most recent items first (reverse since sitemap is often chronological)
+        const sortedMatches = videoMatches.reverse();
+
+        for (const match of sortedMatches) {
+          if (results.length >= maxItems) break;
+
+          const [, url, feedUrl, lastmod] = match;
+          if (url && url.includes('/news/')) {
+            results.push({
+              url,
+              source: '1tv',
+              sourceKey,
+              videoFeed: feedUrl,
+              publishDate: lastmod ? lastmod.split('T')[0] : null,
+              categories: source.categories,
+            });
+          }
+        }
+
+        // If no video feeds found, just use regular URLs
+        if (results.length === 0) {
+          for (let i = urls.length - 1; i >= 0 && results.length < maxItems; i--) {
+            const url = urls[i];
+            if (url && url.includes('/news/')) {
+              results.push({
+                url,
+                source: '1tv',
+                sourceKey,
+                publishDate: dates[i] ? dates[i].split('T')[0] : null,
+                categories: source.categories,
+              });
+            }
+          }
+        }
+
+        log('Found', results.length, 'items from sitemap');
+      }
+    }
+  } catch (e) {
+    log('Sitemap discovery failed:', e.message);
+  }
+
+  // Strategy 2: Try the schedule API for program-based content (vremya, news)
+  if (results.length < maxItems && (sourceKey === 'vremya' || sourceKey === 'news')) {
     try {
       log('Trying 1tv schedule API...');
       const scheduleData = await fetchJson(SITES['1tv'].scheduleApi);
@@ -583,19 +651,21 @@ async function discover1tv(sourceKey, maxItems = 20) {
           if (program.link || program.url) {
             const url = program.link || program.url;
             const fullUrl = url.startsWith('http') ? url : `https://www.1tv.ru${url}`;
-            results.push({
-              url: fullUrl,
-              source: '1tv',
-              sourceKey,
-              title: program.title || null,
-              thumbnail: program.image || program.preview || null,
-              publishDate: program.datetime || program.date || null,
-              duration: program.duration || null,
-              categories: source.categories,
-            });
+            if (!results.find(r => r.url === fullUrl)) {
+              results.push({
+                url: fullUrl,
+                source: '1tv',
+                sourceKey,
+                title: program.title || null,
+                thumbnail: program.image || program.preview || null,
+                publishDate: program.datetime || program.date || null,
+                duration: program.duration || null,
+                categories: source.categories,
+              });
+            }
           }
         }
-        log('Found', results.length, 'items from schedule API');
+        log('Found', results.length, 'items after schedule API');
       }
     } catch (e) {
       log('Schedule API failed:', e.message);
@@ -1333,28 +1403,40 @@ async function extractNtv(url) {
     if (response.ok) {
       const xml = await response.text();
 
-      // Parse XML response
-      const title = xml.match(/<title>([^<]+)<\/title>/)?.[1] || '';
-      const description = xml.match(/<description>([^<]+)<\/description>/)?.[1] || '';
-      const duration = parseInt(xml.match(/<duration>(\d+)<\/duration>/)?.[1] || '0');
-      const thumbnail = xml.match(/<image>([^<]+)<\/image>/)?.[1] || '';
+      // Parse XML response - handles CDATA wrappers
+      const extractCdata = (tag) => {
+        const match = xml.match(new RegExp(`<${tag}>(?:<!\\[CDATA\\[)?([^<\\]]+)(?:\\]\\]>)?</${tag}>`));
+        return match ? match[1].trim() : '';
+      };
+
+      const title = extractCdata('title');
+      const description = extractCdata('description');
+      const duration = parseInt(xml.match(/<totaltime>(\d+)<\/totaltime>/)?.[1] || '0');
       const views = parseInt(xml.match(/<views>(\d+)<\/views>/)?.[1] || '0');
 
-      // Extract MP4 URLs
+      // Thumbnail (splash field)
+      let thumbnail = '';
+      const splashMatch = xml.match(/<splash>(?:<!\[CDATA\[)?([^\]<]+)(?:\]\]>)?<\/splash>/);
+      if (splashMatch) {
+        thumbnail = splashMatch[1].trim();
+        if (thumbnail.startsWith('//')) thumbnail = 'https:' + thumbnail;
+      }
+
+      // Extract MP4 URLs - both file (SD) and hifile (HD)
       let mp4Url = null;
       let mp4UrlHd = null;
 
-      // Standard quality
-      const fileMatch = xml.match(/<file>([^<]+)<\/file>/);
+      // Standard quality (file tag)
+      const fileMatch = xml.match(/<file>(?:<!\[CDATA\[)?([^\]<]+)(?:\]\]>)?<\/file>/);
       if (fileMatch) {
-        mp4Url = fileMatch[1];
+        mp4Url = fileMatch[1].trim();
         if (mp4Url.startsWith('//')) mp4Url = 'https:' + mp4Url;
       }
 
-      // HD quality
-      const fileHdMatch = xml.match(/<filehires>[\s\S]*?<file>([^<]+)<\/file>[\s\S]*?<\/filehires>/);
-      if (fileHdMatch) {
-        mp4UrlHd = fileHdMatch[1];
+      // HD quality (hifile tag)
+      const hifileMatch = xml.match(/<hifile>(?:<!\[CDATA\[)?([^\]<]+)(?:\]\]>)?<\/hifile>/);
+      if (hifileMatch) {
+        mp4UrlHd = hifileMatch[1].trim();
         if (mp4UrlHd.startsWith('//')) mp4UrlHd = 'https:' + mp4UrlHd;
       }
 
@@ -1364,7 +1446,7 @@ async function extractNtv(url) {
         videoId,
         title: decodeHtmlEntities(title),
         description: decodeHtmlEntities(description),
-        thumbnail: thumbnail.startsWith('http') ? thumbnail : `https://ntv.ru${thumbnail}`,
+        thumbnail,
         duration,
         views,
         mp4Url: mp4UrlHd || mp4Url,
@@ -1744,14 +1826,23 @@ async function extractAudio(videoUrl) {
     throw new Error('No stream URL found for this video');
   }
 
-  log('Found m3u8:', meta.m3u8Url);
+  // Normalize m3u8Url - handle cases where it's an object like {auto: "..."}
+  let m3u8Url = meta.m3u8Url;
+  if (typeof m3u8Url === 'object' && m3u8Url !== null) {
+    m3u8Url = m3u8Url.auto || m3u8Url.hls || m3u8Url.default || Object.values(m3u8Url)[0];
+  }
+  if (!m3u8Url || typeof m3u8Url !== 'string') {
+    throw new Error('Invalid m3u8 URL format');
+  }
+
+  log('Found m3u8:', m3u8Url);
 
   // Fetch m3u8 playlist
-  const m3u8Response = await fetchWithHeaders(meta.m3u8Url);
+  const m3u8Response = await fetchWithHeaders(m3u8Url);
   if (!m3u8Response.ok) throw new Error(`Failed to fetch m3u8: ${m3u8Response.status}`);
   const m3u8Content = await m3u8Response.text();
 
-  const playlist = parseM3u8(m3u8Content, meta.m3u8Url);
+  const playlist = parseM3u8(m3u8Content, m3u8Url);
 
   // If master playlist, get first variant
   let segmentPlaylist = playlist;
