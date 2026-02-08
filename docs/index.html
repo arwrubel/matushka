@@ -114,11 +114,33 @@
                     <div class="advanced-content">
                         <div class="input-group">
                             <label for="minDuration" data-i18n="durationLabel">Duration</label>
-                            <div class="range-inputs">
-                                <input type="number" id="minDuration" name="minDuration" min="0" value="0" data-i18n-placeholder="minDuration">
+                            <div class="range-inputs duration-selects">
+                                <select id="minDuration" name="minDuration">
+                                    <option value="0" data-i18n="durAny">Any</option>
+                                    <option value="15" data-i18n="dur15s">15 sec</option>
+                                    <option value="30" data-i18n="dur30s">30 sec</option>
+                                    <option value="45" data-i18n="dur45s">45 sec</option>
+                                    <option value="60" data-i18n="dur1m">1 min</option>
+                                    <option value="120" data-i18n="dur2m">2 min</option>
+                                    <option value="180" data-i18n="dur3m">3 min</option>
+                                    <option value="300" data-i18n="dur5m">5 min</option>
+                                    <option value="600" data-i18n="dur10m">10 min</option>
+                                    <option value="900" data-i18n="dur15m">15 min</option>
+                                    <option value="1800" data-i18n="dur30m">30 min</option>
+                                </select>
                                 <span class="range-sep">–</span>
-                                <input type="number" id="maxDuration" name="maxDuration" min="0" value="3600" data-i18n-placeholder="maxDuration">
-                                <span class="input-suffix" data-i18n="durationSuffix">sec</span>
+                                <select id="maxDuration" name="maxDuration">
+                                    <option value="0" data-i18n="durAny">Any</option>
+                                    <option value="60" data-i18n="dur1m">1 min</option>
+                                    <option value="120" data-i18n="dur2m">2 min</option>
+                                    <option value="180" data-i18n="dur3m">3 min</option>
+                                    <option value="300" data-i18n="dur5m">5 min</option>
+                                    <option value="600" data-i18n="dur10m">10 min</option>
+                                    <option value="900" data-i18n="dur15m">15 min</option>
+                                    <option value="1800" data-i18n="dur30m">30 min</option>
+                                    <option value="3600" data-i18n="dur1h">1 hour</option>
+                                    <option value="7200" data-i18n="dur2h">2 hours</option>
+                                </select>
                             </div>
                         </div>
                         <div class="input-group">

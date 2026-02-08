@@ -410,6 +410,29 @@ body {
   }
 }
 
+/* Duration select dropdowns */
+.duration-selects select {
+  flex: 1;
+  min-width: 80px;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.duration-selects select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.duration-selects select:hover {
+  border-color: var(--color-text-muted);
+}
+
 /* Filter Actions */
 .filter-actions {
   margin-top: auto;

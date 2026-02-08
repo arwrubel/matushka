@@ -34,11 +34,24 @@ const TRANSLATIONS = {
     resetBtn: 'Reset',
 
     // Filters
-    durationTitle: 'Duration (seconds)',
+    durationTitle: 'Duration',
     durationLabel: 'Duration',
     minDuration: 'Min',
     maxDuration: 'Max',
-    durationSuffix: 'sec',
+    // Duration options
+    durAny: 'Any',
+    dur15s: '15 sec',
+    dur30s: '30 sec',
+    dur45s: '45 sec',
+    dur1m: '1 min',
+    dur2m: '2 min',
+    dur3m: '3 min',
+    dur5m: '5 min',
+    dur10m: '10 min',
+    dur15m: '15 min',
+    dur30m: '30 min',
+    dur1h: '1 hour',
+    dur2h: '2 hours',
     dateRangeTitle: 'Date Range',
     dateRangeLabel: 'Date Range',
     startDate: 'Start',
@@ -158,7 +171,20 @@ const TRANSLATIONS = {
     durationLabel: 'Длительность',
     minDuration: 'От',
     maxDuration: 'До',
-    durationSuffix: 'сек',
+    // Duration options
+    durAny: 'Любая',
+    dur15s: '15 сек',
+    dur30s: '30 сек',
+    dur45s: '45 сек',
+    dur1m: '1 мин',
+    dur2m: '2 мин',
+    dur3m: '3 мин',
+    dur5m: '5 мин',
+    dur10m: '10 мин',
+    dur15m: '15 мин',
+    dur30m: '30 мин',
+    dur1h: '1 час',
+    dur2h: '2 часа',
     dateRangeTitle: 'Выбрать период времени',
     dateRangeLabel: 'По датам',
     startDate: 'С',
@@ -688,10 +714,12 @@ function sortResults(sortBy) {
 // =============================================================================
 
 function getFilterValues() {
+  const minDur = parseInt(document.getElementById('minDuration')?.value) || 0;
+  const maxDur = parseInt(document.getElementById('maxDuration')?.value) || 0;
   return {
     query: document.getElementById('searchQuery')?.value.trim() || '',
-    minDuration: parseInt(document.getElementById('minDuration')?.value) || 0,
-    maxDuration: parseInt(document.getElementById('maxDuration')?.value) || 3600,
+    minDuration: minDur,
+    maxDuration: maxDur === 0 ? Infinity : maxDur, // 0 means "Any" = no limit
     startDate: document.getElementById('startDate')?.value || '',
     endDate: document.getElementById('endDate')?.value || '',
     maxResults: parseInt(document.getElementById('maxResults')?.value) || 20,
@@ -1123,11 +1151,11 @@ function handleReset() {
   const searchQuery = document.getElementById('searchQuery');
   if (searchQuery) searchQuery.value = '';
 
-  // Reset duration
+  // Reset duration (0 = Any)
   const minDuration = document.getElementById('minDuration');
   const maxDuration = document.getElementById('maxDuration');
   if (minDuration) minDuration.value = '0';
-  if (maxDuration) maxDuration.value = '3600';
+  if (maxDuration) maxDuration.value = '0';
 
   // Reset max results
   const maxResults = document.getElementById('maxResults');
