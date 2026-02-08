@@ -11,21 +11,20 @@ const https = require('https');
 
 const API_BASE = 'https://matushka-api.arwrubel.workers.dev';
 
-// Sources that should return video content
+// All sources should return video content (via Rutube or native video)
 const VIDEO_SOURCES = [
   'smotrim:news',
   '1tv:news',
   'rutube:news',
   'ntv:video',
   'tass:main',
-  'kommersant:main'
+  'kommersant:main',
+  'rt:news',    // Now uses Rutube channel
+  'ria:main'    // Now uses Rutube channel
 ];
 
-// Sources that are text-only by design
-const TEXT_SOURCES = [
-  'rt:news',
-  'ria:main'
-];
+// No text-only sources - all sources now return video content
+const TEXT_SOURCES = [];
 
 function fetch(url) {
   return new Promise((resolve, reject) => {

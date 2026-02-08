@@ -2485,28 +2485,32 @@ function extractTitleFrom1tvUrl(url) {
 const SOURCE_CACHE_TTL = 30 * 60 * 1000; // 30 minutes - sources update slowly
 const sourceCache = new Map();
 
-async function getCachedSourceResults(sourceId, fetchFn) {
+async function getCachedSourceResults(sourceId, fetchFn, skipCache = false) {
   const cacheKey = `source:${sourceId}`;
 
-  // Check memory cache first
-  const cached = sourceCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < SOURCE_CACHE_TTL) {
-    log('Source cache hit:', sourceId);
-    return cached.data;
-  }
-
-  // Check KV cache
-  if (KV_CACHE) {
-    try {
-      const kvCached = await KV_CACHE.get(cacheKey, 'json');
-      if (kvCached) {
-        log('Source KV cache hit:', sourceId);
-        sourceCache.set(cacheKey, { data: kvCached, timestamp: Date.now() });
-        return kvCached;
-      }
-    } catch (e) {
-      log('Source KV error:', e.message);
+  if (!skipCache) {
+    // Check memory cache first
+    const cached = sourceCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < SOURCE_CACHE_TTL) {
+      log('Source cache hit:', sourceId);
+      return cached.data;
     }
+
+    // Check KV cache
+    if (KV_CACHE) {
+      try {
+        const kvCached = await KV_CACHE.get(cacheKey, 'json');
+        if (kvCached) {
+          log('Source KV cache hit:', sourceId);
+          sourceCache.set(cacheKey, { data: kvCached, timestamp: Date.now() });
+          return kvCached;
+        }
+      } catch (e) {
+        log('Source KV error:', e.message);
+      }
+    }
+  } else {
+    log('Source cache bypass:', sourceId);
   }
 
   // Fetch fresh data
@@ -3008,9 +3012,16 @@ async function discoverRt(sourceKey, maxItems = 20) {
   if (!source) throw new Error(`Unknown RT source: ${sourceKey}`);
 
   log('Discovering from RT:', sourceKey);
+
+  // Always use Rutube channel for RT (RSS feed returns text articles, not videos)
+  if (site.usesRutube && site.rutubeChannelId) {
+    log('Using RT Rutube channel for video content');
+    return discoverRutubeChannel('rt', sourceKey, maxItems);
+  }
+
   const results = [];
 
-  // Strategy 1: Use RSS feeds (more reliable)
+  // Strategy 1: Use RSS feeds (for text news - fallback only)
   const rssFeed = site.rssFeeds[sourceKey] || site.rssFeeds.news;
   if (rssFeed) {
     try {
@@ -3743,8 +3754,17 @@ async function extractNtv(url) {
 
 async function discoverRia(sourceKey = 'video', maxItems = 20) {
   log('Discovering from RIA Novosti:', sourceKey);
+
+  // Use Rutube channel for video content (RIA page scraping returns article URLs)
+  const site = SITES['ria'];
+  if (site.usesRutube && site.rutubeChannelId) {
+    log('Using RIA Rutube channel for video content');
+    return discoverRutubeChannel('ria', sourceKey, maxItems);
+  }
+
   const results = [];
 
+  // Fallback: Scrape video page (legacy)
   try {
     const response = await fetchWithHeaders('https://ria.ru/video/', {
       headers: { 'Accept-Language': 'ru-RU,ru;q=0.9' }
@@ -5069,7 +5089,7 @@ async function handleDiscover(url, request) {
       // NTV and similar sources with parallel fetches need more time
       const timeoutMs = (siteId === 'ntv' || siteId === 'tass') ? 5000 : 3000;
       const allSourceItems = await fetchWithTimeout(
-        () => getCachedSourceResults(cacheSourceKey, discoverFn),
+        () => getCachedSourceResults(cacheSourceKey, discoverFn, skipCache),
         timeoutMs
       );
 
