@@ -103,9 +103,9 @@ const TRANSLATIONS = {
     srcRt: 'RT',
     srcIzvestia: 'Izvestia',
     srcNtv: 'NTV',
-    srcRia: 'RIA Novosti',
+    // srcRia removed - videos have music instead of audio
     srcTass: 'TASS',
-    srcKommersant: 'Kommersant',
+    // srcKommersant removed
 
     // Results
     resultsTitle: 'Results',
@@ -236,9 +236,9 @@ const TRANSLATIONS = {
     srcRt: 'RT',
     srcIzvestia: 'Известия',
     srcNtv: 'НТВ',
-    srcRia: 'РИА Новости',
+    // srcRia removed - videos have music instead of audio
     srcTass: 'ТАСС',
-    srcKommersant: 'Коммерсантъ',
+    // srcKommersant removed
 
     // Results
     resultsTitle: 'Результаты',
@@ -782,9 +782,9 @@ const CATEGORY_SOURCE_MAP = {
     default: 'rt:news'
   },
   'ntv': { default: 'ntv:video' },
-  'ria': { default: 'ria:video' },
+  // 'ria' removed - videos have music instead of audio
   'tass': { default: 'tass:video' },
-  'kommersant': { default: 'kommersant:video' },
+  // 'kommersant' removed
   'izvestia': { default: 'izvestia:video' }
 };
 

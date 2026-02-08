@@ -125,17 +125,7 @@ const SITES = {
       'news': { url: 'https://ntv.ru/novosti/', categories: ['politics', 'society'] },
     }
   },
-  'ria': {
-    name: 'RIA Novosti',
-    nameRu: 'РИА Новости',
-    domain: 'ria.ru',
-    videoApi: 'https://nfw.ria.ru/flv/file/id',
-    usesRutube: true,
-    rutubeChannelId: 23469114,  // 14,543+ videos
-    sources: {
-      'video': { categories: ['politics', 'society', 'world'] },
-    }
-  },
+  // RIA Novosti removed - their Rutube videos have music instead of audio
   'tass': {
     name: 'TASS',
     nameRu: 'ТАСС',
@@ -156,16 +146,7 @@ const SITES = {
       'video': { categories: ['politics', 'society', 'world'] },
     }
   },
-  'kommersant': {
-    name: 'Kommersant',
-    nameRu: 'Коммерсантъ',
-    domain: 'kommersant.ru',
-    usesRutube: true,
-    rutubeChannelId: 23923011,  // 2,140+ videos
-    sources: {
-      'video': { categories: ['politics', 'economy', 'society'] },
-    }
-  },
+  // 'kommersant' removed - videos don't match expected economy category well
 
   // ============================================================================
   // RUTUBE CATEGORY SEARCH
@@ -690,6 +671,8 @@ const CATEGORY_DETECTION = {
       { keywords: ['зарплат', 'оклад', 'мрот', 'доход'], weight: 3 },
       // Real estate
       { keywords: ['недвижимост', 'застройщик', 'жилье', 'квартир'], weight: 3 },
+      // Business news sources - when content references these, it's likely economy
+      { keywords: ['рбк', 'rbc.ru', 'ведомости', 'vedomosti.ru'], weight: 3 },
       // Latin transliterations (from 1tv agent - gas/energy focus)
       { keywords: ['ekonomik', 'ekonomichesk'], weight: 4 },
       { keywords: ['rubl', 'dollar', 'evro', 'valyut', 'kurs valyut'], weight: 4 },
@@ -887,7 +870,13 @@ const CATEGORY_DETECTION = {
       { keywords: ['голод', 'бездомн', 'сирот', 'инвалид', 'нищет'], weight: 3 },
       { keywords: ['праздник', 'юбилей', 'годовщин', 'торжеств'], weight: 2 },
       { keywords: ['авари', 'дтп', 'пожар', 'катастроф', 'трагед'], weight: 3 },
-      { keywords: ['преступлен', 'убийств', 'кражa', 'мошенник', 'арест'], weight: 3 },
+      { keywords: ['преступлен', 'убийств', 'кража', 'мошенник', 'арест'], weight: 3 },
+      // Missing persons / crime news (HIGH WEIGHT - very specific to society/crime)
+      { keywords: ['пропал', 'пропавш', 'исчез'], weight: 4 },
+      { keywords: ['тело найден', 'тело обнаружен', 'найден труп', 'обнаружен труп'], weight: 5 },
+      { keywords: ['нападен', 'стрельб', 'ранен', 'пострадал'], weight: 3 },
+      // School attacks / violence - definitely society news
+      { keywords: ['нападение на школ', 'стрельба в школ', 'школьный стрелок'], weight: 5 },
       // Mental health
       { keywords: ['психолог', 'депресс', 'тревожност', 'стресс', 'ментальн'], weight: 3 },
       // Social movements
@@ -919,6 +908,12 @@ const CATEGORY_DETECTION = {
       { keywords: ['prazdnik', 'yubiley', 'godovshin', 'torzhestvo'], weight: 2 },
       { keywords: ['avari', 'dtp', 'pozhar', 'katastro', 'traged'], weight: 3 },
       { keywords: ['prestuplen', 'ubiystvo', 'krazh', 'moshennik', 'arest'], weight: 3 },
+      // Missing persons / crime news - Latin
+      { keywords: ['propal', 'propavsh', 'ischez'], weight: 4 },
+      { keywords: ['telo nayden', 'telo obnaruzhen', 'nayden trup', 'obnaruzhen trup'], weight: 5 },
+      { keywords: ['napaden', 'strelba', 'ranen', 'postradal'], weight: 3 },
+      // School attacks - Latin
+      { keywords: ['napadeniye na shkol', 'strelba v shkol', 'shkolny strelok'], weight: 5 },
       // Mental health/movements/demographics - Latin
       { keywords: ['psikholog', 'depress', 'trevozhnost', 'stress', 'mentaln'], weight: 3 },
       { keywords: ['protest', 'miting', 'demonstrac', 'petici'], weight: 3 },
@@ -1202,7 +1197,18 @@ const CATEGORY_DETECTION = {
       { keywords: ['veteran boev', 'uchastnik svo', 'kombatant', 'demobilizac'], weight: 3 },
       { keywords: ['voenn uchilisch', 'voenn akademi', 'kadet', 'suvorovets'], weight: 3 },
     ],
-    negative: ['спорт', 'культур', 'экономик', 'sport', 'kultur', 'ekonomik'],
+    negative: [
+      'спорт', 'культур', 'экономик', 'sport', 'kultur', 'ekonomik',
+      // Domestic crime - NOT military
+      'преступник', 'криминал', 'уголовн', 'мошенник', 'кража',
+      'prestupnik', 'kriminal', 'ugolovn', 'moshennik', 'krazha',
+      // Police/law enforcement (not military)
+      'полиц', 'мвд', 'следствие', 'прокуратур', 'суд',
+      'polic', 'mvd', 'sledstvie', 'prokuratur', 'sud',
+      // Missing persons context
+      'пропавш', 'пропал', 'исчез', 'найден тело',
+      'propavsh', 'propal', 'ischez', 'nayden telo',
+    ],
     requiredScore: 3,
   },
   weather: {
@@ -1425,6 +1431,37 @@ const DISAMBIGUATION_RULES = {
     { pattern: /десант[а-яё]*[\s\S]{0,20}(больниц|госпитал|дет[а-яё]*|ребенок|ребят|пациент)/gi, adjust: -15 },
     { pattern: /desant[a-z]*[\s\S]{0,20}(bolnic|gospital|det[a-z]*|rebenok|rebyat|pacient)/gi, adjust: -15 },
     { pattern: /(больниц|госпитал)[а-яё]*[\s\S]{0,20}десант/gi, adjust: -15 },
+
+    // === DOMESTIC CRIME - NOT MILITARY ===
+    // School attacks/shootings - crime news, not military operations
+    { pattern: /нападен[а-яё]*[\s\S]{0,20}(школ|лице|гимназ|колледж|университет)/gi, adjust: -25 },
+    { pattern: /napaden[a-z]*[\s\S]{0,20}(shkol|lice|gimnaz|kolledzh|universitet)/gi, adjust: -25 },
+    { pattern: /(школ|лице|гимназ)[а-яё]*[\s\S]{0,20}(нападен|стрельб|стрелок)/gi, adjust: -25 },
+    { pattern: /(shkol|lice|gimnaz)[a-z]*[\s\S]{0,20}(napaden|strelb|strelok)/gi, adjust: -25 },
+
+    // Missing persons / bodies found - crime news
+    { pattern: /тело[\s\S]{0,15}(пропавш|найден|обнаружен)/gi, adjust: -25 },
+    { pattern: /telo[\s\S]{0,15}(propavsh|nayden|obnaruzhen)/gi, adjust: -25 },
+    { pattern: /(пропал|пропавш|исчез)[а-яё]*[\s\S]{0,20}(ребенок|мальчик|девочк|подросток|человек)/gi, adjust: -25 },
+    { pattern: /(propal|propavsh|ischez)[a-z]*[\s\S]{0,20}(rebenok|malchik|devochk|podrostok|chelovek)/gi, adjust: -25 },
+
+    // Murder in civilian context (no military keywords nearby)
+    { pattern: /убийств[а-яё]*[\s\S]{0,30}(семь|женщин|ребенк|супруг|сосед|знаком|квартир|дом[еуа])/gi, adjust: -20 },
+    { pattern: /ubiystvo[a-z]*[\s\S]{0,30}(semya|zhenschin|rebenk|suprug|sosed|znakom|kvartir|dom[eua])/gi, adjust: -20 },
+
+    // Crime terms that should reduce military score
+    { pattern: /(преступлен|преступник|криминал|уголовн)[а-яё]*/gi, adjust: -15 },
+    { pattern: /(prestuplen|prestupnik|kriminal|ugolovn)[a-z]*/gi, adjust: -15 },
+    { pattern: /(задержан|арестован|подозрева|обвиняем)[а-яё]*/gi, adjust: -10 },
+    { pattern: /(zaderzhan|arestovan|podozreva|obvinyaem)[a-z]*/gi, adjust: -10 },
+
+    // Police/law enforcement context (not military)
+    { pattern: /(полиц|мвд|следствие|следователь|прокуратур)[а-яё]*/gi, adjust: -15 },
+    { pattern: /(polic|mvd|sledstvie|sledovatel|prokuratur)[a-z]*/gi, adjust: -15 },
+
+    // Boost for ACTUAL military context (to compensate for crime penalties when military is present)
+    { pattern: /(сво|всу|минобороны|генштаб|донецк|харьков|запорож|херсон|днр|лнр)/gi, adjust: +10 },
+    { pattern: /(svo|vsu|minoborony|genshtab|doneck|kharkov|zaporozh|kherson|dnr|lnr)/gi, adjust: +10 },
   ],
   education: [
     // "vypusk novostey" = news broadcast, NOT graduation
@@ -3984,162 +4021,9 @@ async function extractNtv(url) {
   throw new Error('Could not extract NTV video');
 }
 
-// --- RIA.RU (RIA Novosti) ---
-
-async function discoverRia(sourceKey = 'video', maxItems = 20) {
-  log('Discovering from RIA Novosti:', sourceKey);
-
-  // Use Rutube channel for video content (RIA page scraping returns article URLs)
-  const site = SITES['ria'];
-  if (site.usesRutube && site.rutubeChannelId) {
-    log('Using RIA Rutube channel for video content');
-    return discoverRutubeChannel('ria', sourceKey, maxItems);
-  }
-
-  const results = [];
-
-  // Fallback: Scrape video page (legacy)
-  try {
-    const response = await fetchWithHeaders('https://ria.ru/video/', {
-      headers: { 'Accept-Language': 'ru-RU,ru;q=0.9' }
-    });
-
-    if (response.ok) {
-      const html = await response.text();
-
-      // Extract article URLs and titles from video listing
-      // Strategy: find all unique URLs first, then extract titles from meta tags
-      const urlPattern = /https:\/\/ria\.ru\/\d{8}\/[^"'\s]+\.html/g;
-      const foundUrls = [...new Set(html.match(urlPattern) || [])];
-
-      for (const url of foundUrls) {
-        if (results.length >= maxItems) break;
-
-        let title = null;
-
-        // RIA uses <meta itemprop="name" content="TITLE"> near the URL link
-        // Find the URL and extract the meta tag content
-        const urlIndex = html.indexOf(url);
-        if (urlIndex !== -1) {
-          // Look for <meta itemprop="name" content="..."> near this URL
-          const chunkStart = Math.max(0, urlIndex - 100);
-          const chunkEnd = Math.min(html.length, urlIndex + url.length + 300);
-          const htmlChunk = html.substring(chunkStart, chunkEnd);
-
-          const metaMatch = htmlChunk.match(/<meta\s+itemprop=["']name["']\s+content=["']([^"']+)["']/i);
-          if (metaMatch) {
-            title = metaMatch[1];
-          }
-        }
-
-        // Extract date from URL
-        const dateMatch = url.match(/\/(\d{4})(\d{2})(\d{2})\//);
-        const publishDate = dateMatch ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}` : null;
-
-        // Infer category from title
-        const inferredCategory = inferCategory(title || '', url);
-        const categories = inferredCategory
-          ? [inferredCategory]
-          : SITES['ria'].sources[sourceKey]?.categories || ['politics', 'society'];
-
-        // Detect content type and pedagogical level
-        const metadata = { title, description: null, url, duration: null, category: inferredCategory };
-        const contentType = detectContentType(metadata);
-        const pedagogicalLevel = estimatePedagogicalLevel(metadata);
-
-        results.push({
-          url,
-          title,
-          source: 'ria',
-          sourceKey,
-          publishDate,
-          category: inferredCategory,
-          categories,
-          contentType,
-          pedagogicalLevel,
-        });
-      }
-      log('Found', results.length, 'videos from RIA');
-    }
-  } catch (e) {
-    log('RIA discovery error:', e.message);
-  }
-
-  return results.slice(0, maxItems);
-}
-
-async function extractRia(url) {
-  log('Extracting from RIA Novosti:', url);
-
-  const response = await fetchWithHeaders(url, {
-    headers: { 'Accept-Language': 'ru-RU,ru;q=0.9' }
-  });
-
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const html = await response.text();
-
-  // Extract JSON-LD VideoObject schema
-  const jsonLdMatch = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
-  let videoObject = null;
-
-  if (jsonLdMatch) {
-    for (const match of jsonLdMatch) {
-      try {
-        const jsonContent = match.replace(/<script[^>]*>|<\/script>/gi, '');
-        const data = JSON.parse(jsonContent);
-        if (data['@type'] === 'VideoObject') {
-          videoObject = data;
-          break;
-        }
-      } catch (e) { /* continue */ }
-    }
-  }
-
-  if (!videoObject) {
-    // Fallback to OpenGraph
-    const og = extractOpenGraph(html);
-    return {
-      source: 'ria',
-      sourceUrl: url,
-      title: og.title || 'RIA Video',
-      description: og.description || null,
-      thumbnail: og.image || null,
-      streamType: null,
-    };
-  }
-
-  // Parse ISO 8601 duration (PT1M30S -> seconds)
-  let duration = null;
-  if (videoObject.duration) {
-    const durMatch = videoObject.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/i);
-    if (durMatch) {
-      duration = (parseInt(durMatch[1] || 0) * 3600) +
-                 (parseInt(durMatch[2] || 0) * 60) +
-                 parseInt(durMatch[3] || 0);
-    }
-  }
-
-  // Extract video ID from contentUrl
-  let videoId = null;
-  let mp4Url = videoObject.contentUrl || null;
-  if (mp4Url) {
-    const idMatch = mp4Url.match(/\/id\/(\d+)\//);
-    videoId = idMatch ? idMatch[1] : null;
-  }
-
-  return {
-    source: 'ria',
-    sourceUrl: url,
-    videoId,
-    title: videoObject.name || '',
-    description: videoObject.description || '',
-    thumbnail: videoObject.thumbnailUrl || '',
-    publishDate: videoObject.uploadDate || null,
-    duration,
-    mp4Url,
-    streamType: 'mp4',
-  };
-}
+// --- RIA.RU (RIA Novosti) - REMOVED ---
+// RIA Novosti removed - their Rutube videos have background music instead of spoken audio
+// This makes the content unsuitable for language learning
 
 // --- TASS (via Rutube) ---
 
@@ -4231,95 +4115,8 @@ async function extractTass(url) {
   throw new Error('Could not extract TASS video - no Rutube embed found');
 }
 
-// --- KOMMERSANT (via Rutube) ---
-
-async function discoverKommersant(sourceKey = 'video', maxItems = 20) {
-  const channelId = SITES['kommersant'].rutubeChannelId;
-  log('Discovering from Kommersant via Rutube channel:', channelId);
-  const results = [];
-
-  try {
-    const apiUrl = `https://rutube.ru/api/video/person/${channelId}/?format=json&page=1&page_size=${maxItems}`;
-    log('Fetching Kommersant Rutube channel:', apiUrl);
-
-    const response = await fetchWithHeaders(apiUrl, {
-      headers: { 'Accept': 'application/json' }
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-
-      if (data?.results && Array.isArray(data.results)) {
-        for (const item of data.results) {
-          const title = item.title || null;
-          const description = item.description || null;
-          const url = `https://rutube.ru/video/${item.id}/`;
-
-          // Infer SINGLE category from title and description
-          const inferredCat = inferCategory((title || '') + ' ' + (description || ''), url);
-          const duration = item.duration || null;
-
-          // Detect content type and pedagogical level
-          const metadata = { title, description, url, duration, category: inferredCat };
-          const contentType = detectContentType(metadata);
-          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
-
-          results.push({
-            url,
-            source: 'kommersant',
-            sourceKey,
-            videoId: item.id,
-            title,
-            description,
-            thumbnail: item.thumbnail_url || null,
-            publishDate: item.created_ts || null,
-            duration,
-            category: inferredCat,  // SINGLE inferred category
-            categories: inferredCat ? [inferredCat] : SITES['kommersant'].sources[sourceKey]?.categories || ['politics', 'economy'],
-            contentType,
-            pedagogicalLevel,
-          });
-        }
-        log('Found', results.length, 'videos from Kommersant Rutube channel');
-      }
-    }
-  } catch (e) {
-    log('Kommersant discovery error:', e.message);
-  }
-
-  return results.slice(0, maxItems);
-}
-
-async function extractKommersant(url) {
-  log('Extracting from Kommersant:', url);
-
-  // Kommersant uses Rutube - delegate extraction
-  if (url.includes('rutube.ru')) {
-    const result = await extractRutube(url);
-    result.source = 'kommersant';
-    return result;
-  }
-
-  // If it's a kommersant.ru URL, look for Rutube embed
-  try {
-    const response = await fetchWithHeaders(url);
-    if (response.ok) {
-      const html = await response.text();
-
-      // Look for Rutube embed
-      const rutubeMatch = html.match(/rutube\.ru\/(?:video|play\/embed)\/([a-f0-9]{32})/i);
-      if (rutubeMatch) {
-        const result = await extractRutube(`https://rutube.ru/video/${rutubeMatch[1]}/`);
-        result.source = 'kommersant';
-        return result;
-      }
-    }
-  } catch (e) {
-    log('Kommersant page parse error:', e.message);
-  }
-
-  throw new Error('Could not extract Kommersant video - no Rutube embed found');
-}
+// --- KOMMERSANT - REMOVED ---
+// Kommersant removed - videos don't match expected economy category well
 
 // --- MCHS RUSSIA / EMERCOM (via Rutube) ---
 
@@ -4457,12 +4254,10 @@ async function extractMetadata(url) {
       return extractIzvestia(url);
     case 'ntv':
       return extractNtv(url);
-    case 'ria':
-      return extractRia(url);
+    // case 'ria' removed - videos have music instead of audio
     case 'tass':
       return extractTass(url);
-    case 'kommersant':
-      return extractKommersant(url);
+    // case 'kommersant' removed
     default:
       throw new Error(`Unsupported site: ${url}`);
   }
@@ -5100,8 +4895,8 @@ async function handleDiscover(url, request) {
     'smotrim': { culture: 'smotrim:culture-news', economy: 'smotrim:russia24', politics: 'smotrim:news' },
     // Rutube-based sources - use video endpoint (they have general content, filtering happens later)
     'tass': { economy: 'tass:video', politics: 'tass:video', world: 'tass:video', military: 'tass:video' },
-    'kommersant': { economy: 'kommersant:video', politics: 'kommersant:video' },
-    'ria': { economy: 'ria:video', politics: 'ria:video', world: 'ria:video', military: 'ria:video' },
+    // 'kommersant' removed
+    // RIA removed - videos have music instead of audio
     'ntv': { economy: 'ntv:video', politics: 'ntv:video', society: 'ntv:video' },
     'izvestia': { economy: 'izvestia:video', politics: 'izvestia:video', society: 'izvestia:video' },
   };
@@ -5149,7 +4944,7 @@ async function handleDiscover(url, request) {
             sourcesByCategory[cat] = ['matchtv:video', 'khl:video', 'rfs:video', 'zenit:video', 'sport-marathon:video', 'rutube:sports', '1tv:sports'];
             break;
           case 'economy':
-            sourcesByCategory[cat] = ['rbc:video', 'kommersant:video', '1tv:economy'];
+            sourcesByCategory[cat] = ['rbc:video', '1tv:economy'];
             break;
           case 'science': case 'technology':
             sourcesByCategory[cat] = ['naukatv:video', 'bauman:video', 'spbgu:video', 'rutube:science', 'rt:news'];
@@ -5215,7 +5010,7 @@ async function handleDiscover(url, request) {
     } else {
       // Default: discover from main sources (general query - limited to 4 for performance)
       sourcesToDiscover = [
-        '1tv:news', 'rt:news', 'tass:video', 'kommersant:video'
+        '1tv:news', 'rt:news', 'tass:video'
       ];
     }
   }
@@ -5308,9 +5103,9 @@ async function handleDiscover(url, request) {
         'rutube': () => discoverRutube(sourceId || 'news', SOURCE_FETCH_SIZE),
         'izvestia': () => discoverIzvestia(sourceId || 'video', SOURCE_FETCH_SIZE),
         'ntv': () => discoverNtv(sourceId || 'video', SOURCE_FETCH_SIZE),
-        'ria': () => discoverRia(sourceId || 'video', SOURCE_FETCH_SIZE),
+        // 'ria' removed - videos have music instead of audio
         'tass': () => discoverTass(sourceId || 'video', SOURCE_FETCH_SIZE),
-        'kommersant': () => discoverKommersant(sourceId || 'video', SOURCE_FETCH_SIZE),
+        // 'kommersant' removed
         'matchtv': () => discoverMatchtv(sourceId || 'video', SOURCE_FETCH_SIZE),
         'rbc': () => discoverRbc(sourceId || 'video', SOURCE_FETCH_SIZE),
         'naukatv': () => discoverNaukatv(sourceId || 'video', SOURCE_FETCH_SIZE),
@@ -5670,7 +5465,7 @@ async function handleDiscover(url, request) {
     const daysSinceStart = Math.floor((Date.now() - startDate.getTime()) / (24 * 60 * 60 * 1000));
     feedback.adjustments.push({
       type: 'historical_search_note',
-      reason: `Searching ${daysSinceStart} days ago. RSS-based sources (RT, Smotrim) only retain recent content. For historical searches, 1tv and Rutube-based sources have better archives. Try expanding your date range or using sources like 1tv:news, tass:video, kommersant:video.`,
+      reason: `Searching ${daysSinceStart} days ago. RSS-based sources (RT, Smotrim) only retain recent content. For historical searches, 1tv and Rutube-based sources have better archives. Try expanding your date range or using sources like 1tv:news, tass:video.`,
     });
   }
 
