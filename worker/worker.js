@@ -586,9 +586,9 @@ const CATEGORY_DETECTION = {
       { keywords: ['сборн', 'команд', 'тренер', 'игрок', 'вратарь', 'забит', 'забил'], weight: 3 },
       { keywords: ['атлет', 'фигурист', 'фигурн', 'плаван', 'гимнаст', 'шахмат'], weight: 3 },
       { keywords: ['лыж', 'биатлон', 'легкоатлет', 'хоккеист'], weight: 3 },
-      // Ice skating shows and skating terms
-      { keywords: ['ледниковый период', 'ледовое шоу', 'танцы на льду', 'лёд и пламя'], weight: 5 },
-      { keywords: ['коньки', 'катание', 'каток', 'фигурное катан'], weight: 3 },
+      // Ice skating terms (not "ледниковый период" alone - could be Ice Age geological)
+      { keywords: ['ледовое шоу', 'танцы на льду', 'лёд и пламя', 'звёзды на льду'], weight: 5 },
+      { keywords: ['коньки', 'катание на льду', 'каток', 'фигурное катан'], weight: 3 },
       { keywords: ['стадион', 'арена', 'соревнован'], weight: 2 },
       // Esports
       { keywords: ['киберспорт', 'esport', 'dota', 'counter-strike', 'cs2', 'valorant'], weight: 4 },
@@ -1374,6 +1374,11 @@ function wordBoundaryMatch(text, word) {
 // These patterns, when matched, adjust the score for a category
 const DISAMBIGUATION_RULES = {
   sports: [
+    // "Ледниковый период" + show context = Ice skating TV show (sports)
+    { pattern: /ледниковый\s+период[\s\S]{0,30}(шоу|выпуск|канал|сезон|эфир|участник|звёзд)/gi, adjust: +10 },
+    { pattern: /(шоу|выпуск|канал|сезон|эфир)[\s\S]{0,30}ледниковый\s+период/gi, adjust: +10 },
+    // "Ледниковый период" alone could be Ice Age (geological) - reduce sports score
+    { pattern: /ледниковый\s+период(?![\s\S]{0,30}(шоу|выпуск|канал|сезон|эфир|участник))/gi, adjust: -5 },
     // "futbolka/futbolke/futbolku" = t-shirt, NOT football
     { pattern: /futbolk[aeiuoy]/gi, adjust: -15 },
     { pattern: /футболк[аеиоуюя]/gi, adjust: -15 },
@@ -1525,6 +1530,25 @@ function inferCategory(text, url) {
   if (!text) return null;
   const lowerText = text.toLowerCase();
   const lowerUrl = (url || '').toLowerCase();
+
+  // PRIORITY 1: URL-based category detection (most reliable - sites pre-categorize content)
+  const URL_CATEGORY_MAP = {
+    '/ekonomika/': 'economy', '/economy/': 'economy', '/business/': 'economy',
+    '/politika/': 'politics', '/politics/': 'politics',
+    '/sport/': 'sports', '/sports/': 'sports',
+    '/kultura/': 'culture', '/culture/': 'culture',
+    '/v-mire/': 'world', '/world/': 'world', '/mir/': 'world',
+    '/obschestvo/': 'society', '/society/': 'society',
+    '/nauka/': 'science', '/science/': 'science', '/tech/': 'technology',
+    '/obrazovanie/': 'education', '/education/': 'education',
+    '/armiya/': 'military', '/military/': 'military', '/voennye/': 'military',
+  };
+
+  for (const [urlPattern, category] of Object.entries(URL_CATEGORY_MAP)) {
+    if (lowerUrl.includes(urlPattern)) {
+      return category; // Definitive match from URL
+    }
+  }
 
   const scores = {};
 
@@ -5069,12 +5093,36 @@ async function handleDiscover(url, request) {
   // Parse sources to discover from
   let sourcesToDiscover = [];
 
+  // Map generic sources to category-specific sources when categories are selected
+  const CATEGORY_SOURCE_KEYS = {
+    '1tv': { economy: '1tv:economy', politics: '1tv:politics', sports: '1tv:sports', culture: '1tv:culture', world: '1tv:world', society: '1tv:society' },
+    'rt': { politics: 'rt:russia', world: 'rt:world', economy: 'rt:business', sports: 'rt:sport' },
+    'smotrim': { culture: 'smotrim:culture-news' },
+  };
+
+  const mapSourceToCategory = (source) => {
+    if (source.includes(':')) return source; // Already has source key
+    if (requestedCategories.length === 0) return source + ':news'; // No category filter
+
+    const sourceMap = CATEGORY_SOURCE_KEYS[source.toLowerCase()];
+    if (sourceMap) {
+      // Find first matching category
+      for (const cat of requestedCategories) {
+        if (sourceMap[cat]) {
+          log(`Mapping ${source} + ${cat} → ${sourceMap[cat]}`);
+          return sourceMap[cat];
+        }
+      }
+    }
+    return source + ':news'; // Default to news
+  };
+
   if (sourceParam) {
     // Single source specified
-    sourcesToDiscover.push(sourceParam);
+    sourcesToDiscover.push(mapSourceToCategory(sourceParam));
   } else if (sourcesParam) {
-    // Multiple sources specified
-    sourcesToDiscover = sourcesParam.split(',').map(s => s.trim());
+    // Multiple sources specified - map each to category-specific source
+    sourcesToDiscover = sourcesParam.split(',').map(s => mapSourceToCategory(s.trim()));
   } else {
     // Smart source selection based on requested categories
     // Use specialized sources for specific categories, general sources for mixed queries
@@ -5350,6 +5398,19 @@ async function handleDiscover(url, request) {
     return true;
   });
   log(`After deduplication: ${filtered.length} items`);
+
+  // Filter out text-only content (no video/audio) - REQUIRE duration > 0
+  const beforeVideoFilter = filtered.length;
+  filtered = filtered.filter(item => {
+    // Must have duration > 0 to be considered video/audio content
+    if (item.duration && item.duration > 0) return true;
+    // Filter out text-only articles (even if they have videoId - could be placeholder)
+    log('Filtering out text-only item (no duration):', item.title?.substring(0, 50));
+    return false;
+  });
+  if (beforeVideoFilter !== filtered.length) {
+    log(`After video filter: ${filtered.length} items (removed ${beforeVideoFilter - filtered.length} text-only)`);
+  }
 
   // Filter by date range if specified
   if (startDate || endDate) {
