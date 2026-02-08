@@ -1202,9 +1202,9 @@ const CATEGORY_DETECTION = {
       // Domestic crime - NOT military
       'преступник', 'криминал', 'уголовн', 'мошенник', 'кража',
       'prestupnik', 'kriminal', 'ugolovn', 'moshennik', 'krazha',
-      // Police/law enforcement (not military)
-      'полиц', 'мвд', 'следствие', 'прокуратур', 'суд',
-      'polic', 'mvd', 'sledstvie', 'prokuratur', 'sud',
+      // Civilian police/law enforcement - NOT "военная полиция" which IS military
+      'мвд', 'следствие', 'прокуратур', 'гражданск суд',
+      'mvd', 'sledstvie', 'prokuratur',
       // Missing persons context
       'пропавш', 'пропал', 'исчез', 'найден тело',
       'propavsh', 'propal', 'ischez', 'nayden telo',
@@ -1462,6 +1462,15 @@ const DISAMBIGUATION_RULES = {
     // Boost for ACTUAL military context (to compensate for crime penalties when military is present)
     { pattern: /(сво|всу|минобороны|генштаб|донецк|харьков|запорож|херсон|днр|лнр)/gi, adjust: +10 },
     { pattern: /(svo|vsu|minoborony|genshtab|doneck|kharkov|zaporozh|kherson|dnr|lnr)/gi, adjust: +10 },
+    // "военная полиция" = Military Police, IS military
+    { pattern: /военн[а-яё]*\s*полиц/gi, adjust: +15 },
+    { pattern: /voenn[a-z]*\s*polic/gi, adjust: +15 },
+    // Submarine/navy content
+    { pattern: /(подлодк|подводн|субмарин|флот|кораб|фрегат|корвет)/gi, adjust: +8 },
+    { pattern: /(podlodk|podvodn|submarin|flot|korabl|fregat|korvet)/gi, adjust: +8 },
+    // Frontline/combat zone terms
+    { pattern: /(передов|фронт|боев|наступлен|оборон)/gi, adjust: +8 },
+    { pattern: /(peredov|front|boev|nastuplen|oboron)/gi, adjust: +8 },
   ],
   education: [
     // "vypusk novostey" = news broadcast, NOT graduation
@@ -1511,6 +1520,49 @@ const DISAMBIGUATION_RULES = {
     // Boost when clear government terms present
     { pattern: /gosduma|госдума/gi, adjust: +5 },
     { pattern: /sovet\s*federacii|совет\s*федерации/gi, adjust: +5 },
+    // Politicians making statements - boost politics (headline pattern "Лавров:")
+    { pattern: /^(лавров|путин|песков|захарова|мид)[а-яё]*\s*:/gi, adjust: +15 },
+    { pattern: /(лавров|путин|мишустин|песков|захарова|матвиенко|володин)[а-яё]*[\s\S]{0,30}(заявил|сказал|сообщил|отметил|подчеркнул)/gi, adjust: +10 },
+    { pattern: /(lavrov|putin|mishustin|peskov|zakharova|matvienko|volodin)[a-z]*[\s\S]{0,30}(zayavil|skazal|soobshchil|otmetil|podcherknul)/gi, adjust: +10 },
+    // Official statements about Europe/NATO/West - this is diplomacy
+    { pattern: /(европ|нато|запад|сша|америк)[а-яё]*[\s\S]{0,30}(заявлен|позици|требован|угроз|ответ)/gi, adjust: +8 },
+    { pattern: /(evrop|nato|zapad|ssha|amerika)[a-z]*[\s\S]{0,30}(zayavlen|pozici|trebovan|ugroz|otvet)/gi, adjust: +8 },
+    // Military response statements from officials - politics (diplomacy)
+    { pattern: /(военн[а-яё]*\s*ответ|воен\s*действ)[а-яё]*/gi, adjust: +8 },
+    // Election/voting context
+    { pattern: /(выбор|голосован|референдум|избиратель)[а-яё]*/gi, adjust: +5 },
+  ],
+  economy: [
+    // Reduce score when politicians making statements (not economy news)
+    // Pattern: "Лавров:" at start of headline, or "Lavrov заявил/сказал"
+    { pattern: /^(лавров|путин|песков|захарова|мид|министр)[а-яё]*\s*:/gi, adjust: -20 },
+    { pattern: /(лавров|путин|мид|министр иностран)[а-яё]*[\s\S]{0,30}(заявил|сказал|отметил)/gi, adjust: -15 },
+    { pattern: /(lavrov|putin|mid|ministr inostran)[a-z]*[\s\S]{0,30}(zayavil|skazal|otmetil)/gi, adjust: -15 },
+    // Military terms in economy context - this is geopolitics, not economy
+    { pattern: /(нападен|военн|армия|атак|удар)[а-яё]*[\s\S]{0,20}(европ|нато|россия)/gi, adjust: -20 },
+    { pattern: /(napaden|voenn|armiya|atak|udar)[a-z]*[\s\S]{0,20}(evrop|nato|rossiya)/gi, adjust: -20 },
+    // Geopolitical threats about industry - not economy news
+    { pattern: /(промышленност|экономик)[а-яё]*[\s\S]{0,30}(угроз|нападен|атак|удар|разрушен)/gi, adjust: -15 },
+    { pattern: /(promyshlennost|ekonomik)[a-z]*[\s\S]{0,30}(ugroz|napaden|atak|udar|razrushen)/gi, adjust: -15 },
+    // When European industry discussed in crisis/threat context
+    { pattern: /(европ|европейск)[а-яё]*[\s\S]{0,20}(промышленност|экономик)[а-яё]*[\s\S]{0,20}(кризис|угроз|потеря|обвал)/gi, adjust: -10 },
+    // "военный ответ" - military response - definitely not economy
+    { pattern: /военн[а-яё]*\s*(ответ|угроз|действ|операц)/gi, adjust: -25 },
+    { pattern: /voenn[a-z]*\s*(otvet|ugroz|deystviy|operac)/gi, adjust: -25 },
+    // Boost for actual economy reporting
+    { pattern: /(курс|рубл|доллар|евро|биржа|акци|индекс)[а-яё]*/gi, adjust: +5 },
+    { pattern: /(kurs|rubl|dollar|evro|birzha|akci|indeks)[a-z]*/gi, adjust: +5 },
+  ],
+  world: [
+    // Boost when foreign countries/leaders mentioned with conflict/crisis terms
+    { pattern: /(европ|нато|сша|америк|китай|украин)[а-яё]*[\s\S]{0,30}(угроз|кризис|напряжен|конфликт|санкци)/gi, adjust: +10 },
+    { pattern: /(evrop|nato|ssha|amerika|kitay|ukrain)[a-z]*[\s\S]{0,30}(ugroz|krizis|napryazhen|konflikt|sankci)/gi, adjust: +10 },
+    // International diplomacy context
+    { pattern: /(переговор|визит|саммит|встреч)[а-яё]*[\s\S]{0,20}(лидер|президент|премьер|министр)/gi, adjust: +8 },
+    { pattern: /(peregovor|vizit|sammit|vstrech)[a-z]*[\s\S]{0,20}(lider|prezident|premyer|ministr)/gi, adjust: +8 },
+    // Reduce when domestic Russian content
+    { pattern: /(россиян|россияне|жители росси|граждан росси)[а-яё]*/gi, adjust: -8 },
+    { pattern: /(rossiyan|rossiyane|zhiteli rossi|grazhdan rossi)[a-z]*/gi, adjust: -8 },
   ],
   science: [
     // BOOKS/LITERATURE - "открытие" can mean book launch, "выход книги" context
