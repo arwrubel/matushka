@@ -675,6 +675,39 @@ function handleSelectionChange(e) {
 // SORTING
 // =============================================================================
 
+// Calculate relevance score for an item
+function calculateRelevanceScore(item) {
+  let score = 0;
+
+  // Base score: items with more complete metadata are more relevant
+  if (item.title) score += 10;
+  if (item.description) score += 5;
+  if (item.thumbnail) score += 3;
+  if (item.duration && item.duration > 0) score += 2;
+  if (item.publishDate || item.publishedAt) score += 2;
+
+  // Prefer items with proper categories
+  if (item.category) score += 3;
+  if (item.categories && item.categories.length > 0) score += 2;
+
+  // Prefer items with pedagogical level (indicates quality metadata)
+  if (item.pedagogicalLevel) score += 3;
+
+  // Recency bonus: newer content gets slight boost
+  const pubDate = new Date(item.publishDate || item.publishedAt || 0);
+  const daysSincePublish = (Date.now() - pubDate.getTime()) / (1000 * 60 * 60 * 24);
+  if (daysSincePublish < 7) score += 5;      // Last week
+  else if (daysSincePublish < 30) score += 3; // Last month
+  else if (daysSincePublish < 90) score += 1; // Last 3 months
+
+  // Duration sweet spot: 1-10 minutes is ideal for learning
+  const dur = item.duration || 0;
+  if (dur >= 60 && dur <= 600) score += 4;    // 1-10 min: ideal
+  else if (dur >= 30 && dur <= 900) score += 2; // 30s-15 min: good
+
+  return score;
+}
+
 function sortResults(sortBy) {
   if (state.currentResults.length === 0) return;
 
@@ -701,7 +734,8 @@ function sortResults(sortBy) {
       break;
     case 'relevance':
     default:
-      // Keep original order
+      // Sort by relevance score (higher = more relevant)
+      sorted.sort((a, b) => calculateRelevanceScore(b) - calculateRelevanceScore(a));
       break;
   }
 

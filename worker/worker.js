@@ -2527,23 +2527,37 @@ const sourceCache = new Map();
 
 async function getCachedSourceResults(sourceId, fetchFn, skipCache = false) {
   const cacheKey = `source:${sourceId}`;
+  const MIN_VALID_RESULTS = 2; // Cache is considered stale if fewer than this
+
+  // Helper to validate cached data
+  const isValidCache = (data) => {
+    if (!data) return false;
+    if (Array.isArray(data) && data.length < MIN_VALID_RESULTS) return false;
+    return true;
+  };
 
   if (!skipCache) {
     // Check memory cache first
     const cached = sourceCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < SOURCE_CACHE_TTL) {
-      log('Source cache hit:', sourceId);
-      return cached.data;
+      if (isValidCache(cached.data)) {
+        log('Source cache hit:', sourceId, '- items:', cached.data?.length || 0);
+        return cached.data;
+      } else {
+        log('Source cache invalid (too few results), refetching:', sourceId);
+      }
     }
 
     // Check KV cache
     if (KV_CACHE) {
       try {
         const kvCached = await KV_CACHE.get(cacheKey, 'json');
-        if (kvCached) {
-          log('Source KV cache hit:', sourceId);
+        if (kvCached && isValidCache(kvCached)) {
+          log('Source KV cache hit:', sourceId, '- items:', kvCached?.length || 0);
           sourceCache.set(cacheKey, { data: kvCached, timestamp: Date.now() });
           return kvCached;
+        } else if (kvCached) {
+          log('Source KV cache invalid (too few results), refetching:', sourceId);
         }
       } catch (e) {
         log('Source KV error:', e.message);
@@ -2557,16 +2571,21 @@ async function getCachedSourceResults(sourceId, fetchFn, skipCache = false) {
   log('Source cache miss, fetching:', sourceId);
   const data = await fetchFn();
 
-  // Cache in memory
-  sourceCache.set(cacheKey, { data, timestamp: Date.now() });
+  // Only cache if we got valid results
+  if (isValidCache(data)) {
+    // Cache in memory
+    sourceCache.set(cacheKey, { data, timestamp: Date.now() });
 
-  // Cache in KV
-  if (KV_CACHE) {
-    try {
-      await KV_CACHE.put(cacheKey, JSON.stringify(data), { expirationTtl: 600 }); // 10 min
-    } catch (e) {
-      log('Source KV write error:', e.message);
+    // Cache in KV
+    if (KV_CACHE) {
+      try {
+        await KV_CACHE.put(cacheKey, JSON.stringify(data), { expirationTtl: 600 }); // 10 min
+      } catch (e) {
+        log('Source KV write error:', e.message);
+      }
     }
+  } else {
+    log('Not caching empty/invalid results for:', sourceId);
   }
 
   return data;
@@ -4898,12 +4917,21 @@ async function handleDiscover(url, request) {
   const cache = caches.default;
   const edgeCacheKey = new Request(url.toString(), { method: 'GET' });
 
+  // Helper to validate cached response (don't serve empty results from cache)
+  const isValidCachedResponse = (data) => {
+    if (!data) return false;
+    // If the cached response has 0 items, consider it invalid and refetch
+    if (data.total === 0 || (data.items && data.items.length === 0)) return false;
+    return true;
+  };
+
   if (!skipCache) {
     try {
       const edgeCached = await cache.match(edgeCacheKey);
       if (edgeCached) {
+        // For edge cache, we can't easily inspect content, so just return it
+        // Edge cache has shorter TTL (20 min) so stale data clears faster
         log('Edge cache hit - zero CPU');
-        // Return directly from edge cache - no processing needed
         return edgeCached;
       }
     } catch (e) {
@@ -4913,25 +4941,30 @@ async function handleDiscover(url, request) {
     // Level 1: Check in-memory cache (instant, minimal CPU)
     const memCached = memoryCache.get(cacheKey);
     if (memCached && Date.now() - memCached.timestamp < CACHE_TTL_MS) {
-      log('Memory cache hit');
-      const response = jsonResponse({ ...memCached.data, cached: 'memory' });
-      // Also store in edge cache for next time
-      cacheToEdge(cache, edgeCacheKey, response.clone());
-      return response;
+      if (isValidCachedResponse(memCached.data)) {
+        log('Memory cache hit - items:', memCached.data?.total || 0);
+        const response = jsonResponse({ ...memCached.data, cached: 'memory' });
+        cacheToEdge(cache, edgeCacheKey, response.clone());
+        return response;
+      } else {
+        log('Memory cache invalid (empty results), refetching');
+      }
     }
 
     // Level 2: Check KV cache (persistent, shared across workers)
     if (KV_CACHE) {
       try {
         const kvCached = await KV_CACHE.get(cacheKey, 'json');
-        if (kvCached) {
-          log('KV cache hit');
-          // Store in memory cache for faster subsequent hits
+        if (kvCached && isValidCachedResponse(kvCached)) {
+          log('KV cache hit - items:', kvCached?.total || 0);
           memoryCache.set(cacheKey, { data: kvCached, timestamp: Date.now() });
           const response = jsonResponse({ ...kvCached, cached: 'kv' });
-          // Also store in edge cache for next time
           cacheToEdge(cache, edgeCacheKey, response.clone());
           return response;
+        } else if (kvCached) {
+          log('KV cache invalid (empty results), refetching');
+          // Delete the invalid cache entry
+          await KV_CACHE.delete(cacheKey);
         }
       } catch (e) {
         log('KV cache error:', e.message);
@@ -5588,30 +5621,38 @@ async function handleDiscover(url, request) {
   };
 
   // Cache the response at all levels (reduces CPU usage on repeated requests)
+  // But DON'T cache empty results - they may be temporary failures
+  const shouldCache = responseData.total > 0 || (responseData.items && responseData.items.length > 0);
 
-  // Level 1: Memory cache (instant access within same worker instance)
-  memoryCache.set(cacheKey, {
-    data: responseData,
-    timestamp: Date.now()
-  });
+  if (shouldCache) {
+    // Level 1: Memory cache (instant access within same worker instance)
+    memoryCache.set(cacheKey, {
+      data: responseData,
+      timestamp: Date.now()
+    });
 
-  // Level 2: KV cache (persistent, shared across all workers)
-  if (KV_CACHE) {
-    try {
-      await KV_CACHE.put(cacheKey, JSON.stringify(responseData), {
-        expirationTtl: CACHE_TTL
-      });
-      log('Cached to KV:', cacheKey.substring(0, 50));
-    } catch (e) {
-      log('KV cache write error:', e.message);
+    // Level 2: KV cache (persistent, shared across all workers)
+    if (KV_CACHE) {
+      try {
+        await KV_CACHE.put(cacheKey, JSON.stringify(responseData), {
+          expirationTtl: CACHE_TTL
+        });
+        log('Cached to KV:', cacheKey.substring(0, 50));
+      } catch (e) {
+        log('KV cache write error:', e.message);
+      }
     }
+  } else {
+    log('Not caching empty response for:', cacheKey.substring(0, 50));
   }
 
   // Use 5 minute browser cache (shorter than edge cache - users can refresh for fresh data)
   const response = jsonResponse(responseData, 200, 300);
 
-  // Store in edge cache (reuse cache and edgeCacheKey from beginning of function)
-  cacheToEdge(cache, edgeCacheKey, response.clone());
+  // Store in edge cache only if we have results
+  if (shouldCache) {
+    cacheToEdge(cache, edgeCacheKey, response.clone());
+  }
 
   return response;
 }
