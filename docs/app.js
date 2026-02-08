@@ -49,17 +49,36 @@ const TRANSLATIONS = {
     catPolitics: 'Politics',
     catEconomy: 'Economy',
     catSociety: 'Society',
+    catEducation: 'Education',
     catWorld: 'World',
     catSports: 'Sports',
     catCulture: 'Culture',
     catScience: 'Science',
     catTechnology: 'Technology',
+    catMilitary: 'Military',
+    catWeather: 'Weather',
+    catTourism: 'Tourism',
+
+    // Pedagogical Level
+    levelTitle: 'Pedagogical Level',
+    levelBeginner: 'Beginner',
+    levelBeginnerDesc: '(slow, simple topics)',
+    levelIntermediate: 'Intermediate',
+    levelIntermediateDesc: '(standard news)',
+    levelAdvanced: 'Advanced',
+    levelAdvancedDesc: '(complex topics)',
+
+    // Content Type
+    contentTypeTitle: 'Content Type',
+    typeNews: 'News Reports',
+    typeInterview: 'Interviews',
+    typeDocumentary: 'Documentaries',
+    typeSpeech: 'Speeches',
 
     // Sources
-    src1tv: 'Channel One News',
-    src1tvVremya: 'Vremya',
-    srcSmotrim: 'Smotrim',
-    srcRt: 'RT News',
+    src1tv: 'Channel One (1TV)',
+    srcSmotrim: 'Smotrim/Vesti',
+    srcRt: 'RT Russian',
     srcIzvestia: 'Izvestia',
     srcNtv: 'NTV',
     srcRia: 'RIA Novosti',
@@ -76,7 +95,8 @@ const TRANSLATIONS = {
     sortDurationAsc: 'Duration (shortest)',
     sortTitleAsc: 'Title (A-Z)',
     sortTitleDesc: 'Title (Z-A)',
-    emptyStateDesc: 'Enter search terms and click Search to find videos.',
+    emptyStateTitle: 'Discover Russian Media',
+    emptyStateDesc: 'Select your filters and click "Find Videos" to explore authentic Russian content for language learning.',
     selectForCitation: 'Select',
     watchVideo: 'Watch',
 
@@ -139,17 +159,36 @@ const TRANSLATIONS = {
     catPolitics: 'Политика',
     catEconomy: 'Экономика',
     catSociety: 'Общество',
+    catEducation: 'Образование',
     catWorld: 'В мире',
     catSports: 'Спорт',
     catCulture: 'Культура',
     catScience: 'Наука',
     catTechnology: 'Технологии',
+    catMilitary: 'Военное',
+    catWeather: 'Погода',
+    catTourism: 'Туризм',
+
+    // Pedagogical Level
+    levelTitle: 'Уровень сложности',
+    levelBeginner: 'Начальный',
+    levelBeginnerDesc: '(медленная речь, простые темы)',
+    levelIntermediate: 'Средний',
+    levelIntermediateDesc: '(стандартные новости)',
+    levelAdvanced: 'Продвинутый',
+    levelAdvancedDesc: '(сложные темы)',
+
+    // Content Type
+    contentTypeTitle: 'Тип контента',
+    typeNews: 'Новости',
+    typeInterview: 'Интервью',
+    typeDocumentary: 'Документальное',
+    typeSpeech: 'Выступления',
 
     // Sources
-    src1tv: 'Первый канал - Новости',
-    src1tvVremya: 'Время',
-    srcSmotrim: 'Смотрим',
-    srcRt: 'RT - Новости',
+    src1tv: 'Первый канал',
+    srcSmotrim: 'Смотрим/Вести',
+    srcRt: 'RT на русском',
     srcIzvestia: 'Известия',
     srcNtv: 'НТВ',
     srcRia: 'РИА Новости',
@@ -166,7 +205,8 @@ const TRANSLATIONS = {
     sortDurationAsc: 'Длительность (короткие)',
     sortTitleAsc: 'Название (А-Я)',
     sortTitleDesc: 'Название (Я-А)',
-    emptyStateDesc: 'Введите запрос и нажмите Поиск.',
+    emptyStateTitle: 'Откройте русские медиа',
+    emptyStateDesc: 'Выберите фильтры и нажмите «Найти видео» для поиска материалов для изучения языка.',
     selectForCitation: 'Выбрать',
     watchVideo: 'Смотреть',
 
@@ -485,7 +525,8 @@ function setLoading(loading, progress = null) {
 function updateResultsCount() {
   const countEl = document.getElementById('resultsCount');
   if (countEl) {
-    countEl.textContent = `(${state.currentResults.length})`;
+    const count = state.currentResults.length;
+    countEl.textContent = count > 0 ? count : '';
   }
 }
 
@@ -516,44 +557,54 @@ function renderResults(results) {
 
   if (results.length === 0) {
     grid.innerHTML = '';
-    if (emptyState) emptyState.hidden = false;
+    if (emptyState) emptyState.style.display = '';
     announce(t('noResults'));
     return;
   }
 
-  if (emptyState) emptyState.hidden = true;
+  if (emptyState) emptyState.style.display = 'none';
 
   grid.innerHTML = results.map(item => `
     <article class="video-card" data-id="${item.id}" role="listitem">
+      <label class="card-select">
+        <input type="checkbox" class="video-select" data-id="${item.id}"
+               ${state.selectedItems.has(item.id) ? 'checked' : ''}
+               aria-label="${t('selectForCitation')}">
+        <span class="checkmark">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </span>
+      </label>
       <div class="video-thumbnail">
         ${item.thumbnail
           ? `<img src="${escapeHtml(item.thumbnail)}" alt="" loading="lazy">`
-          : `<div class="thumbnail-placeholder"></div>`
+          : `<div style="width:100%;height:100%;background:#e2e8f0;"></div>`
         }
         ${item.duration ? `<span class="video-duration">${formatDuration(item.duration)}</span>` : ''}
+        ${item.pedagogicalLevel ? `<span class="video-level ${item.pedagogicalLevel}">${escapeHtml(item.pedagogicalLevel)}</span>` : ''}
       </div>
-      <div class="video-info">
-        <h3 class="video-title">${escapeHtml(item.title)}</h3>
-        <p class="video-program">${escapeHtml(item.program || '')}</p>
-        <p class="video-meta">
-          <time class="video-date">${formatDate(item.publishedAt)}</time>
-          <span class="video-source">${escapeHtml(item.source)}</span>
+      <div class="video-content">
+        <div class="video-badges">
+          <span class="video-source">${escapeHtml(item.source?.toUpperCase() || '')}</span>
           ${item.category ? `<span class="video-category">${escapeHtml(item.category)}</span>` : ''}
-        </p>
-      </div>
-      <div class="video-actions">
-        <label class="select-video">
-          <input type="checkbox" class="video-select" data-id="${item.id}"
-                 ${state.selectedItems.has(item.id) ? 'checked' : ''}
-                 aria-label="${t('selectForCitation')}">
-          <span>${t('selectForCitation')}</span>
-        </label>
-        <a href="${escapeHtml(item.url)}" class="video-link" target="_blank" rel="noopener">${t('watchVideo')}</a>
+        </div>
+        <h3 class="video-title">${escapeHtml(item.title)}</h3>
+        <p class="video-description">${escapeHtml((item.description || item.program || '').substring(0, 120))}${(item.description || item.program || '').length > 120 ? '...' : ''}</p>
+        <div class="video-footer">
+          <time class="video-date">${formatDate(item.publishedAt)}</time>
+          <a href="${escapeHtml(item.url)}" class="video-link" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Watch
+          </a>
+        </div>
       </div>
     </article>
   `).join('');
 
-  // Attach checkbox handlers - direct event binding without re-render
+  // Attach checkbox handlers
   grid.querySelectorAll('.video-select').forEach(checkbox => {
     checkbox.addEventListener('change', handleSelectionChange);
   });
@@ -622,8 +673,104 @@ function getFilterValues() {
     endDate: document.getElementById('endDate')?.value || '',
     maxResults: parseInt(document.getElementById('maxResults')?.value) || 20,
     sources: Array.from(document.querySelectorAll('input[name="source"]:checked')).map(cb => cb.value),
-    categories: Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value)
+    categories: Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value),
+    levels: Array.from(document.querySelectorAll('input[name="level"]:checked')).map(cb => cb.value),
+    contentTypes: Array.from(document.querySelectorAll('input[name="contentType"]:checked')).map(cb => cb.value)
   };
+}
+
+// Category to specialized source mapping
+const CATEGORY_SOURCE_MAP = {
+  '1tv': {
+    sports: '1tv:sports',
+    economy: '1tv:economy',
+    culture: '1tv:culture',
+    society: '1tv:society',
+    default: '1tv:news'
+  },
+  'smotrim': {
+    default: 'smotrim:news'
+  },
+  'rt': {
+    sports: 'rt:sport',
+    economy: 'rt:business',
+    default: 'rt:news'
+  },
+  'ntv': { default: 'ntv:video' },
+  'ria': { default: 'ria:video' },
+  'tass': { default: 'tass:video' },
+  'kommersant': { default: 'kommersant:video' },
+  'izvestia': { default: 'izvestia:video' }
+};
+
+// Expand sources based on selected categories
+// e.g., "1tv" + categories["sports", "economy"] -> ["1tv:sports", "1tv:economy", "1tv:news"]
+function expandSourcesWithCategories(sources, categories) {
+  const expanded = new Set();
+
+  for (const source of sources) {
+    const mapping = CATEGORY_SOURCE_MAP[source];
+    if (!mapping) {
+      // Unknown source, pass through as-is
+      expanded.add(source);
+      continue;
+    }
+
+    // Always add the default source for general news
+    expanded.add(mapping.default);
+
+    // Add specialized sources for selected categories (limit to first 2 categories)
+    const limitedCategories = categories.slice(0, 2);
+    for (const cat of limitedCategories) {
+      const specialized = mapping[cat.toLowerCase()];
+      if (specialized && expanded.size < 4) {
+        expanded.add(specialized);
+      }
+    }
+  }
+
+  // IMPORTANT: Limit to max 3 sources to prevent worker timeout
+  const result = Array.from(expanded).slice(0, 3);
+  console.log('[Matushka] Limited sources to:', result);
+  return result;
+}
+
+// Even distribution across categories using round-robin merge
+function rebalanceResults(results, categories, maxResults) {
+  if (categories.length <= 1) return results.slice(0, maxResults);
+
+  // Create category buckets
+  const buckets = {};
+  for (const cat of categories) {
+    buckets[cat.toLowerCase()] = [];
+  }
+
+  // Sort items into buckets
+  for (const item of results) {
+    const cat = (item.category || '').toLowerCase();
+    if (buckets[cat] !== undefined) {
+      buckets[cat].push(item);
+    }
+  }
+
+  // Round-robin merge
+  const balanced = [];
+  let idx = 0;
+  while (balanced.length < maxResults) {
+    let added = false;
+    for (const cat of categories) {
+      const bucket = buckets[cat.toLowerCase()];
+      if (bucket && bucket[idx]) {
+        balanced.push(bucket[idx]);
+        if (balanced.length >= maxResults) break;
+        added = true;
+      }
+    }
+    if (!added) break; // All buckets exhausted
+    idx++;
+  }
+
+  return balanced;
 }
 
 async function performSearch(e) {
@@ -641,84 +788,163 @@ async function performSearch(e) {
   }
 
   setLoading(true);
+  state.selectedItems.clear();  // Clear previous selections
+  updateSelectionCount();
   const emptyState = document.getElementById('emptyState');
   if (emptyState) emptyState.hidden = true;
 
   try {
-    // Build discover params
+    // Expand sources based on selected categories
+    // For 1tv, map category selections to category-specific sources
+    const expandedSources = expandSourcesWithCategories(filters.sources, filters.categories);
+    log('Expanded sources:', expandedSources);
+
+    // Build discover params (match worker API)
+    // Keep max_items reasonable to prevent worker timeout
     const discoverParams = {
-      source: filters.sources.join(','),
-      max: filters.maxResults * 2  // Request extra for filtering
+      sources: expandedSources.join(','),
+      max_items: Math.min(filters.maxResults + 10, 30),  // Cap at 30 to prevent timeout
+      distribution: 'even'  // Request even distribution across categories
     };
 
-    if (filters.query) discoverParams.q = filters.query;
+    if (filters.query) discoverParams.query = filters.query;
     if (filters.startDate) discoverParams.start_date = filters.startDate;
     if (filters.endDate) discoverParams.end_date = filters.endDate;
+    if (filters.categories.length > 0 && filters.categories.length < 11) {
+      discoverParams.categories = filters.categories.join(',');
+    }
+    if (filters.levels.length > 0 && filters.levels.length < 3) {
+      discoverParams.levels = filters.levels.join(',');
+    }
+    if (filters.contentTypes.length > 0 && filters.contentTypes.length < 4) {
+      discoverParams.content_types = filters.contentTypes.join(',');
+    }
 
-    // Step 1: Discover URLs
+    // Step 1: Discover videos - the API already returns rich metadata
     const discovered = await apiDiscover(discoverParams);
-    const urls = discovered.urls || [];
+    const items = discovered.items || [];
 
-    log(`Discovered ${urls.length} URLs`);
+    log(`Discovered ${items.length} items`);
 
-    if (urls.length === 0) {
+    if (items.length === 0) {
       renderResults([]);
       setLoading(false);
       return;
     }
 
-    // Step 2: Scrape metadata in parallel batches
+    // Step 2: Use discovery metadata directly (it's already rich for most sources)
+    // Only scrape if discovery metadata is incomplete
     const results = [];
-    const batchSize = 5;
-    const maxToProcess = Math.min(urls.length, filters.maxResults * 2);
+    const itemsToProcess = items.slice(0, filters.maxResults * 2);
 
-    for (let i = 0; i < maxToProcess; i += batchSize) {
-      const batch = urls.slice(i, i + batchSize);
-      setLoading(true, { current: results.length, total: filters.maxResults });
+    for (let i = 0; i < itemsToProcess.length && results.length < filters.maxResults; i++) {
+      const item = itemsToProcess[i];
+      setLoading(true, { current: results.length + 1, total: Math.min(itemsToProcess.length, filters.maxResults) });
 
-      const batchResults = await Promise.allSettled(batch.map(url => apiScrape(url)));
+      let duration = item.duration || 0;
 
-      batchResults.forEach((result, idx) => {
-        if (result.status === 'fulfilled' && result.value?.metadata) {
-          const meta = result.value.metadata;
-          const url = batch[idx];
-          const duration = meta.duration || 0;
+      // Apply duration filter (only if we have duration data)
+      if (duration > 0 && (duration < filters.minDuration || duration > filters.maxDuration)) {
+        continue;
+      }
 
-          // Apply duration filter
-          if (duration < filters.minDuration || duration > filters.maxDuration) {
-            return;
+      // Use discovery metadata - it's already good for Smotrim, TASS, Kommersant, NTV
+      let title = item.title || item.description?.substring(0, 80) || 'Video';
+      let description = item.description || '';
+      let thumbnail = item.thumbnail || null;
+      let program = item.program || '';
+      let publishedAt = item.publishDate || item.publishedAt || null;
+
+      // Track category, content type, and pedagogical level
+      let category = item.categories?.[0] || item.category || null;
+      let contentType = item.contentType || null;
+      let pedagogicalLevel = item.pedagogicalLevel || null;
+
+      // For sources with incomplete discovery data (like 1tv), scrape to get full metadata
+      if (!title || title === 'Video' || !thumbnail || !category) {
+        try {
+          const scraped = await apiScrape(item.url);
+          if (scraped?.metadata) {
+            const meta = scraped.metadata;
+            title = meta.title || title;
+            description = meta.description || description;
+            thumbnail = meta.thumbnail || thumbnail;
+            program = meta.program || program;
+            publishedAt = meta.publishDate || publishedAt;
+            // Get duration from scrape if we don't have it
+            if (!duration && meta.duration) {
+              duration = meta.duration;
+            }
+            // Get inferred category from scrape (for 1tv)
+            if (!category && meta.category) {
+              category = meta.category;
+              log('Got inferred category from scrape:', category);
+            }
+            // Get content type and level from scrape
+            if (!contentType && meta.contentType) {
+              contentType = meta.contentType;
+            }
+            if (!pedagogicalLevel && meta.pedagogicalLevel) {
+              pedagogicalLevel = meta.pedagogicalLevel;
+            }
           }
-
-          results.push({
-            id: generateId(url),
-            url: url,
-            title: meta.title || 'Untitled',
-            description: meta.description || '',
-            program: meta.program || '',
-            source: extractSource(url),
-            thumbnail: meta.thumbnail || null,
-            duration: duration,
-            publishedAt: meta.published_at || new Date().toISOString(),
-            category: meta.category || null,
-            m3u8Url: meta.m3u8_url || null
-          });
+        } catch (e) {
+          log('Scrape failed for', item.url, e.message);
         }
-      });
+      }
 
-      // Stop early if we have enough
-      if (results.length >= filters.maxResults) break;
+      // Skip items with no useful title
+      if (!title || title === 'Unknown' || title === 'Video') {
+        continue;
+      }
+
+      results.push({
+        id: generateId(item.url),
+        url: item.url,
+        title: title,
+        description: description,
+        program: program,
+        source: item.source || extractSource(item.url),
+        thumbnail: thumbnail,
+        duration: duration,
+        publishedAt: publishedAt || new Date().toISOString(),
+        category: category,
+        contentType: contentType,
+        pedagogicalLevel: pedagogicalLevel,
+        m3u8Url: null
+      });
     }
 
-    // Apply category filter (client-side)
+    // Apply client-side filters as fallback (API should have already filtered)
     let filtered = results;
-    if (filters.categories.length > 0 && filters.categories.length < 8) {
-      filtered = results.filter(item =>
+
+    // Category filter
+    if (filters.categories.length > 0 && filters.categories.length < 11) {
+      filtered = filtered.filter(item =>
         !item.category || filters.categories.includes(item.category.toLowerCase())
       );
     }
 
-    // Trim to requested max
-    filtered = filtered.slice(0, filters.maxResults);
+    // Content type filter
+    if (filters.contentTypes.length > 0 && filters.contentTypes.length < 4) {
+      filtered = filtered.filter(item =>
+        !item.contentType || filters.contentTypes.includes(item.contentType.toLowerCase())
+      );
+    }
+
+    // Pedagogical level filter
+    if (filters.levels.length > 0 && filters.levels.length < 3) {
+      filtered = filtered.filter(item =>
+        !item.pedagogicalLevel || filters.levels.includes(item.pedagogicalLevel.toLowerCase())
+      );
+    }
+
+    // Apply even distribution client-side if API didn't
+    if (filters.categories.length > 1) {
+      filtered = rebalanceResults(filtered, filters.categories, filters.maxResults);
+    } else {
+      filtered = filtered.slice(0, filters.maxResults);
+    }
 
     log(`Final results: ${filtered.length}`);
     renderResults(filtered);
@@ -738,11 +964,11 @@ async function performSearch(e) {
 
 async function handleDownloadAudio() {
   if (state.selectedItems.size === 0) {
-    showError(t('noResults'));
+    showError(t('selectVideos') || 'Please select videos first');
     return;
   }
 
-  const btn = document.getElementById('downloadCitationBtn');
+  const btn = document.getElementById('downloadAudioBtn');
   const originalText = btn?.textContent;
   if (btn) {
     btn.textContent = t('downloading');
@@ -815,6 +1041,13 @@ function formatCitation(item, format) {
 
 function updateCitationPreview() {
   const output = document.getElementById('citationText');
+  const panel = document.getElementById('citationsPanel');
+
+  // Show/hide citations panel based on selection
+  if (panel) {
+    panel.hidden = state.selectedItems.size === 0;
+  }
+
   if (!output) return;
 
   if (state.selectedItems.size === 0) {
@@ -848,8 +1081,8 @@ async function handleCopyCitations() {
 function handleCitationFormatChange(format) {
   state.currentCitationFormat = format;
 
-  // Update tab states
-  document.querySelectorAll('[role="tab"]').forEach(tab => {
+  // Update tab states (supports both old and new HTML)
+  document.querySelectorAll('[role="tab"], .format-btn').forEach(tab => {
     const isSelected = tab.dataset.format === format;
     tab.setAttribute('aria-selected', isSelected ? 'true' : 'false');
     tab.classList.toggle('active', isSelected);
@@ -863,15 +1096,35 @@ function handleCitationFormatChange(format) {
 // =============================================================================
 
 function handleReset() {
-  // Reset form
-  document.getElementById('searchForm')?.reset();
+  // Clear search query
+  const searchQuery = document.getElementById('searchQuery');
+  if (searchQuery) searchQuery.value = '';
 
-  // Set default checkbox states
-  document.querySelectorAll('input[name="category"]').forEach((cb, i) => {
-    cb.checked = i < 4;
+  // Reset duration
+  const minDuration = document.getElementById('minDuration');
+  const maxDuration = document.getElementById('maxDuration');
+  if (minDuration) minDuration.value = '0';
+  if (maxDuration) maxDuration.value = '3600';
+
+  // Reset max results
+  const maxResults = document.getElementById('maxResults');
+  if (maxResults) maxResults.value = '20';
+
+  // Reset all checkboxes - nothing selected
+  document.querySelectorAll('input[name="category"]').forEach(cb => {
+    cb.checked = false;
   });
-  document.querySelectorAll('input[name="source"]').forEach((cb, i) => {
-    cb.checked = i < 3;
+
+  document.querySelectorAll('input[name="source"]').forEach(cb => {
+    cb.checked = false;
+  });
+
+  document.querySelectorAll('input[name="level"]').forEach(cb => {
+    cb.checked = false;
+  });
+
+  document.querySelectorAll('input[name="contentType"]').forEach(cb => {
+    cb.checked = false;
   });
 
   // Set default dates
@@ -901,18 +1154,17 @@ function handleReset() {
 // =============================================================================
 
 function setDefaultDates() {
+  // Don't set default dates - most news sources only retain 1-2 days of content
+  // Setting a date range by default causes most searches to return 0 results
+  // Users can manually set date ranges if they want to filter by date
   const startDate = document.getElementById('startDate');
   const endDate = document.getElementById('endDate');
 
-  if (startDate && !startDate.value) {
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    startDate.value = weekAgo.toISOString().split('T')[0];
-  }
-
+  // Only set end date to today for reference (users often want "up to today")
   if (endDate && !endDate.value) {
     endDate.value = new Date().toISOString().split('T')[0];
   }
+  // Leave start date empty - no date filtering by default
 }
 
 function injectStyles() {
@@ -996,12 +1248,30 @@ function init() {
     sortResults(e.target.value);
   });
 
-  // Citation format tabs
-  document.querySelectorAll('[role="tab"]').forEach(tab => {
+  // Citation format tabs (both old and new HTML structures)
+  document.querySelectorAll('[role="tab"], .format-btn').forEach(tab => {
     tab.addEventListener('click', () => {
       handleCitationFormatChange(tab.dataset.format);
     });
   });
+
+  // Sidebar toggle for mobile
+  const sidebarToggle = document.querySelector('.sidebar-toggle');
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebarToggle && sidebar) {
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 1024 &&
+          sidebar.classList.contains('open') &&
+          !sidebar.contains(e.target) &&
+          !sidebarToggle.contains(e.target)) {
+        sidebar.classList.remove('open');
+      }
+    });
+  }
 
   // Copy citations button
   document.getElementById('copyCitationBtn')?.addEventListener('click', handleCopyCitations);
@@ -1009,7 +1279,7 @@ function init() {
   // Download audio button (in results header)
   document.getElementById('downloadAudioBtn')?.addEventListener('click', handleDownloadAudio);
 
-  console.log('[Matushka] Initialization complete. Ready to search.');
+  log('Matushka initialized');
 }
 
 // Start when DOM is ready

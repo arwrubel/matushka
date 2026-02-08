@@ -2474,7 +2474,14 @@ async function extract1tv(url) {
   };
 }
 
-// Helper function to extract title from 1tv URL slug
+// Helper function to extract news ID from 1tv URL
+function extractNewsIdFrom1tvUrl(url) {
+  // URL format: /news/2025-12-22/529290-v_rabote_whatsapp...
+  const match = url.match(/\/news\/\d{4}-\d{2}-\d{2}\/(\d+)/);
+  return match ? match[1] : null;
+}
+
+// Helper function to extract title from 1tv URL slug (fallback for when API fails)
 function extractTitleFrom1tvUrl(url) {
   // URL format: /news/2025-12-22/529290-v_rabote_whatsapp_v_rossii_proizoshel_massovyy_sboy
   const match = url.match(/\/news\/\d{4}-\d{2}-\d{2}\/\d+-(.+?)(?:\?|#|$)/);
@@ -2484,6 +2491,30 @@ function extractTitleFrom1tvUrl(url) {
   // Replace underscores with spaces and capitalize first letter
   const title = slug.replace(/_/g, ' ');
   return title.charAt(0).toUpperCase() + title.slice(1);
+}
+
+// Fetch real Russian title and metadata from 1tv video API
+async function fetch1tvMetadata(newsId) {
+  try {
+    const apiUrl = `https://www.1tv.ru/video_materials.json?news_id=${newsId}&single=true`;
+    const response = await fetchWithHeaders(apiUrl);
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
+
+    const video = data[0];
+    return {
+      title: video.title || null,
+      description: video.description || null,
+      thumbnail: video.poster || video.poster_thumb || null,
+      duration: video.duration || null,
+      publishDate: video.date_air || null,
+    };
+  } catch (e) {
+    log('1tv metadata fetch error for', newsId, ':', e.message);
+    return null;
+  }
 }
 
 // Source-level cache - caches individual source results for 30 minutes
@@ -2566,8 +2597,10 @@ async function discover1tv(sourceKey, maxItems = 20) {
     const fetchMultiplier = isSpecializedSource ? 10 : 3;
     let candidateItems = [];
 
+    // Step 1: Collect URLs from sitemap
+    let sitemapUrls = [];
     for (const year of [currentYear, currentYear - 1]) {
-      if (candidateItems.length >= maxItems * fetchMultiplier) break;
+      if (sitemapUrls.length >= maxItems * fetchMultiplier) break;
 
       const sitemapUrl = `${SITES['1tv'].sitemapBase}${year}.xml`;
       log('Trying 1tv sitemap:', sitemapUrl);
@@ -2584,29 +2617,61 @@ async function discover1tv(sourceKey, maxItems = 20) {
         const sortedMatches = videoMatches.reverse();
 
         for (const match of sortedMatches) {
-          if (candidateItems.length >= maxItems * fetchMultiplier) break;
+          if (sitemapUrls.length >= maxItems * fetchMultiplier) break;
 
           const [, url, feedUrl, lastmod] = match;
           if (url && url.includes('/news/')) {
-            const title = extractTitleFrom1tvUrl(url);
-            const inferredCategory = title ? inferCategory(title, url) : null;
-
-            // Store with inferred category only - don't fallback yet (needed for filtering)
-            candidateItems.push({
-              url,
-              source: '1tv',
-              sourceKey,
-              title,
-              videoFeed: feedUrl,
-              publishDate: lastmod ? lastmod.split('T')[0] : null,
-              inferredCategory: inferredCategory,  // Store raw inference result
-            });
+            const newsId = extractNewsIdFrom1tvUrl(url);
+            if (newsId) {
+              sitemapUrls.push({ url, feedUrl, lastmod, newsId });
+            }
           }
         }
-
-        log('Found', candidateItems.length, 'candidate items from sitemap');
+        log('Found', sitemapUrls.length, 'URLs from sitemap');
       }
     }
+
+    // Step 2: Fetch real Russian titles from API in parallel (limit to avoid timeout)
+    const urlsToFetch = sitemapUrls.slice(0, Math.min(maxItems + 5, 15));
+    log('Fetching Russian titles for', urlsToFetch.length, 'items...');
+
+    const metadataPromises = urlsToFetch.map(async (item) => {
+      const meta = await fetch1tvMetadata(item.newsId);
+      if (meta && meta.title) {
+        // Got real Russian title - use it for category inference
+        const inferredCategory = inferCategory(meta.title + ' ' + (meta.description || ''), item.url);
+        return {
+          url: item.url,
+          source: '1tv',
+          sourceKey,
+          videoId: item.newsId,
+          title: meta.title,  // Real Russian title!
+          description: meta.description,
+          thumbnail: meta.thumbnail,
+          videoFeed: item.feedUrl,
+          publishDate: meta.publishDate || (item.lastmod ? item.lastmod.split('T')[0] : null),
+          duration: meta.duration,
+          inferredCategory,
+        };
+      }
+      // Fallback to transliterated title if API fails
+      const fallbackTitle = extractTitleFrom1tvUrl(item.url);
+      const inferredCategory = fallbackTitle ? inferCategory(fallbackTitle, item.url) : null;
+      return {
+        url: item.url,
+        source: '1tv',
+        sourceKey,
+        videoId: item.newsId,
+        title: fallbackTitle,
+        videoFeed: item.feedUrl,
+        publishDate: item.lastmod ? item.lastmod.split('T')[0] : null,
+        inferredCategory,
+      };
+    });
+
+    const resolvedItems = await Promise.all(metadataPromises);
+    candidateItems = resolvedItems.filter(item => item !== null);
+    log('Got metadata for', candidateItems.length, 'items');
 
     // For specialized sources, filter to only items whose inferred category matches target
     if (isSpecializedSource && targetCategories.length > 0) {
@@ -3598,7 +3663,8 @@ async function discoverNtv(sourceKey = 'video', maxItems = 20) {
   }
 
   // Strategy 3: Fetch metadata for videos in parallel (faster)
-  const idsToFetch = videoIds.slice(0, Math.min(maxItems + 5, 15)); // Limit to avoid timeout
+  // Limit to 10 to stay within timeout - better to return fewer than timeout
+  const idsToFetch = videoIds.slice(0, Math.min(maxItems + 3, 10));
 
   const fetchMeta = async (videoId) => {
     try {
@@ -5102,8 +5168,8 @@ async function handleDiscover(url, request) {
 
       // Use source-level cache with timeout - this is the key optimization!
       // The cache stores pre-fetched results that can be sliced for different queries
-      // NTV and similar sources with parallel fetches need more time
-      const timeoutMs = (siteId === 'ntv' || siteId === 'tass') ? 5000 : 3000;
+      // NTV needs extra time for parallel metadata fetches, 1TV needs time for API title lookups
+      const timeoutMs = (siteId === 'ntv' || siteId === 'tass' || siteId === '1tv') ? 8000 : 3000;
       const allSourceItems = await fetchWithTimeout(
         () => getCachedSourceResults(cacheSourceKey, discoverFn, skipCache),
         timeoutMs
