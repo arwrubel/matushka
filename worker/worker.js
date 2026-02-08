@@ -97,8 +97,8 @@ const SITES = {
     rssFeeds: {
       'news': 'https://russian.rt.com/rss',
     },
-    usesRutube: true,
-    rutubeChannelId: 25547249,  // RT main Rutube channel
+    usesRutube: false,  // Disabled: Rutube channel has older content, use RSS for fresh news
+    rutubeChannelId: 25547249,  // RT main Rutube channel (kept for reference)
     sources: {
       'news': { url: 'https://russian.rt.com/', categories: ['politics', 'world'] },
       'russia': { url: 'https://russian.rt.com/russia', categories: ['politics', 'society'] },
@@ -2111,7 +2111,10 @@ function decodeHtmlEntities(text) {
   if (!text) return '';
   const entities = {
     '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"',
-    '&#39;': "'", '&apos;': "'", '&nbsp;': ' '
+    '&#39;': "'", '&apos;': "'", '&nbsp;': ' ',
+    '&laquo;': '«', '&raquo;': '»', '&mdash;': '—', '&ndash;': '–',
+    '&hellip;': '…', '&bull;': '•', '&copy;': '©', '&reg;': '®',
+    '&trade;': '™', '&euro;': '€', '&pound;': '£', '&yen;': '¥'
   };
   let decoded = text;
   for (const [entity, char] of Object.entries(entities)) {
@@ -2576,22 +2579,108 @@ async function discover1tv(sourceKey, maxItems = 20) {
 
   log('Discovering from 1tv:', sourceKey);
 
-  // Use Rutube channel for proper Russian titles and actual video content
-  // The sitemap only has transliterated URL slugs which break category inference
-  if (site.usesRutube && site.rutubeChannelId) {
-    log('Using 1tv Rutube channel for video content');
-    return discoverRutubeChannel('1tv', sourceKey, maxItems);
-  }
-
   const results = [];
 
-  // Fallback: sitemap discovery (transliterated titles - less accurate)
-  // Determine if this is a specialized source that needs category filtering
-  const isSpecializedSource = sourceKey !== 'news' && sourceKey !== 'vremya';
-  const targetCategories = source.categories || [];
+  // Category-specific search keywords for 1TV search API
+  const SEARCH_KEYWORDS = {
+    'news': ['новости', 'сегодня', 'россия'],
+    'politics': ['политика', 'путин', 'правительство', 'госдума'],
+    'economy': ['экономика', 'рубль', 'инфляция', 'бизнес'],
+    'society': ['общество', 'социальный', 'люди'],
+    'world': ['мир', 'международный', 'сша', 'европа', 'украина'],
+    'sports': ['спорт', 'футбол', 'хоккей', 'олимпиада', 'чемпионат'],
+    'culture': ['культура', 'театр', 'кино', 'музей', 'искусство'],
+    'vremya': ['время', 'новости'],
+  };
 
-  // Sitemap as fallback method (1tv category pages are client-rendered)
+  // Strategy 1: Use 1TV search.js API (returns fresh content with Russian titles)
   try {
+    const keywords = SEARCH_KEYWORDS[sourceKey] || SEARCH_KEYWORDS['news'];
+    const searchKeyword = keywords[Math.floor(Math.random() * keywords.length)];
+    const today = new Date().toISOString().split('T')[0];
+    const lastMonth = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Use the .js endpoint which returns parseable JavaScript with embedded HTML
+    const searchUrl = `https://www.1tv.ru/search.js?from=${lastMonth}&to=${today}&limit=${maxItems + 10}&offset=0&q=text%3A${encodeURIComponent(searchKeyword)}`;
+    log('Trying 1tv search.js API:', searchUrl);
+
+    const response = await fetchWithHeaders(searchUrl);
+    if (response.ok) {
+      const jsContent = await response.text();
+
+      // Extract news URLs from the JavaScript response
+      // Pattern matches: href="/news/2026-02-07/533151-petru_gumenniku..."
+      const urlPattern = /href=\\"(\/news\/\d{4}-\d{2}-\d{2}\/(\d+)-[^"\\]+)\\"/g;
+      const matches = [...jsContent.matchAll(urlPattern)];
+
+      const seenUrls = new Set();
+      const urlsToProcess = [];
+
+      for (const match of matches) {
+        if (urlsToProcess.length >= maxItems) break;
+
+        const path = match[1];
+        const newsId = match[2];
+        const url = `https://www.1tv.ru${path}`;
+
+        if (seenUrls.has(url)) continue;
+        seenUrls.add(url);
+
+        urlsToProcess.push({ url, newsId });
+      }
+
+      log('Found', urlsToProcess.length, 'URLs from search.js');
+
+      // Fetch metadata in parallel (limit concurrency to avoid timeout)
+      const batchSize = Math.min(urlsToProcess.length, 10);
+      const batch = urlsToProcess.slice(0, batchSize);
+
+      const metadataPromises = batch.map(async ({ url, newsId }) => {
+        const meta = await fetch1tvMetadata(newsId);
+        if (meta && meta.title) {
+          const inferredCategory = inferCategory(meta.title + ' ' + (meta.description || ''), url);
+          const metadata = { title: meta.title, description: meta.description, url, duration: meta.duration, category: inferredCategory };
+          const contentType = detectContentType(metadata);
+          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
+
+          return {
+            url,
+            source: '1tv',
+            sourceKey,
+            videoId: newsId,
+            title: meta.title,
+            description: meta.description,
+            thumbnail: meta.thumbnail,
+            publishDate: meta.publishDate,
+            duration: meta.duration,
+            category: inferredCategory || source.categories?.[0],
+            categories: inferredCategory ? [inferredCategory] : source.categories || [],
+            contentType,
+            pedagogicalLevel,
+          };
+        }
+        return null;
+      });
+
+      const resolvedItems = await Promise.all(metadataPromises);
+      for (const item of resolvedItems) {
+        if (item && results.length < maxItems) {
+          results.push(item);
+        }
+      }
+      log('Found', results.length, 'items from 1tv search.js');
+    }
+  } catch (e) {
+    log('1tv search.js error:', e.message);
+  }
+
+  // Strategy 2: Fallback to sitemap if search didn't work
+  if (results.length < maxItems) {
+    const isSpecializedSource = sourceKey !== 'news' && sourceKey !== 'vremya';
+    const targetCategories = source.categories || [];
+
+    // Sitemap as fallback method (1tv category pages are client-rendered)
+    try {
     const currentYear = new Date().getFullYear();
     // Fetch more items for specialized sources to ensure enough matches after filtering
     const fetchMultiplier = isSpecializedSource ? 10 : 3;
@@ -2718,11 +2807,12 @@ async function discover1tv(sourceKey, maxItems = 20) {
     }
 
     log('Final results from sitemap:', results.length, 'items');
-  } catch (e) {
-    log('Sitemap discovery failed:', e.message);
-  }
+    } catch (e) {
+      log('Sitemap discovery failed:', e.message);
+    }
+  }  // End of Strategy 2 (sitemap fallback)
 
-  // Strategy 2: Try the schedule API for program-based content (vremya, news)
+  // Strategy 3: Try the schedule API for program-based content (vremya, news)
   if (results.length < maxItems && (sourceKey === 'vremya' || sourceKey === 'news')) {
     try {
       log('Trying 1tv schedule API...');
@@ -3166,46 +3256,61 @@ async function discoverRt(sourceKey, maxItems = 20) {
     }
   }
 
-  // Strategy 2: Scrape the web page
+  // Strategy 2: Scrape the video section page for actual video content
   if (results.length < maxItems) {
     try {
-      log('Trying page scrape:', source.url);
-      const response = await fetchWithHeaders(source.url);
+      const videoPageUrl = 'https://russian.rt.com/nnn/video';
+      log('Trying RT video page scrape:', videoPageUrl);
+      const response = await fetchWithHeaders(videoPageUrl);
 
       if (response.ok) {
         const html = await response.text();
 
-        // Look for article links (both rt.com and russian.rt.com)
-        const linkMatches = html.matchAll(/href=["'](https?:\/\/(?:www\.|russian\.)?rt\.com\/[^"']+\/\d+[^"']*)["']/gi);
+        // Look for video links (contain /video/ in path)
+        const linkMatches = html.matchAll(/href=["']((?:https?:\/\/russian\.rt\.com)?\/[^"']*\/video\/[^"']+)["']/gi);
+        const seen = new Set();
 
         for (const match of linkMatches) {
-          const url = match[1];
-          // Filter for actual article URLs
-          if (url.match(/\/\d+-[^/]+\/?$/) && !results.find(r => r.url === url)) {
-            // Infer category from URL path (limited info available from scrape)
-            const urlCategory = inferCategory(url, url);
-
-            // Detect content type and pedagogical level (limited info)
-            const metadata = { title: null, description: null, url, duration: null, category: urlCategory };
-            const contentType = detectContentType(metadata);
-            const pedagogicalLevel = estimatePedagogicalLevel(metadata);
-
-            results.push({
-              url,
-              source: 'rt',
-              sourceKey,
-              category: urlCategory,
-              categories: urlCategory ? [urlCategory] : source.categories,
-              contentType,
-              pedagogicalLevel,
-            });
+          let url = match[1];
+          if (!url.startsWith('http')) {
+            url = 'https://russian.rt.com' + url;
           }
+
+          // Skip duplicates and generic video page links
+          if (seen.has(url) || url === 'https://russian.rt.com/video') continue;
+          seen.add(url);
+
+          // Extract title from URL path
+          const pathMatch = url.match(/\/video\/(\d+)-(.+)$/);
+          const videoId = pathMatch ? pathMatch[1] : null;
+          const slugTitle = pathMatch ? pathMatch[2].replace(/-/g, ' ') : null;
+
+          // Infer category from URL path
+          const urlCategory = inferCategory(slugTitle || url, url);
+
+          // Detect content type and pedagogical level
+          const metadata = { title: slugTitle, description: null, url, duration: null, category: urlCategory };
+          const contentType = detectContentType(metadata);
+          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
+
+          results.push({
+            url,
+            source: 'rt',
+            sourceKey,
+            videoId,
+            title: slugTitle,
+            category: urlCategory,
+            categories: urlCategory ? [urlCategory] : source.categories,
+            contentType,
+            pedagogicalLevel,
+          });
+
           if (results.length >= maxItems) break;
         }
-        log('Found', results.length, 'items total');
+        log('Found', results.length, 'video items from RT');
       }
     } catch (e) {
-      log('Page scrape error:', e.message);
+      log('RT video page scrape error:', e.message);
     }
   }
 

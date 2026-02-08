@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#6366f1">
 
     <!-- Favicon - Cute Matryoshka -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3ClinearGradient id='fg' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23EF5350'/%3E%3Cstop offset='100%25' stop-color='%23D32F2F'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M4 6Q4 3 8 2Q12 3 12 6Q12 13 8 14Q4 13 4 6Z' fill='url(%23fg)'/%3E%3Ccircle cx='8' cy='5.5' r='2.5' fill='%23FFF8F0'/%3E%3Ccircle cx='7' cy='5.3' r='.6' fill='%232C2416'/%3E%3Ccircle cx='9' cy='5.3' r='.6' fill='%232C2416'/%3E%3Cpath d='M7 6.5Q8 7.2 9 6.5' fill='none' stroke='%232C2416' stroke-width='.5'/%3E%3Ccircle cx='8' cy='10' r='2' fill='%23FFF8F0'/%3E%3Cpolygon points='7,9 7,11 9.5,10' fill='%23D32F2F'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cellipse cx='8' cy='10' rx='6' ry='5.5' fill='%23FF6B6B'/%3E%3Ccircle cx='8' cy='6' r='4' fill='%23FFF5EE'/%3E%3Ccircle cx='6.5' cy='5.5' r='1' fill='%233D3D3D'/%3E%3Ccircle cx='9.5' cy='5.5' r='1' fill='%233D3D3D'/%3E%3Ccircle cx='7' cy='5' r='.3' fill='%23FFF'/%3E%3Ccircle cx='10' cy='5' r='.3' fill='%23FFF'/%3E%3Cpath d='M6.5 7.5Q8 9 9.5 7.5' fill='none' stroke='%233D3D3D' stroke-width='.7' stroke-linecap='round'/%3E%3Cellipse cx='8' cy='8' rx='5' ry='1.2' fill='%23FFD93D'/%3E%3C/svg%3E">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,31 +29,37 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
                             <defs>
                                 <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stop-color="#EF5350"/>
-                                    <stop offset="100%" stop-color="#D32F2F"/>
+                                    <stop offset="0%" stop-color="#FF6B6B"/>
+                                    <stop offset="100%" stop-color="#EE5A5A"/>
                                 </linearGradient>
                                 <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#FFB300"/>
-                                    <stop offset="100%" stop-color="#F9A825"/>
+                                    <stop offset="0%" stop-color="#FFD93D"/>
+                                    <stop offset="100%" stop-color="#F9C846"/>
                                 </linearGradient>
                             </defs>
-                            <ellipse cx="50" cy="70" rx="28" ry="18" fill="url(#bodyGrad)"/>
-                            <path d="M28 48Q28 22 50 16Q72 22 72 48Q72 78 50 84Q28 78 28 48Z" fill="url(#bodyGrad)"/>
-                            <ellipse cx="50" cy="46" rx="26" ry="7" fill="url(#goldGrad)"/>
-                            <circle cx="50" cy="36" r="14" fill="#FFF8F0"/>
-                            <circle cx="50" cy="36" r="14" fill="none" stroke="url(#goldGrad)" stroke-width="1.5"/>
-                            <circle cx="45" cy="34" r="2.5" fill="#2C2416"/>
-                            <circle cx="55" cy="34" r="2.5" fill="#2C2416"/>
-                            <circle cx="44" cy="33" r="1" fill="#FFF"/>
-                            <circle cx="54" cy="33" r="1" fill="#FFF"/>
-                            <path d="M45 40Q50 44 55 40" fill="none" stroke="#2C2416" stroke-width="2" stroke-linecap="round"/>
-                            <ellipse cx="40" cy="38" rx="3" ry="2" fill="#FFCDD2"/>
-                            <ellipse cx="60" cy="38" rx="3" ry="2" fill="#FFCDD2"/>
-                            <circle cx="50" cy="64" r="10" fill="rgba(255,248,240,0.95)"/>
-                            <polygon points="47,60 47,68 56,64" fill="#D32F2F"/>
+                            <!-- Cute rounded body -->
+                            <ellipse cx="50" cy="62" rx="32" ry="32" fill="url(#bodyGrad)"/>
+                            <!-- Gold decorative band -->
+                            <ellipse cx="50" cy="48" rx="28" ry="6" fill="url(#goldGrad)"/>
+                            <!-- Face circle - bigger and friendlier -->
+                            <circle cx="50" cy="35" r="18" fill="#FFF5EE"/>
+                            <!-- Big cute eyes - simple dots -->
+                            <circle cx="43" cy="33" r="3.5" fill="#3D3D3D"/>
+                            <circle cx="57" cy="33" r="3.5" fill="#3D3D3D"/>
+                            <!-- Eye sparkles - makes it cute! -->
+                            <circle cx="44.5" cy="31.5" r="1.2" fill="#FFF"/>
+                            <circle cx="58.5" cy="31.5" r="1.2" fill="#FFF"/>
+                            <!-- Happy smile - simple arc -->
+                            <path d="M44 40 Q50 46 56 40" fill="none" stroke="#3D3D3D" stroke-width="2.5" stroke-linecap="round"/>
+                            <!-- Rosy cheeks -->
+                            <circle cx="38" cy="38" r="3" fill="#FFAAAA" opacity="0.6"/>
+                            <circle cx="62" cy="38" r="3" fill="#FFAAAA" opacity="0.6"/>
+                            <!-- Cute play button on tummy -->
+                            <circle cx="50" cy="70" r="12" fill="#FFF5EE"/>
+                            <polygon points="47,66 47,74 55,70" fill="#EE5A5A"/>
                         </svg>
                     </span>
-                    <span class="logo-text">Matushka</span>
+                    <span class="logo-text" data-i18n="appTitle">Matushka</span>
                 </div>
                 <div class="lang-toggle">
                     <button type="button" class="lang-btn active" data-lang="en">EN</button>
@@ -66,14 +72,14 @@
                 <div class="filter-section">
                     <h3 class="filter-title" data-i18n="sourcesTitle">Sources</h3>
                     <div class="chip-group">
-                        <label class="chip"><input type="checkbox" name="source" value="1tv"><span>1TV</span></label>
-                        <label class="chip"><input type="checkbox" name="source" value="smotrim"><span>Smotrim</span></label>
-                        <label class="chip"><input type="checkbox" name="source" value="rt"><span>RT</span></label>
-                        <label class="chip"><input type="checkbox" name="source" value="ntv"><span>NTV</span></label>
-                        <label class="chip"><input type="checkbox" name="source" value="ria"><span>RIA</span></label>
-                        <label class="chip"><input type="checkbox" name="source" value="tass"><span>TASS</span></label>
-                        <label class="chip"><input type="checkbox" name="source" value="kommersant"><span>Kommersant</span></label>
-                        <label class="chip"><input type="checkbox" name="source" value="izvestia"><span>Izvestia</span></label>
+                        <label class="chip"><input type="checkbox" name="source" value="1tv"><span data-i18n="src1tv">Channel One</span></label>
+                        <label class="chip"><input type="checkbox" name="source" value="smotrim"><span data-i18n="srcSmotrim">Smotrim</span></label>
+                        <label class="chip"><input type="checkbox" name="source" value="rt"><span data-i18n="srcRt">RT</span></label>
+                        <label class="chip"><input type="checkbox" name="source" value="ntv"><span data-i18n="srcNtv">NTV</span></label>
+                        <label class="chip"><input type="checkbox" name="source" value="ria"><span data-i18n="srcRia">RIA Novosti</span></label>
+                        <label class="chip"><input type="checkbox" name="source" value="tass"><span data-i18n="srcTass">TASS</span></label>
+                        <label class="chip"><input type="checkbox" name="source" value="kommersant"><span data-i18n="srcKommersant">Kommersant</span></label>
+                        <label class="chip"><input type="checkbox" name="source" value="izvestia"><span data-i18n="srcIzvestia">Izvestia</span></label>
                     </div>
                 </div>
 
@@ -102,31 +108,21 @@
                     </div>
                 </div>
 
-                <div class="filter-section">
-                    <h3 class="filter-title" data-i18n="contentTypeTitle">Type</h3>
-                    <div class="chip-group">
-                        <label class="chip"><input type="checkbox" name="contentType" value="news"><span data-i18n="typeNews">News</span></label>
-                        <label class="chip"><input type="checkbox" name="contentType" value="interview"><span data-i18n="typeInterview">Interview</span></label>
-                        <label class="chip"><input type="checkbox" name="contentType" value="documentary"><span data-i18n="typeDocumentary">Documentary</span></label>
-                        <label class="chip"><input type="checkbox" name="contentType" value="speech"><span data-i18n="typeSpeech">Speech</span></label>
-                    </div>
-                </div>
-
                 <!-- Advanced Filters (collapsible) -->
                 <details class="filter-section advanced-filters">
-                    <summary class="filter-title">More Filters</summary>
+                    <summary class="filter-title" data-i18n="moreFilters">More Filters</summary>
                     <div class="advanced-content">
                         <div class="input-group">
-                            <label for="minDuration">Duration</label>
+                            <label for="minDuration" data-i18n="durationLabel">Duration</label>
                             <div class="range-inputs">
-                                <input type="number" id="minDuration" name="minDuration" min="0" value="0" placeholder="Min">
+                                <input type="number" id="minDuration" name="minDuration" min="0" value="0" data-i18n-placeholder="minDuration">
                                 <span class="range-sep">–</span>
-                                <input type="number" id="maxDuration" name="maxDuration" min="0" value="3600" placeholder="Max">
-                                <span class="input-suffix">sec</span>
+                                <input type="number" id="maxDuration" name="maxDuration" min="0" value="3600" data-i18n-placeholder="maxDuration">
+                                <span class="input-suffix" data-i18n="durationSuffix">sec</span>
                             </div>
                         </div>
                         <div class="input-group">
-                            <label for="startDate">Date Range</label>
+                            <label for="startDate" data-i18n="dateRangeLabel">Date Range</label>
                             <div class="range-inputs">
                                 <input type="date" id="startDate" name="startDate">
                                 <span class="range-sep">–</span>
@@ -134,7 +130,7 @@
                             </div>
                         </div>
                         <div class="input-group">
-                            <label for="maxResults">Max Results</label>
+                            <label for="maxResults" data-i18n="maxResultsTitle">Max Results</label>
                             <input type="number" id="maxResults" name="maxResults" min="1" max="100" value="20">
                         </div>
                     </div>
@@ -202,13 +198,34 @@
 
             <!-- Empty State -->
             <div id="emptyState" class="empty-state">
+                <!-- Decorative hint arrow pointing to sidebar (hidden on mobile) -->
+                <div class="hint-arrow" aria-hidden="true">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/>
+                    </svg>
+                </div>
                 <div class="empty-icon">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    <!-- Cute matryoshka illustration for empty state -->
+                    <svg width="72" height="72" viewBox="0 0 100 100" fill="none">
+                        <ellipse cx="50" cy="62" rx="32" ry="32" fill="#FF6B6B"/>
+                        <ellipse cx="50" cy="48" rx="28" ry="6" fill="#FFD93D"/>
+                        <circle cx="50" cy="35" r="18" fill="#FFF5EE"/>
+                        <circle cx="43" cy="33" r="3.5" fill="#3D3D3D"/>
+                        <circle cx="57" cy="33" r="3.5" fill="#3D3D3D"/>
+                        <circle cx="44.5" cy="31.5" r="1.2" fill="#FFF"/>
+                        <circle cx="58.5" cy="31.5" r="1.2" fill="#FFF"/>
+                        <path d="M44 40 Q50 46 56 40" fill="none" stroke="#3D3D3D" stroke-width="2.5" stroke-linecap="round"/>
+                        <circle cx="38" cy="38" r="3" fill="#FFAAAA" opacity="0.6"/>
+                        <circle cx="62" cy="38" r="3" fill="#FFAAAA" opacity="0.6"/>
+                        <circle cx="50" cy="70" r="12" fill="#FFF5EE"/>
+                        <polygon points="47,66 47,74 55,70" fill="#EE5A5A"/>
                     </svg>
                 </div>
                 <h2 data-i18n="emptyStateTitle">Discover Russian Media</h2>
                 <p data-i18n="emptyStateDesc">Select your filters and click "Find Videos" to explore authentic Russian content for language learning.</p>
+                <div class="empty-tips">
+                    <span class="tip-badge" data-i18n="emptyStateTip">💡 Tip: Start with 1-2 sources for faster results</span>
+                </div>
             </div>
 
             <!-- Results Grid -->

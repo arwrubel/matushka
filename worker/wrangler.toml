@@ -4,3 +4,12 @@ compatibility_date = "2024-01-01"
 
 [vars]
 DEBUG = "true"
+
+# KV namespace for caching - reduces CPU usage dramatically
+[[kv_namespaces]]
+binding = "MATUSHKA_CACHE"
+id = "13a156090ad84f55b2a7712fb39bd2af"
+
+# Cron trigger to warm cache every 5 minutes (free tier allows this)
+[triggers]
+crons = ["*/5 * * * *"]

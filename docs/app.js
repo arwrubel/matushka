@@ -35,15 +35,24 @@ const TRANSLATIONS = {
 
     // Filters
     durationTitle: 'Duration (seconds)',
+    durationLabel: 'Duration',
     minDuration: 'Min',
     maxDuration: 'Max',
+    durationSuffix: 'sec',
     dateRangeTitle: 'Date Range',
+    dateRangeLabel: 'Date Range',
     startDate: 'Start',
     endDate: 'End',
+    todayYesterday: 'Today & Yesterday',
+    lastMonth: 'Last Month',
+    allTime: 'All Time',
+    byDates: 'By Dates',
+    showPeriod: 'Show Results',
     categoriesTitle: 'Categories',
     sourcesTitle: 'Sources',
     maxResultsTitle: 'Max Results',
     maxResultsLabel: 'Number of results',
+    moreFilters: 'More Filters',
 
     // Categories
     catPolitics: 'Politics',
@@ -75,10 +84,10 @@ const TRANSLATIONS = {
     typeDocumentary: 'Documentaries',
     typeSpeech: 'Speeches',
 
-    // Sources
-    src1tv: 'Channel One (1TV)',
-    srcSmotrim: 'Smotrim/Vesti',
-    srcRt: 'RT Russian',
+    // Sources (English names)
+    src1tv: 'Channel One',
+    srcSmotrim: 'Smotrim',
+    srcRt: 'RT',
     srcIzvestia: 'Izvestia',
     srcNtv: 'NTV',
     srcRia: 'RIA Novosti',
@@ -97,6 +106,7 @@ const TRANSLATIONS = {
     sortTitleDesc: 'Title (Z-A)',
     emptyStateTitle: 'Discover Russian Media',
     emptyStateDesc: 'Select your filters and click "Find Videos" to explore authentic Russian content for language learning.',
+    emptyStateTip: '💡 Tip: Start with 1-2 sources for faster results',
     selectForCitation: 'Select',
     watchVideo: 'Watch',
 
@@ -135,60 +145,69 @@ const TRANSLATIONS = {
 
     // Hero
     heroTitle: 'Материалы для изучения русского языка',
-    heroSubtitle: 'Находите аутентичный русскоязычный медиаконтент из надежных источников. Скачивайте аудиофайлы и создавайте академические ссылки.',
+    heroSubtitle: 'Находите аутентичный русскоязычный медиаконтент из надёжных источников. Скачивайте аудиофайлы и создавайте академические ссылки.',
 
     // Search
     searchLabel: 'Поисковый запрос',
     searchPlaceholder: 'Поиск видео...',
     searchBtn: 'Поиск',
-    resetBtn: 'Сброс',
+    resetBtn: 'Очистить',
 
     // Filters
-    durationTitle: 'Длительность (секунд)',
-    minDuration: 'Мин',
-    maxDuration: 'Макс',
-    dateRangeTitle: 'Период',
-    startDate: 'Начало',
-    endDate: 'Конец',
-    categoriesTitle: 'Категории',
+    durationTitle: 'Длительность',
+    durationLabel: 'Длительность',
+    minDuration: 'От',
+    maxDuration: 'До',
+    durationSuffix: 'сек',
+    dateRangeTitle: 'Выбрать период времени',
+    dateRangeLabel: 'По датам',
+    startDate: 'С',
+    endDate: 'По',
+    todayYesterday: 'За сегодня и вчера',
+    lastMonth: 'За месяц',
+    allTime: 'За всё время',
+    byDates: 'По датам',
+    showPeriod: 'Показать за этот период',
+    categoriesTitle: 'Рубрики',
     sourcesTitle: 'Источники',
-    maxResultsTitle: 'Лимит',
-    maxResultsLabel: 'Количество',
+    maxResultsTitle: 'Количество',
+    maxResultsLabel: 'Макс. результатов',
+    moreFilters: 'Дополнительно',
 
-    // Categories
+    // Categories (matching Russian news sites)
     catPolitics: 'Политика',
     catEconomy: 'Экономика',
     catSociety: 'Общество',
     catEducation: 'Образование',
-    catWorld: 'В мире',
+    catWorld: 'Мир',
     catSports: 'Спорт',
     catCulture: 'Культура',
     catScience: 'Наука',
     catTechnology: 'Технологии',
-    catMilitary: 'Военное',
+    catMilitary: 'Армия',
     catWeather: 'Погода',
     catTourism: 'Туризм',
 
     // Pedagogical Level
-    levelTitle: 'Уровень сложности',
+    levelTitle: 'Уровень',
     levelBeginner: 'Начальный',
-    levelBeginnerDesc: '(медленная речь, простые темы)',
+    levelBeginnerDesc: '(медленная речь)',
     levelIntermediate: 'Средний',
-    levelIntermediateDesc: '(стандартные новости)',
+    levelIntermediateDesc: '(новости)',
     levelAdvanced: 'Продвинутый',
     levelAdvancedDesc: '(сложные темы)',
 
     // Content Type
-    contentTypeTitle: 'Тип контента',
+    contentTypeTitle: 'Формат',
     typeNews: 'Новости',
     typeInterview: 'Интервью',
-    typeDocumentary: 'Документальное',
+    typeDocumentary: 'Документалистика',
     typeSpeech: 'Выступления',
 
-    // Sources
+    // Sources (in Russian)
     src1tv: 'Первый канал',
-    srcSmotrim: 'Смотрим/Вести',
-    srcRt: 'RT на русском',
+    srcSmotrim: 'Смотрим',
+    srcRt: 'RT',
     srcIzvestia: 'Известия',
     srcNtv: 'НТВ',
     srcRia: 'РИА Новости',
@@ -197,38 +216,39 @@ const TRANSLATIONS = {
 
     // Results
     resultsTitle: 'Результаты',
-    sortLabel: 'Сортировка',
-    sortRelevance: 'Релевантность',
-    sortDateDesc: 'Дата (новые)',
-    sortDateAsc: 'Дата (старые)',
-    sortDurationDesc: 'Длительность (длинные)',
-    sortDurationAsc: 'Длительность (короткие)',
+    sortLabel: 'Сортировать',
+    sortRelevance: 'По релевантности',
+    sortDateDesc: 'Сначала новые',
+    sortDateAsc: 'Сначала старые',
+    sortDurationDesc: 'Сначала длинные',
+    sortDurationAsc: 'Сначала короткие',
     sortTitleAsc: 'Название (А-Я)',
     sortTitleDesc: 'Название (Я-А)',
-    emptyStateTitle: 'Откройте русские медиа',
-    emptyStateDesc: 'Выберите фильтры и нажмите «Найти видео» для поиска материалов для изучения языка.',
+    emptyStateTitle: 'Поиск видео',
+    emptyStateDesc: 'Выберите источники и рубрики, затем нажмите «Поиск» для поиска учебных материалов.',
+    emptyStateTip: 'Совет: начните с 1-2 источников для быстрого результата',
     selectForCitation: 'Выбрать',
     watchVideo: 'Смотреть',
 
     // Citations & Actions
     selectedVideos: 'выбрано',
-    citationsTitle: 'Цитаты',
-    citationPlaceholder: 'Выберите видео для цитат...',
-    copyBtn: 'Копировать цитаты',
+    citationsTitle: 'Библиография',
+    citationPlaceholder: 'Выберите видео для создания библиографии...',
+    copyBtn: 'Копировать',
     downloadBtn: 'Скачать аудио',
 
     // Status
-    loadingText: 'Загрузка...',
+    loadingText: 'Идёт поиск...',
     loading: 'Загрузка...',
-    loadingProgress: 'Загрузка {current} из {total}...',
+    loadingProgress: 'Загружено {current} из {total}...',
     downloading: 'Скачивание...',
     complete: 'Готово!',
     error: 'Ошибка',
     noResults: 'Ничего не найдено',
-    selected: 'Выбрано: {count}',
+    selected: '{count} выбрано',
     selectSource: 'Выберите хотя бы один источник',
-    copySuccess: 'Скопировано',
-    copyFailed: 'Ошибка копирования',
+    copySuccess: 'Скопировано в буфер обмена',
+    copyFailed: 'Не удалось скопировать',
 
     // Footer
     footerCopyright: 'Матушка 2024',
@@ -305,6 +325,9 @@ function setLanguage(lang) {
   if (!TRANSLATIONS[lang]) return;
   state.currentLanguage = lang;
   localStorage.setItem('matushka_lang', lang);
+
+  // Update document language for browser locale handling
+  document.documentElement.lang = lang;
 
   // Update button states
   document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -1212,6 +1235,9 @@ function init() {
 
   // Inject additional styles
   injectStyles();
+
+  // Set document language for browser locale (affects date picker format)
+  document.documentElement.lang = state.currentLanguage;
 
   // Apply translations
   applyTranslations();
