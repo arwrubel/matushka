@@ -39,7 +39,7 @@ const TRANSLATIONS = {
     minDuration: 'Min',
     maxDuration: 'Max',
     // Duration options
-    durAny: 'Any',
+    durAny: '00:00',
     dur15s: '15 sec',
     dur30s: '30 sec',
     dur45s: '45 sec',
@@ -172,7 +172,7 @@ const TRANSLATIONS = {
     minDuration: 'От',
     maxDuration: 'До',
     // Duration options
-    durAny: 'Любая',
+    durAny: '00:00',
     dur15s: '15 сек',
     dur30s: '30 сек',
     dur45s: '45 сек',
