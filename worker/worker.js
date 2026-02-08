@@ -3162,6 +3162,37 @@ async function discoverSmotrim(sourceKey, maxItems = 20) {
           }
         }
         log('Found', results.length, 'videos from Smotrim API');
+
+        // Fetch thumbnails from player API for items missing them
+        const itemsNeedingThumbnails = results.filter(r => !r.thumbnail);
+        if (itemsNeedingThumbnails.length > 0) {
+          log('Fetching thumbnails for', itemsNeedingThumbnails.length, 'items');
+          const batchSize = 5;
+          for (let i = 0; i < itemsNeedingThumbnails.length; i += batchSize) {
+            const batch = itemsNeedingThumbnails.slice(i, i + batchSize);
+            await Promise.all(batch.map(async (item) => {
+              try {
+                const playerUrl = `${SITES['smotrim'].playerApi}/${item.videoId}/sid/smotrim`;
+                const playerResp = await fetchWithHeaders(playerUrl, {
+                  headers: { 'Accept': 'application/json' }
+                });
+                if (playerResp.ok) {
+                  const playerData = await playerResp.json();
+                  const mediaData = playerData?.data?.playlist?.medialist?.[0];
+                  if (mediaData) {
+                    item.thumbnail = mediaData.picture || mediaData.pictures?.['16:9'] || null;
+                    // Also update duration if missing
+                    if (!item.duration && mediaData.duration) {
+                      item.duration = mediaData.duration;
+                    }
+                  }
+                }
+              } catch (e) {
+                log('Player API thumbnail fetch failed for', item.videoId);
+              }
+            }));
+          }
+        }
       }
     } else {
       log('Smotrim API returned:', response.status);
@@ -3170,7 +3201,7 @@ async function discoverSmotrim(sourceKey, maxItems = 20) {
     log('Smotrim API error:', e.message);
   }
 
-  // Fallback: scrape the web page
+  // Fallback: scrape the web page and fetch metadata from player API
   if (results.length === 0) {
     try {
       const pageUrl = `https://smotrim.ru/brand/${source.brandId}`;
@@ -3183,14 +3214,62 @@ async function discoverSmotrim(sourceKey, maxItems = 20) {
         // Look for video IDs in the page
         const videoIdMatches = html.matchAll(/\/video\/(\d+)/g);
         const seenIds = new Set();
+        const videoIds = [];
 
         for (const match of videoIdMatches) {
           const videoId = match[1];
-          if (!seenIds.has(videoId)) {
+          if (!seenIds.has(videoId) && videoIds.length < maxItems) {
             seenIds.add(videoId);
-            const url = `https://smotrim.ru/video/${videoId}`;
-            // Use source categories for fallback (no title/description available)
-            const metadata = { url, category: source.categories[0] };
+            videoIds.push(videoId);
+          }
+        }
+        log('Found', videoIds.length, 'video IDs from page scrape');
+
+        // Fetch metadata from player API for each video (in parallel, batches of 5)
+        const batchSize = 5;
+        for (let i = 0; i < videoIds.length; i += batchSize) {
+          const batch = videoIds.slice(i, i + batchSize);
+          const metadataPromises = batch.map(async (videoId) => {
+            try {
+              const playerUrl = `${SITES['smotrim'].playerApi}/${videoId}/sid/smotrim`;
+              const playerResp = await fetchWithHeaders(playerUrl, {
+                headers: { 'Accept': 'application/json' }
+              });
+              if (playerResp.ok) {
+                const playerData = await playerResp.json();
+                const data = playerData?.data?.playlist?.medialist?.[0];
+                if (data) {
+                  return {
+                    videoId,
+                    title: data.anons || data.combinedTitle || null,
+                    description: data.anons || null,
+                    thumbnail: data.picture || data.pictures?.['16:9'] || null,
+                    duration: data.duration || null,
+                  };
+                }
+              }
+            } catch (e) {
+              log('Player API failed for video', videoId, e.message);
+            }
+            return { videoId, title: null, description: null, thumbnail: null, duration: null };
+          });
+
+          const metadataResults = await Promise.all(metadataPromises);
+
+          for (const meta of metadataResults) {
+            const url = `https://smotrim.ru/video/${meta.videoId}`;
+            const title = meta.title;
+            const description = meta.description;
+            // Infer category from content
+            const inferredCat = inferCategory((title || '') + ' ' + (description || ''), url);
+            const metadata = {
+              title,
+              description,
+              url,
+              duration: meta.duration,
+              program: source.name,
+              category: inferredCat || source.categories[0]
+            };
             const contentType = detectContentType(metadata);
             metadata.contentType = contentType;
             const pedagogicalLevel = estimatePedagogicalLevel(metadata);
@@ -3198,14 +3277,20 @@ async function discoverSmotrim(sourceKey, maxItems = 20) {
               url,
               source: 'smotrim',
               sourceKey,
-              videoId,
-              categories: source.categories,
+              videoId: meta.videoId,
+              title,
+              description,
+              thumbnail: meta.thumbnail,
+              duration: meta.duration,
+              program: source.name,
+              category: inferredCat,
+              categories: inferredCat ? [inferredCat] : source.categories,
               contentType,
               pedagogicalLevel,
             });
           }
         }
-        log('Found', results.length, 'videos from page scrape');
+        log('Retrieved metadata for', results.length, 'videos');
       }
     } catch (e) {
       log('Page scrape failed:', e.message);
@@ -5267,7 +5352,8 @@ async function handleDiscover(url, request) {
       // Use source-level cache with timeout - this is the key optimization!
       // The cache stores pre-fetched results that can be sliced for different queries
       // NTV needs extra time for parallel metadata fetches, 1TV needs time for API title lookups
-      const timeoutMs = (siteId === 'ntv' || siteId === 'tass' || siteId === '1tv') ? 8000 : 3000;
+      // Smotrim API can be slow too, give all main sources extra time
+      const timeoutMs = (siteId === 'ntv' || siteId === 'tass' || siteId === '1tv' || siteId === 'smotrim' || siteId === 'rt') ? 8000 : 3000;
       const allSourceItems = await fetchWithTimeout(
         () => getCachedSourceResults(cacheSourceKey, discoverFn, skipCache),
         timeoutMs
