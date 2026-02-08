@@ -5097,7 +5097,13 @@ async function handleDiscover(url, request) {
   const CATEGORY_SOURCE_KEYS = {
     '1tv': { economy: '1tv:economy', politics: '1tv:politics', sports: '1tv:sports', culture: '1tv:culture', world: '1tv:world', society: '1tv:society' },
     'rt': { politics: 'rt:russia', world: 'rt:world', economy: 'rt:business', sports: 'rt:sport' },
-    'smotrim': { culture: 'smotrim:culture-news' },
+    'smotrim': { culture: 'smotrim:culture-news', economy: 'smotrim:russia24', politics: 'smotrim:news' },
+    // Rutube-based sources - use video endpoint (they have general content, filtering happens later)
+    'tass': { economy: 'tass:video', politics: 'tass:video', world: 'tass:video', military: 'tass:video' },
+    'kommersant': { economy: 'kommersant:video', politics: 'kommersant:video' },
+    'ria': { economy: 'ria:video', politics: 'ria:video', world: 'ria:video', military: 'ria:video' },
+    'ntv': { economy: 'ntv:video', politics: 'ntv:video', society: 'ntv:video' },
+    'izvestia': { economy: 'izvestia:video', politics: 'izvestia:video', society: 'izvestia:video' },
   };
 
   const mapSourceToCategory = (source) => {
@@ -5214,10 +5220,11 @@ async function handleDiscover(url, request) {
     }
   }
 
-  // Final safety limit - max 2 sources to prevent CPU timeout (reduced from 3)
-  if (sourcesToDiscover.length > 2) {
-    log('Final limiting sources from', sourcesToDiscover.length, 'to 2');
-    sourcesToDiscover = sourcesToDiscover.slice(0, 2);
+  // Final safety limit - max 4 sources to prevent CPU timeout
+  // With shorter timeouts per source (3s) and parallel fetching, 4 sources is safe
+  if (sourcesToDiscover.length > 4) {
+    log('Final limiting sources from', sourcesToDiscover.length, 'to 4');
+    sourcesToDiscover = sourcesToDiscover.slice(0, 4);
   }
 
   // Check if date range is "historical" (more than 3 days ago)
