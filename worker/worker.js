@@ -51,8 +51,8 @@ const SITES = {
     domain: '1tv.ru',
     scheduleApi: 'https://stream.1tv.ru/api/schedule.json',
     sitemapBase: 'https://www.1tv.ru/sitemap-news-',  // + YYYY.xml
-    usesRutube: true,
-    rutubeChannelId: 23460655,  // 268,260+ videos - full channel archive!
+    usesRutube: false,  // Disabled: Rutube channel is geo-restricted outside Russia
+    rutubeChannelId: 23460655,  // 268,260+ videos - kept for reference
     sources: {
       'news': { url: 'https://www.1tv.ru/news', categories: ['politics', 'society', 'world'] },
       'politics': { url: 'https://www.1tv.ru/news/politika', categories: ['politics'] },
@@ -653,11 +653,17 @@ const CATEGORY_DETECTION = {
       { keywords: ['koalic', 'korrupci', 'impichment', 'otstavk', 'naznachen'], weight: 3 },
       { keywords: ['ratifikac', 'veto', 'rezolyuc', 'mandat'], weight: 3 },
     ],
-    // Exclude military operations, sports, pure society stories
+    // Exclude military operations, sports, pure society stories, and health/medical content
     negative: ['спорт', 'футбол', 'хоккей', 'матч', 'турнир', 'чемпион', 'фигурист',
                'войск', 'армия', 'всу', 'сво', 'харьков', 'донецк', 'военн', 'артиллер', 'бпла', 'штурм',
+               // Health/medical - should be society, not politics
+               'здоровь', 'медицин', 'врач', 'больниц', 'лечен', 'диет', 'витамин', 'организм',
+               'мозг', 'сердц', 'давлен', 'питани', 'рецепт', 'совет врача', 'медицинск',
                'sport', 'futbol', 'hokkey', 'match', 'turnir', 'figurist',
-               'voysk', 'armiya', 'vsu', 'svo', 'harkov', 'doneck', 'voenn', 'artiller', 'bpla', 'shturm'],
+               'voysk', 'armiya', 'vsu', 'svo', 'harkov', 'doneck', 'voenn', 'artiller', 'bpla', 'shturm',
+               // Health/medical - Latin transliterations
+               'zdorov', 'medicin', 'vrach', 'bolnic', 'lechen', 'diet', 'vitamin', 'organism',
+               'mozg', 'serdc', 'davlen', 'pitani', 'recept', 'sovet vracha', 'medicinskiy'],
     requiredScore: 3,
   },
   economy: {
@@ -2533,17 +2539,27 @@ async function getCachedSourceResults(sourceId, fetchFn, skipCache = false) {
 }
 
 async function discover1tv(sourceKey, maxItems = 20) {
-  const source = SITES['1tv'].sources[sourceKey];
+  const site = SITES['1tv'];
+  const source = site.sources[sourceKey];
   if (!source) throw new Error(`Unknown 1tv source: ${sourceKey}`);
 
-  log('Discovering from 1tv:', sourceKey, 'url:', source.url);
+  log('Discovering from 1tv:', sourceKey);
+
+  // Use Rutube channel for proper Russian titles and actual video content
+  // The sitemap only has transliterated URL slugs which break category inference
+  if (site.usesRutube && site.rutubeChannelId) {
+    log('Using 1tv Rutube channel for video content');
+    return discoverRutubeChannel('1tv', sourceKey, maxItems);
+  }
+
   const results = [];
 
+  // Fallback: sitemap discovery (transliterated titles - less accurate)
   // Determine if this is a specialized source that needs category filtering
   const isSpecializedSource = sourceKey !== 'news' && sourceKey !== 'vremya';
   const targetCategories = source.categories || [];
 
-  // Always use sitemap as primary discovery method (1tv category pages are client-rendered)
+  // Sitemap as fallback method (1tv category pages are client-rendered)
   try {
     const currentYear = new Date().getFullYear();
     // Fetch more items for specialized sources to ensure enough matches after filtering
