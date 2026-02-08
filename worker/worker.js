@@ -3796,64 +3796,100 @@ async function extractIzvestia(url) {
 async function discoverNtv(sourceKey = 'video', maxItems = 20) {
   log('Discovering from NTV:', sourceKey);
   const videoIds = [];
+  const seen = new Set();
 
-  // Strategy 1: Use sitemap for recent videos
+  // Strategy 1: Scrape NTV NEWS SECTION - this is where actual news videos are
+  // The main homepage has entertainment shows, but /novosti/ has real news
   try {
-    const sitemapUrl = SITES['ntv'].sitemap;
-    log('Fetching NTV sitemap:', sitemapUrl);
-
-    const response = await fetchWithHeaders(sitemapUrl, {
-      headers: { 'Accept': 'application/xml, text/xml' }
+    log('Fetching NTV news section for news videos');
+    const response = await fetchWithHeaders('https://www.ntv.ru/novosti/', {
+      headers: { 'Accept-Encoding': 'identity' }
     });
 
     if (response.ok) {
-      const xml = await response.text();
+      const html = await response.text();
+      const videoMatches = html.matchAll(/\/video\/(\d+)/gi);
 
-      // Parse video URLs from sitemap
-      const urlMatches = xml.matchAll(/<loc>(https?:\/\/(?:www\.)?ntv\.ru\/video\/(\d+)[^<]*)<\/loc>/gi);
-
-      for (const match of urlMatches) {
-        const videoId = match[2];
-        videoIds.push(videoId);
-        if (videoIds.length >= maxItems * 2) break; // Fetch extra for filtering
+      for (const match of videoMatches) {
+        const videoId = match[1];
+        if (!seen.has(videoId)) {
+          seen.add(videoId);
+          videoIds.push(videoId);
+        }
+        if (videoIds.length >= maxItems * 2) break;
       }
-      log('Found', videoIds.length, 'video IDs from NTV sitemap');
+      log('Found', videoIds.length, 'video IDs from NTV news section');
     }
   } catch (e) {
-    log('NTV sitemap error:', e.message);
+    log('NTV news section scrape error:', e.message);
   }
 
-  // Strategy 2: Scrape video listing page
-  if (videoIds.length < maxItems * 2) {
-    try {
-      const source = SITES['ntv'].sources[sourceKey];
-      if (source?.url) {
-        const response = await fetchWithHeaders(source.url);
+  // Strategy 2: Also try category-specific news pages if we need more
+  if (videoIds.length < maxItems) {
+    const newsPages = [
+      'https://www.ntv.ru/novosti/politika/',
+      'https://www.ntv.ru/novosti/obschestvo/',
+      'https://www.ntv.ru/novosti/ekonomika/',
+      'https://www.ntv.ru/novosti/mir/'
+    ];
 
+    for (const pageUrl of newsPages) {
+      if (videoIds.length >= maxItems * 2) break;
+      try {
+        const response = await fetchWithHeaders(pageUrl, {
+          headers: { 'Accept-Encoding': 'identity' }
+        });
         if (response.ok) {
           const html = await response.text();
-
-          // Extract video IDs from the page
-          const videoMatches = html.matchAll(/href=["'](?:https?:\/\/(?:www\.)?ntv\.ru)?\/video\/(\d+)\/?["']/gi);
-
+          const videoMatches = html.matchAll(/\/video\/(\d+)/gi);
           for (const match of videoMatches) {
             const videoId = match[1];
-            if (!videoIds.includes(videoId)) {
+            if (!seen.has(videoId)) {
+              seen.add(videoId);
               videoIds.push(videoId);
             }
             if (videoIds.length >= maxItems * 2) break;
           }
-          log('Found', videoIds.length, 'video IDs total from NTV');
         }
+      } catch (e) {
+        log('NTV news page scrape error:', pageUrl, e.message);
+      }
+    }
+    log('Found', videoIds.length, 'video IDs total after news pages');
+  }
+
+  // Strategy 3: Fallback to sitemap only if news pages failed
+  if (videoIds.length < maxItems) {
+    try {
+      const sitemapUrl = SITES['ntv'].sitemap;
+      log('Fetching NTV sitemap as fallback:', sitemapUrl);
+
+      const response = await fetchWithHeaders(sitemapUrl, {
+        headers: { 'Accept': 'application/xml, text/xml' }
+      });
+
+      if (response.ok) {
+        const xml = await response.text();
+        const urlMatches = xml.matchAll(/<loc>https?:\/\/(?:www\.)?ntv\.ru\/video\/(\d+)[^<]*<\/loc>/gi);
+
+        for (const match of urlMatches) {
+          const videoId = match[1];
+          if (!seen.has(videoId)) {
+            seen.add(videoId);
+            videoIds.push(videoId);
+          }
+          if (videoIds.length >= maxItems * 2) break;
+        }
+        log('Found', videoIds.length, 'video IDs total after sitemap');
       }
     } catch (e) {
-      log('NTV page scrape error:', e.message);
+      log('NTV sitemap error:', e.message);
     }
   }
 
   // Strategy 3: Fetch metadata for videos in parallel (faster)
-  // Limit to 10 to stay within timeout - better to return fewer than timeout
-  const idsToFetch = videoIds.slice(0, Math.min(maxItems + 3, 10));
+  // Fetch more to account for entertainment filtering
+  const idsToFetch = videoIds.slice(0, Math.min(maxItems * 3, 30));
 
   const fetchMeta = async (videoId) => {
     try {
@@ -3875,6 +3911,24 @@ async function discoverNtv(sourceKey = 'video', maxItems = 20) {
         const description = extractCdata('description');
         const duration = parseInt(xml.match(/<totaltime>(\d+)<\/totaltime>/)?.[1] || '0');
 
+        // Extract tags to filter out entertainment content
+        const tagsMatch = xml.match(/<ovs:tag>(?:<!\[CDATA\[)?([^\]<]+)(?:\]\]>)?<\/ovs:tag>/i) ||
+                          xml.match(/<keywords>(?:<!\[CDATA\[)?([^\]<]+)(?:\]\]>)?<\/keywords>/i);
+        const tags = tagsMatch ? tagsMatch[1].toLowerCase() : '';
+
+        // Skip entertainment shows (Маска, celebrity content, etc.)
+        const entertainmentKeywords = ['маска', 'шоу-бизнес', 'знаменитости', 'артисты', 'сериал',
+                                       'фестивали и конкурсы', 'музыка и музыканты', 'кино и сериалы',
+                                       'волочкова', 'киркоров', 'развлечения'];
+        const isEntertainment = entertainmentKeywords.some(kw =>
+          tags.includes(kw) || title.toLowerCase().includes('маска')
+        );
+
+        if (isEntertainment) {
+          log('Skipping NTV entertainment video:', title.substring(0, 50));
+          return null;
+        }
+
         let thumbnail = '';
         const splashMatch = xml.match(/<splash>(?:<!\[CDATA\[)?([^\]<]+)(?:\]\]>)?<\/splash>/);
         if (splashMatch) {
@@ -3883,7 +3937,7 @@ async function discoverNtv(sourceKey = 'video', maxItems = 20) {
         }
 
         const url = `https://ntv.ru/video/${videoId}/`;
-        const inferredCategory = inferCategory(title + ' ' + (description || ''), url);
+        const inferredCategory = inferCategory(title + ' ' + (description || '') + ' ' + tags, url);
         const categories = inferredCategory
           ? [inferredCategory]
           : (SITES['ntv'].sources[sourceKey]?.categories || ['politics', 'society']);
