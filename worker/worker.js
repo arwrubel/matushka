@@ -97,8 +97,8 @@ const SITES = {
     rssFeeds: {
       'news': 'https://russian.rt.com/rss',
     },
-    usesRutube: false,  // Disabled: Rutube channel has older content, use RSS for fresh news
-    rutubeChannelId: 25547249,  // RT main Rutube channel (kept for reference)
+    usesRutube: true,  // Use Rutube channel for video content (RSS only has text articles)
+    rutubeChannelId: 23174740,  // RT на русском channel (18,826 videos) - NOT 25547249 which is English
     sources: {
       'news': { url: 'https://russian.rt.com/', categories: ['politics', 'world'] },
       'russia': { url: 'https://russian.rt.com/russia', categories: ['politics', 'society'] },
