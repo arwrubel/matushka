@@ -586,6 +586,9 @@ const CATEGORY_DETECTION = {
       { keywords: ['сборн', 'команд', 'тренер', 'игрок', 'вратарь', 'забит', 'забил'], weight: 3 },
       { keywords: ['атлет', 'фигурист', 'фигурн', 'плаван', 'гимнаст', 'шахмат'], weight: 3 },
       { keywords: ['лыж', 'биатлон', 'легкоатлет', 'хоккеист'], weight: 3 },
+      // Ice skating shows and skating terms
+      { keywords: ['ледниковый период', 'ледовое шоу', 'танцы на льду', 'лёд и пламя'], weight: 5 },
+      { keywords: ['коньки', 'катание', 'каток', 'фигурное катан'], weight: 3 },
       { keywords: ['стадион', 'арена', 'соревнован'], weight: 2 },
       // Esports
       { keywords: ['киберспорт', 'esport', 'dota', 'counter-strike', 'cs2', 'valorant'], weight: 4 },
@@ -2615,80 +2618,81 @@ async function discover1tv(sourceKey, maxItems = 20) {
   // Strategy 1: Use 1TV search.js API (returns fresh content with Russian titles)
   try {
     const keywords = SEARCH_KEYWORDS[sourceKey] || SEARCH_KEYWORDS['news'];
-    const searchKeyword = keywords[Math.floor(Math.random() * keywords.length)];
     const today = new Date().toISOString().split('T')[0];
-    const lastMonth = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    // Use 6 months ago for broader date range (date filtering happens client-side)
+    const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    // Use the .js endpoint which returns parseable JavaScript with embedded HTML
-    const searchUrl = `https://www.1tv.ru/search.js?from=${lastMonth}&to=${today}&limit=${maxItems + 10}&offset=0&q=text%3A${encodeURIComponent(searchKeyword)}`;
-    log('Trying 1tv search.js API:', searchUrl);
+    const seenUrls = new Set();
+    const urlsToProcess = [];
 
-    const response = await fetchWithHeaders(searchUrl);
-    if (response.ok) {
-      const jsContent = await response.text();
+    // Try multiple keywords to get more diverse results
+    const keywordsToTry = keywords.slice(0, 2); // Try up to 2 keywords
+    for (const searchKeyword of keywordsToTry) {
+      if (urlsToProcess.length >= maxItems * 2) break;
 
-      // Extract news URLs from the JavaScript response
-      // Pattern matches: href="/news/2026-02-07/533151-petru_gumenniku..."
-      const urlPattern = /href=\\"(\/news\/\d{4}-\d{2}-\d{2}\/(\d+)-[^"\\]+)\\"/g;
-      const matches = [...jsContent.matchAll(urlPattern)];
+      const searchUrl = `https://www.1tv.ru/search.js?from=${sixMonthsAgo}&to=${today}&limit=${maxItems + 5}&offset=0&q=text%3A${encodeURIComponent(searchKeyword)}`;
+      log('Trying 1tv search.js API:', searchUrl);
 
-      const seenUrls = new Set();
-      const urlsToProcess = [];
+      const response = await fetchWithHeaders(searchUrl);
+      if (response.ok) {
+        const jsContent = await response.text();
 
-      for (const match of matches) {
-        if (urlsToProcess.length >= maxItems) break;
+        // Extract news URLs from the JavaScript response
+        const urlPattern = /href=\\"(\/news\/\d{4}-\d{2}-\d{2}\/(\d+)-[^"\\]+)\\"/g;
+        const matches = [...jsContent.matchAll(urlPattern)];
 
-        const path = match[1];
-        const newsId = match[2];
-        const url = `https://www.1tv.ru${path}`;
+        for (const match of matches) {
+          const path = match[1];
+          const newsId = match[2];
+          const url = `https://www.1tv.ru${path}`;
 
-        if (seenUrls.has(url)) continue;
-        seenUrls.add(url);
-
-        urlsToProcess.push({ url, newsId });
-      }
-
-      log('Found', urlsToProcess.length, 'URLs from search.js');
-
-      // Fetch metadata in parallel (limit concurrency to avoid timeout)
-      const batchSize = Math.min(urlsToProcess.length, 10);
-      const batch = urlsToProcess.slice(0, batchSize);
-
-      const metadataPromises = batch.map(async ({ url, newsId }) => {
-        const meta = await fetch1tvMetadata(newsId);
-        if (meta && meta.title) {
-          const inferredCategory = inferCategory(meta.title + ' ' + (meta.description || ''), url);
-          const metadata = { title: meta.title, description: meta.description, url, duration: meta.duration, category: inferredCategory };
-          const contentType = detectContentType(metadata);
-          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
-
-          return {
-            url,
-            source: '1tv',
-            sourceKey,
-            videoId: newsId,
-            title: meta.title,
-            description: meta.description,
-            thumbnail: meta.thumbnail,
-            publishDate: meta.publishDate,
-            duration: meta.duration,
-            category: inferredCategory || source.categories?.[0],
-            categories: inferredCategory ? [inferredCategory] : source.categories || [],
-            contentType,
-            pedagogicalLevel,
-          };
-        }
-        return null;
-      });
-
-      const resolvedItems = await Promise.all(metadataPromises);
-      for (const item of resolvedItems) {
-        if (item && results.length < maxItems) {
-          results.push(item);
+          if (seenUrls.has(url)) continue;
+          seenUrls.add(url);
+          urlsToProcess.push({ url, newsId });
         }
       }
-      log('Found', results.length, 'items from 1tv search.js');
     }
+
+    log('Found', urlsToProcess.length, 'total URLs from search.js');
+
+    // Fetch metadata in parallel (limit concurrency to avoid timeout)
+    const batchSize = Math.min(urlsToProcess.length, maxItems + 5, 15);
+    const batch = urlsToProcess.slice(0, batchSize);
+
+    const metadataPromises = batch.map(async ({ url, newsId }) => {
+      const meta = await fetch1tvMetadata(newsId);
+      if (meta && meta.title) {
+        const inferredCategory = inferCategory(meta.title + ' ' + (meta.description || ''), url);
+        const metadata = { title: meta.title, description: meta.description, url, duration: meta.duration, category: inferredCategory };
+        const contentType = detectContentType(metadata);
+        const pedagogicalLevel = estimatePedagogicalLevel(metadata);
+
+        return {
+          url,
+          source: '1tv',
+          sourceKey,
+          videoId: newsId,
+          title: meta.title,
+          description: meta.description,
+          thumbnail: meta.thumbnail,
+          publishDate: meta.publishDate,
+          duration: meta.duration,
+          category: inferredCategory || source.categories?.[0],
+          categories: inferredCategory ? [inferredCategory] : source.categories || [],
+          contentType,
+          pedagogicalLevel,
+        };
+      }
+      return null;
+    });
+
+    const resolvedItems = await Promise.all(metadataPromises);
+    for (const item of resolvedItems) {
+      if (item && results.length < maxItems) {
+        results.push(item);
+      }
+    }
+    log('Found', results.length, 'items from 1tv search.js');
   } catch (e) {
     log('1tv search.js error:', e.message);
   }
