@@ -381,12 +381,23 @@ async function apiDiscover(params) {
 
   console.log('[Matushka] API discover:', url.toString());
 
-  const response = await fetch(url);
-  console.log('[Matushka] API response status:', response.status);
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    console.log('[Matushka] API response status:', response.status);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+    return response.json();
+  } catch (e) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') {
+      throw new Error('Время ожидания истекло. Попробуйте ещё раз или выберите другой источник.');
+    }
+    throw e;
   }
-  return response.json();
 }
 
 async function apiScrape(videoUrl) {

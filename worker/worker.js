@@ -3753,7 +3753,7 @@ async function discoverNtv(sourceKey = 'video', maxItems = 20) {
     log('NTV news section scrape error:', e.message);
   }
 
-  // Strategy 2: Also try category-specific news pages if we need more
+  // Strategy 2: Also try category-specific news pages if we need more (limit to 2 pages)
   if (videoIds.length < maxItems) {
     const newsPages = [
       'https://www.ntv.ru/novosti/politika/',
@@ -3762,8 +3762,8 @@ async function discoverNtv(sourceKey = 'video', maxItems = 20) {
       'https://www.ntv.ru/novosti/mir/'
     ];
 
-    for (const pageUrl of newsPages) {
-      if (videoIds.length >= maxItems * 2) break;
+    for (const pageUrl of newsPages.slice(0, 2)) {
+      if (videoIds.length >= maxItems) break;
       try {
         const response = await fetchWithHeaders(pageUrl, {
           headers: { 'Accept-Encoding': 'identity' }
@@ -3817,8 +3817,8 @@ async function discoverNtv(sourceKey = 'video', maxItems = 20) {
   }
 
   // Strategy 3: Fetch metadata for videos in parallel (faster)
-  // Fetch more to account for entertainment filtering
-  const idsToFetch = videoIds.slice(0, Math.min(maxItems * 3, 30));
+  // Limit to maxItems + small buffer to avoid CPU exhaustion on Cloudflare
+  const idsToFetch = videoIds.slice(0, Math.min(maxItems + 5, 15));
 
   const fetchMeta = async (videoId) => {
     try {
@@ -5246,8 +5246,8 @@ async function handleDiscover(url, request) {
     const beforeDateFilter = filtered.length;
     filtered = filtered.filter(item => {
       if (!item.publishDate) {
-        // Exclude items without dates when date filtering is active
-        return false;
+        // Include items without dates - they're likely recent/current
+        return true;
       }
 
       // Normalize various date formats
