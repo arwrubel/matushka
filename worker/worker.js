@@ -734,6 +734,12 @@ const CATEGORY_DETECTION = {
       { keywords: ['учител', 'преподаватель', 'педагог'], weight: 4 },
       { keywords: ['университет', 'вуз', 'школ', 'студент'], weight: 3 },
       { keywords: ['экзамен', 'контрольн', 'зачет', 'стипенди'], weight: 3 },
+      // EdTech / Online education
+      { keywords: ['онлайн-курс', 'дистанционн обучен', 'вебинар', 'онлайн-образован'], weight: 3 },
+      // Vocational training
+      { keywords: ['профориентац', 'квалификац', 'переподготовк', 'профессиональн обучен'], weight: 3 },
+      // Academic degrees
+      { keywords: ['кандидат наук', 'доктор наук', 'защита диссертац', 'аспирантур', 'докторантур'], weight: 3 },
       // Infrastructure/transport projects (society, not technology)
       { keywords: ['проект', 'инфраструктур'], weight: 2 },
       { keywords: ['поезд', 'всм', 'железнодорожн', 'железная дорог', 'жд'], weight: 3 },
@@ -774,6 +780,10 @@ const CATEGORY_DETECTION = {
       { keywords: ['ege', 'oge'], weight: 5 },
       { keywords: ['uchitel', 'prepodavatel', 'pedagog'], weight: 4 },
       { keywords: ['universitet', 'vuz', 'shkol', 'student'], weight: 3 },
+      // EdTech/vocational/academic - Latin
+      { keywords: ['onlayn-kurs', 'distancionn obuchen', 'vebinar', 'onlayn-obrazovan'], weight: 3 },
+      { keywords: ['proforientac', 'kvalifikac', 'perepodgotovk'], weight: 3 },
+      { keywords: ['kandidat nauk', 'doktor nauk', 'zashchita dissertac', 'aspirantur', 'doktorantur'], weight: 3 },
       // Animals/nature - Latin
       { keywords: ['zhivotn', 'zoopark', 'pitomec', 'sobak', 'koshk'], weight: 3 },
       { keywords: ['pingvin', 'medved', 'volk', 'lis', 'tigr', 'leopard'], weight: 3 },
@@ -895,6 +905,12 @@ const CATEGORY_DETECTION = {
       { keywords: ['научн разработк', 'научн открыт'], weight: 3 },
       // Climate science
       { keywords: ['климатолог', 'глобальн потеплен', 'парников'], weight: 3 },
+      // Archaeology
+      { keywords: ['археолог', 'раскопк', 'артефакт', 'древн'], weight: 3 },
+      // Behavioral/Social science
+      { keywords: ['социолог', 'антрополог', 'психологич исследован'], weight: 3 },
+      // Environmental science
+      { keywords: ['экосистем', 'биоразнообраз', 'экология'], weight: 3 },
       // Latin transliterations - Core science terms
       { keywords: ['nauchn', 'uchenyy', 'uchenye'], weight: 4 },
       { keywords: ['nauchnoe otkryt', 'nauchnoe issledovan'], weight: 5 },
@@ -917,6 +933,12 @@ const CATEGORY_DETECTION = {
       { keywords: ['nauchn razrabotk', 'nauchn otkryt'], weight: 3 },
       // Climate - Latin
       { keywords: ['klimatolog', 'globalnoye poteplen', 'parnikov'], weight: 3 },
+      // Archaeology - Latin
+      { keywords: ['arkheolog', 'raskopk', 'artefakt', 'drevn'], weight: 3 },
+      // Behavioral/Social science - Latin
+      { keywords: ['sociolog', 'antropolog', 'psikhologich issledovan'], weight: 3 },
+      // Environmental science - Latin
+      { keywords: ['ekosistem', 'bioraznoobraz', 'ekologiya'], weight: 3 },
     ],
     // Expanded negative keywords to exclude books, literature, culture, publishing
     negative: [
