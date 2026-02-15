@@ -107,6 +107,8 @@ const TRANSLATIONS = {
     // srcRia removed - videos have music instead of audio
     srcTass: 'TASS',
     // srcKommersant removed
+    srcEuronews: 'Euronews',
+    srcBbc: 'BBC',
 
     // Results
     resultsTitle: 'Results',
@@ -241,6 +243,8 @@ const TRANSLATIONS = {
     // srcRia removed - videos have music instead of audio
     srcTass: 'ТАСС',
     // srcKommersant removed
+    srcEuronews: 'Euronews',
+    srcBbc: 'Би-би-си',
 
     // Results
     resultsTitle: 'Результаты',
@@ -469,7 +473,9 @@ function extractSource(url) {
       'smotrim.ru': 'Смотрим',
       'rt.com': 'RT',
       'rutube.ru': 'Rutube',
-      'iz.ru': 'Известия'
+      'iz.ru': 'Известия',
+      'ru.euronews.com': 'Euronews',
+      'bbc.com': 'Би-би-си',
     };
     return sourceMap[hostname] || hostname;
   } catch {

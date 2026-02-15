@@ -150,6 +150,29 @@ const SITES = {
   // 'kommersant' removed - videos don't match expected economy category well
 
   // ============================================================================
+  // INTERNATIONAL RUSSIAN-LANGUAGE NEWS
+  // ============================================================================
+  'euronews': {
+    name: 'Euronews Russian',
+    nameRu: 'Euronews на русском',
+    domain: 'ru.euronews.com',
+    rssFeed: 'https://ru.euronews.com/rss',
+    sources: {
+      'video': { categories: ['politics', 'society', 'economy', 'culture'] },
+    }
+  },
+  'bbc': {
+    name: 'BBC Russian',
+    nameRu: 'Би-би-си',
+    domain: 'bbc.com',
+    videoPageUrl: 'https://www.bbc.com/russian/topics/c44vyp57qy4t',
+    rssFeed: 'https://feeds.bbci.co.uk/russian/rss.xml',
+    sources: {
+      'video': { categories: ['politics', 'society', 'culture'] },
+    }
+  },
+
+  // ============================================================================
   // RUTUBE CATEGORY SEARCH
   // ============================================================================
   'rutube': {
@@ -4689,6 +4712,280 @@ async function discoverRutubeChannel(siteId, sourceKey = 'video', maxItems = 20)
   return results.slice(0, maxItems);
 }
 
+// ============================================================================
+// EURONEWS RUSSIAN - RSS feed + article page scraping
+// ============================================================================
+async function discoverEuronews(sourceKey = 'video', maxItems = 20) {
+  const site = SITES['euronews'];
+  log('Discovering from Euronews Russian via RSS feed');
+  const results = [];
+
+  try {
+    // Step 1: Fetch RSS feed
+    const rssUrl = site.rssFeed;
+    const rssResponse = await fetchWithHeaders(rssUrl, {
+      headers: { 'Accept': 'application/rss+xml, application/xml, text/xml' }
+    });
+
+    if (!rssResponse.ok) {
+      log('Euronews RSS fetch failed:', rssResponse.status);
+      return [];
+    }
+
+    const rssText = await rssResponse.text();
+
+    // Step 2: Parse RSS items
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+    const items = [];
+    let match;
+    while ((match = itemRegex.exec(rssText)) !== null) {
+      const itemXml = match[1];
+      const title = (itemXml.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) ||
+                     itemXml.match(/<title>(.*?)<\/title>/))?.[1] || null;
+      const link = (itemXml.match(/<link><!\[CDATA\[(.*?)\]\]><\/link>/) ||
+                    itemXml.match(/<link>(.*?)<\/link>/))?.[1] || null;
+      const pubDate = (itemXml.match(/<pubDate>(.*?)<\/pubDate>/))?.[1] || null;
+      const description = (itemXml.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/) ||
+                           itemXml.match(/<description>(.*?)<\/description>/))?.[1] || null;
+
+      if (title && link) {
+        items.push({ title: title.trim(), link: link.trim(), pubDate, description: description?.trim() || null });
+      }
+    }
+
+    log(`Euronews RSS: found ${items.length} total items`);
+
+    // Step 3: Filter for video URLs only, skip "no comment" (unnarrated footage)
+    const videoItems = items.filter(item => {
+      const url = item.link.toLowerCase();
+      if (!url.includes('/video/')) return false;
+      if (url.includes('nocomment') || url.includes('no-comment')) return false;
+      if (item.title.toLowerCase().includes('no comment')) return false;
+      return true;
+    });
+
+    log(`Euronews: ${videoItems.length} video items after filtering`);
+
+    // Step 4: Map URL path to category
+    function euronewsUrlCategory(url) {
+      if (url.includes('/my-europe/')) return 'politics';
+      if (url.includes('/business/')) return 'economy';
+      if (url.includes('/culture/')) return 'culture';
+      if (url.includes('/travel/')) return 'tourism';
+      if (url.includes('/green/')) return 'science';
+      if (url.includes('/health/')) return 'society';
+      if (url.includes('/next/')) return 'technology';
+      return null;
+    }
+
+    // Step 5: Fetch article pages in parallel for thumbnail/duration
+    const itemsToProcess = videoItems.slice(0, maxItems);
+    const articleFetches = itemsToProcess.map(async (item) => {
+      const url = item.link.replace(/^http:/, 'https:');
+      let thumbnail = null;
+      let duration = null;
+
+      try {
+        const articleResponse = await fetchWithHeaders(url, {
+          headers: { 'Accept': 'text/html' }
+        });
+
+        if (articleResponse.ok) {
+          const html = await articleResponse.text();
+
+          // Extract og:image for thumbnail
+          const ogImage = html.match(/<meta\s+(?:property|name)="og:image"\s+content="([^"]+)"/i) ||
+                          html.match(/<meta\s+content="([^"]+)"\s+(?:property|name)="og:image"/i);
+          if (ogImage) thumbnail = ogImage[1];
+
+          // Extract duration from JSON-LD VideoObject
+          const videoObjectMatch = html.match(/"@type"\s*:\s*"VideoObject"[\s\S]*?"duration"\s*:\s*"(PT[^"]+)"/);
+          if (videoObjectMatch) {
+            duration = parseIsoDuration(videoObjectMatch[1]);
+          }
+
+          // Fallback: try data attributes or meta tags for duration
+          if (!duration) {
+            const durationMeta = html.match(/duration["']?\s*[:=]\s*["']?(\d+)/i);
+            if (durationMeta) {
+              const dur = parseInt(durationMeta[1]);
+              // Duration could be in seconds or milliseconds
+              duration = dur > 10000 ? Math.round(dur / 1000) : dur;
+            }
+          }
+        }
+      } catch (e) {
+        log(`Euronews article fetch error for ${url}:`, e.message);
+      }
+
+      // Infer category from URL path or title
+      const urlCategory = euronewsUrlCategory(item.link);
+      const inferredCat = urlCategory || inferCategory((item.title || '') + ' ' + (item.description || ''), url);
+
+      const sourceConfig = site.sources?.[sourceKey] || site.sources?.['video'] || {};
+      const defaultCategories = sourceConfig.categories || [];
+
+      const metadata = {
+        title: item.title,
+        description: item.description,
+        url,
+        duration,
+        category: inferredCat || defaultCategories[0] || null
+      };
+      const contentType = detectContentType(metadata);
+      const pedagogicalLevel = estimatePedagogicalLevel(metadata);
+
+      return {
+        url,
+        source: 'euronews',
+        sourceKey,
+        videoId: url.split('/').filter(Boolean).pop() || null,
+        title: item.title,
+        description: item.description,
+        thumbnail,
+        publishDate: item.pubDate ? new Date(item.pubDate).toISOString() : null,
+        duration,
+        category: inferredCat || defaultCategories[0] || null,
+        categories: inferredCat ? [inferredCat] : defaultCategories,
+        contentType,
+        pedagogicalLevel,
+      };
+    });
+
+    const fetchedResults = await Promise.all(articleFetches);
+    results.push(...fetchedResults);
+    log(`Euronews: returning ${results.length} video results`);
+
+  } catch (e) {
+    log('Euronews discovery error:', e.message);
+  }
+
+  return results.slice(0, maxItems);
+}
+
+// Helper: parse ISO 8601 duration (PT10M55S) to seconds
+function parseIsoDuration(iso) {
+  if (!iso) return null;
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
+  if (!match) return null;
+  const hours = parseInt(match[1] || 0);
+  const minutes = parseInt(match[2] || 0);
+  const seconds = parseFloat(match[3] || 0);
+  return Math.round(hours * 3600 + minutes * 60 + seconds);
+}
+
+// ============================================================================
+// BBC RUSSIAN - __NEXT_DATA__ JSON parsing from video listing page
+// ============================================================================
+async function discoverBbc(sourceKey = 'video', maxItems = 20) {
+  const site = SITES['bbc'];
+  log('Discovering from BBC Russian via __NEXT_DATA__');
+  const results = [];
+
+  try {
+    const pageUrl = site.videoPageUrl;
+    const response = await fetchWithHeaders(pageUrl, {
+      headers: {
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+      }
+    });
+
+    if (!response.ok) {
+      log('BBC video page fetch failed:', response.status);
+      return [];
+    }
+
+    const html = await response.text();
+    log(`BBC: fetched video listing page (${html.length} bytes)`);
+
+    // Extract __NEXT_DATA__ JSON from script tag
+    const nextDataMatch = html.match(/__NEXT_DATA__[^>]*type="application\/json">([\s\S]*?)<\/script>/);
+    if (!nextDataMatch) {
+      log('BBC: __NEXT_DATA__ not found in page');
+      return [];
+    }
+
+    const nextData = JSON.parse(nextDataMatch[1]);
+    const curations = nextData?.props?.pageProps?.pageData?.curations;
+
+    if (!curations || !Array.isArray(curations)) {
+      log('BBC: no curations found in __NEXT_DATA__');
+      return [];
+    }
+
+    // Collect all video items from all sections, deduplicate by ID
+    const seen = new Set();
+    const sourceConfig = site.sources?.[sourceKey] || site.sources?.['video'] || {};
+    const defaultCategories = sourceConfig.categories || [];
+
+    for (const curation of curations) {
+      const summaries = curation.summaries || [];
+      for (const item of summaries) {
+        // Only include video items
+        if (item.type !== 'video') continue;
+        if (!item.title || !item.link) continue;
+        if (seen.has(item.id)) continue;
+        seen.add(item.id);
+
+        const title = item.title;
+        const url = item.link;
+        const description = item.description || title;
+
+        // Parse duration from ISO 8601 (e.g., "PT10M55S")
+        const duration = item.duration ? parseIsoDuration(item.duration) : null;
+
+        // Build thumbnail URL - BBC uses {width} placeholder
+        let thumbnail = null;
+        if (item.imageUrl) {
+          thumbnail = item.imageUrl.replace('{width}', '640');
+        }
+
+        const publishDate = item.firstPublished || null;
+
+        // Infer category from title + description
+        const inferredCat = inferCategory((title || '') + ' ' + (description || ''), url);
+
+        const metadata = {
+          title,
+          description,
+          url,
+          duration,
+          category: inferredCat || defaultCategories[0] || null
+        };
+        const contentType = detectContentType(metadata);
+        const pedagogicalLevel = estimatePedagogicalLevel(metadata);
+
+        results.push({
+          url,
+          source: 'bbc',
+          sourceKey,
+          videoId: item.id || url.split('/').pop() || null,
+          title,
+          description,
+          thumbnail,
+          publishDate,
+          duration,
+          category: inferredCat || defaultCategories[0] || null,
+          categories: inferredCat ? [inferredCat] : defaultCategories,
+          contentType,
+          pedagogicalLevel,
+        });
+
+        if (results.length >= maxItems) break;
+      }
+      if (results.length >= maxItems) break;
+    }
+
+    log(`BBC: found ${results.length} video items from __NEXT_DATA__`);
+
+  } catch (e) {
+    log('BBC discovery error:', e.message);
+  }
+
+  return results.slice(0, maxItems);
+}
+
 // Cache configuration - AGGRESSIVE to minimize CPU usage
 // Cloudflare free tier has 10ms CPU limit, so we cache heavily
 const CACHE_TTL = 30 * 60; // 30 minutes in seconds (for KV) - news doesn't change fast
@@ -5113,6 +5410,10 @@ async function handleDiscover(url, request) {
         'naukatv': () => discoverNaukatv(sourceId || 'video', SOURCE_FETCH_SIZE),
         'mchs': () => discoverMchs(sourceId || 'video', SOURCE_FETCH_SIZE),
 
+        // International Russian-language news
+        'euronews': () => discoverEuronews(sourceId || 'video', SOURCE_FETCH_SIZE),
+        'bbc': () => discoverBbc(sourceId || 'video', SOURCE_FETCH_SIZE),
+
         // Sports channels (via generic Rutube discovery)
         'rfs': () => discoverRutubeChannel('rfs', sourceId || 'video', SOURCE_FETCH_SIZE),
         'zenit': () => discoverRutubeChannel('zenit', sourceId || 'video', SOURCE_FETCH_SIZE),
@@ -5164,7 +5465,7 @@ async function handleDiscover(url, request) {
       // The cache stores pre-fetched results that can be sliced for different queries
       // NTV needs extra time for parallel metadata fetches, 1TV needs time for API title lookups
       // Smotrim API can be slow too, give all main sources extra time
-      const timeoutMs = (siteId === 'ntv' || siteId === 'tass' || siteId === '1tv' || siteId === 'smotrim' || siteId === 'rt') ? 8000 : 3000;
+      const timeoutMs = (siteId === 'ntv' || siteId === 'tass' || siteId === '1tv' || siteId === 'smotrim' || siteId === 'rt' || siteId === 'euronews' || siteId === 'bbc') ? 8000 : 3000;
       const allSourceItems = await fetchWithTimeout(
         () => getCachedSourceResults(cacheSourceKey, discoverFn, skipCache),
         timeoutMs
