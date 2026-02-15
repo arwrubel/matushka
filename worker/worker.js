@@ -5203,6 +5203,31 @@ async function handleDiscover(url, request) {
     log(`Filtered out ${beforeRecapFilter - filtered.length} recap/compilation videos`);
   }
 
+  // Filter out music-only / slideshow / no-speech content
+  // These videos have background music but no spoken words - useless for language learning
+  const beforeMusicFilter = filtered.length;
+  filtered = filtered.filter(item => {
+    const title = (item.title || '').toLowerCase();
+    const desc = (item.description || '').toLowerCase();
+    const text = title + ' ' + desc;
+    // Music compilations / playlists
+    if (/(?:музык|music|playlist|плейлист|подборка\s+музык|сборник|mix\b|remix)/i.test(text)) return false;
+    // Slideshow / photo gallery indicators
+    if (/(?:слайд[-\s]?шоу|slideshow|фотогалере|photo\s*gallery)/i.test(text)) return false;
+    // "Without commentary" / "no words" indicators
+    if (/(?:без\s+комментари|без\s+слов|no\s+comment|no\s+words)/i.test(text)) return false;
+    // Pure ambient / nature footage
+    if (/(?:релакс|relax|ambient|медитаци|asmr|белый\s+шум|white\s+noise)/i.test(text)) return false;
+    // Music video / clip
+    if (/(?:^клип\b|музыкальный\s+клип|music\s+video)/i.test(text)) return false;
+    // Timelapse / drone footage without narration
+    if (/(?:timelapse|таймлапс|аэросъёмк|аэросъемк)/i.test(text) && !/(?:репортаж|сюжет|корреспондент)/i.test(text)) return false;
+    return true;
+  });
+  if (beforeMusicFilter !== filtered.length) {
+    log(`Filtered out ${beforeMusicFilter - filtered.length} music/slideshow items`);
+  }
+
   // Deduplicate by title similarity (same story from same source)
   const seenTitles = new Map(); // normalized title -> first item
   const beforeTitleDedup = filtered.length;

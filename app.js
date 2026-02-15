@@ -79,6 +79,7 @@ const TRANSLATIONS = {
     catTechnology: 'Technology',
     catMilitary: 'Military',
     catWeather: 'Weather',
+    catCrime: 'Crime',
     catTourism: 'Tourism',
 
     // Pedagogical Level
@@ -212,6 +213,7 @@ const TRANSLATIONS = {
     catTechnology: 'Технологии',
     catMilitary: 'Армия',
     catWeather: 'Погода',
+    catCrime: 'Криминал',
     catTourism: 'Туризм',
 
     // Pedagogical Level
@@ -443,7 +445,13 @@ function formatDuration(seconds) {
 function formatDate(dateStr) {
   if (!dateStr) return '';
   try {
-    return new Date(dateStr).toLocaleDateString(state.currentLanguage === 'ru' ? 'ru-RU' : 'en-US');
+    // Handle Smotrim's DD-MM-YYYY HH:MM:SS format from cached responses
+    const smotrimMatch = dateStr.match(/^(\d{2})-(\d{2})-(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?$/);
+    const d = smotrimMatch
+      ? new Date(+smotrimMatch[3], +smotrimMatch[2] - 1, +smotrimMatch[1], +(smotrimMatch[4]||0), +(smotrimMatch[5]||0))
+      : new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString(state.currentLanguage === 'ru' ? 'ru-RU' : 'en-US');
   } catch {
     return '';
   }
