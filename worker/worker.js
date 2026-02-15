@@ -5203,29 +5203,54 @@ async function handleDiscover(url, request) {
     log(`Filtered out ${beforeRecapFilter - filtered.length} recap/compilation videos`);
   }
 
-  // Filter out music-only / slideshow / no-speech content
-  // These videos have background music but no spoken words - useless for language learning
-  const beforeMusicFilter = filtered.length;
+  // Filter out content without spoken words (music-only, raw footage, full broadcasts)
+  // Language learning requires actual spoken Russian - filter aggressively
+  const beforeSpeechFilter = filtered.length;
   filtered = filtered.filter(item => {
     const title = (item.title || '').toLowerCase();
     const desc = (item.description || '').toLowerCase();
     const text = title + ' ' + desc;
-    // Music compilations / playlists
+    const dur = item.duration || 0;
+
+    // --- Explicit no-speech indicators ---
     if (/(?:музык|music|playlist|плейлист|подборка\s+музык|сборник|mix\b|remix)/i.test(text)) return false;
-    // Slideshow / photo gallery indicators
     if (/(?:слайд[-\s]?шоу|slideshow|фотогалере|photo\s*gallery)/i.test(text)) return false;
-    // "Without commentary" / "no words" indicators
     if (/(?:без\s+комментари|без\s+слов|no\s+comment|no\s+words)/i.test(text)) return false;
-    // Pure ambient / nature footage
     if (/(?:релакс|relax|ambient|медитаци|asmr|белый\s+шум|white\s+noise)/i.test(text)) return false;
-    // Music video / clip
     if (/(?:^клип\b|музыкальный\s+клип|music\s+video)/i.test(text)) return false;
-    // Timelapse / drone footage without narration
     if (/(?:timelapse|таймлапс|аэросъёмк|аэросъемк)/i.test(text) && !/(?:репортаж|сюжет|корреспондент)/i.test(text)) return false;
+
+    // --- Full broadcasts (too long, not individual segments) ---
+    if (dur > 2400) { // Over 40 minutes = full newscast
+      log('Filtering full broadcast:', title.substring(0, 60), `(${dur}s)`);
+      return false;
+    }
+
+    // --- Title is just a date (e.g., "15 февраля 2026 года") = full broadcast ---
+    if (/^\d{1,2}\s+(?:январ|феврал|март|апрел|ма[яй]|июн|июл|август|сентябр|октябр|ноябр|декабр)[а-яё]*\s+\d{4}/i.test(title) && !title.includes(':')) {
+      log('Filtering date-only title:', title.substring(0, 60));
+      return false;
+    }
+
+    // --- "Кадры" (footage) clips under 30s - usually raw CCTV/footage with music ---
+    if (/^кадры\s/i.test(title) && dur > 0 && dur <= 30) {
+      log('Filtering short footage clip:', title.substring(0, 60), `(${dur}s)`);
+      return false;
+    }
+
+    // --- Very short clips (under 15s) - almost always just footage with music ---
+    if (dur > 0 && dur < 15) {
+      // Exception: keep if description suggests narration
+      if (!/(?:сообщ|заяви|рассказ|объясн|коммент|корреспондент|сюжет)/i.test(text)) {
+        log('Filtering very short clip:', title.substring(0, 60), `(${dur}s)`);
+        return false;
+      }
+    }
+
     return true;
   });
-  if (beforeMusicFilter !== filtered.length) {
-    log(`Filtered out ${beforeMusicFilter - filtered.length} music/slideshow items`);
+  if (beforeSpeechFilter !== filtered.length) {
+    log(`Filtered out ${beforeSpeechFilter - filtered.length} non-speech items`);
   }
 
   // Deduplicate by title similarity (same story from same source)
