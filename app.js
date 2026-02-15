@@ -251,7 +251,7 @@ const TRANSLATIONS = {
     sortTitleAsc: 'Название (А-Я)',
     sortTitleDesc: 'Название (Я-А)',
     emptyStateTitle: 'Поиск видео',
-    emptyStateDesc: 'Выберите источники и рубрики, затем нажмите «Поиск», чтобы найти учебные материалы.',
+    emptyStateDesc: 'Выберите источники и рубрики, затем нажмите «Поиск», чтобы найти новостные репортажи.',
     emptyStateTip: 'Совет: начните с 1-2 источников для быстрого результата',
     selectForCitation: 'Выбрать',
     watchVideo: 'Смотреть',
@@ -779,6 +779,7 @@ const CATEGORY_SOURCE_MAP = {
   'rt': {
     sports: 'rt:sport',
     economy: 'rt:business',
+    society: 'rt:russia',
     default: 'rt:news'
   },
   'ntv': { default: 'ntv:video' },

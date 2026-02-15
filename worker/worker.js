@@ -32,12 +32,13 @@ const CATEGORIES = {
   politics: { en: 'Politics', ru: 'Политика' },
   economy: { en: 'Economy', ru: 'Экономика' },
   society: { en: 'Society', ru: 'Общество' },
-  education: { en: 'Education', ru: 'Образование' },
-  world: { en: 'World', ru: 'В мире' },
+  military: { en: 'Military', ru: 'Военные' },
   sports: { en: 'Sports', ru: 'Спорт' },
   culture: { en: 'Culture', ru: 'Культура' },
   science: { en: 'Science', ru: 'Наука' },
   technology: { en: 'Technology', ru: 'Технологии' },
+  weather: { en: 'Weather', ru: 'Погода' },
+  crime: { en: 'Crime', ru: 'Криминал' },
 };
 
 // Site configurations with discovery URLs, API endpoints, and category mappings
@@ -54,14 +55,14 @@ const SITES = {
     usesRutube: false,  // Disabled: Rutube channel is geo-restricted outside Russia
     rutubeChannelId: 23460655,  // 268,260+ videos - kept for reference
     sources: {
-      'news': { url: 'https://www.1tv.ru/news', categories: ['politics', 'society', 'world'] },
+      'news': { url: 'https://www.1tv.ru/news', categories: ['politics', 'society'] },
       'politics': { url: 'https://www.1tv.ru/news/politika', categories: ['politics'] },
       'economy': { url: 'https://www.1tv.ru/news/ekonomika', categories: ['economy'] },
       'society': { url: 'https://www.1tv.ru/news/obschestvo', categories: ['society'] },
-      'world': { url: 'https://www.1tv.ru/news/v-mire', categories: ['world'] },
+      'world': { url: 'https://www.1tv.ru/news/v-mire', categories: ['politics', 'society'] },
       'sports': { url: 'https://www.1tv.ru/news/sport', categories: ['sports'] },
       'culture': { url: 'https://www.1tv.ru/news/kultura', categories: ['culture'] },
-      'vremya': { url: 'https://www.1tv.ru/shows/vremya', categories: ['politics', 'world'], programId: 'vremya' },
+      'vremya': { url: 'https://www.1tv.ru/shows/vremya', categories: ['politics', 'society'], programId: 'vremya' },
       'video': { categories: ['politics', 'society', 'culture', 'sports'] },  // Rutube channel
     }
   },
@@ -73,20 +74,20 @@ const SITES = {
     playerApi: 'https://player.smotrim.ru/iframe/datavideo/id',
     sources: {
       // News programs
-      'news': { brandId: 5402, categories: ['politics', 'society', 'world'], name: 'Вести' },
-      'russia24': { brandId: 58500, categories: ['politics', 'economy', 'world'], name: 'Вести в 20:00' },
-      'vesti-nedeli': { brandId: 5206, categories: ['politics', 'world'], name: 'Вести недели' },
+      'news': { brandId: 5402, categories: ['politics', 'society'], name: 'Вести' },
+      'russia24': { brandId: 58500, categories: ['politics', 'economy'], name: 'Вести в 20:00' },
+      'vesti-nedeli': { brandId: 5206, categories: ['politics', 'society'], name: 'Вести недели' },
       // Россия Культура programs
       'culture-news': { brandId: 246379, categories: ['culture'], name: 'Новости культуры' },
-      'culture-history': { brandId: 67400, categories: ['culture', 'education'], name: 'Рассказы из русской истории' },
+      'culture-history': { brandId: 67400, categories: ['culture', 'society'], name: 'Рассказы из русской истории' },
       'culture-architecture': { brandId: 28287, categories: ['culture', 'tourism'], name: 'Роман в камне' },
       'culture-kremlin': { brandId: 68933, categories: ['culture', 'tourism'], name: 'Сокровища Московского Кремля' },
-      // Additional culture/education programs
-      'absolut-sluh': { brandId: 20892, categories: ['culture', 'education'], name: 'Абсолютный слух' },
+      // Additional culture/society programs
+      'absolut-sluh': { brandId: 20892, categories: ['culture', 'society'], name: 'Абсолютный слух' },
       'pisma-provintsii': { brandId: 20920, categories: ['culture', 'society'], name: 'Письма из провинции' },
-      'xx-vek': { brandId: 62153, categories: ['culture', 'education'], name: 'XX век' },
+      'xx-vek': { brandId: 62153, categories: ['culture', 'society'], name: 'XX век' },
       'zemlya-ludey': { brandId: 63258, categories: ['culture', 'society', 'tourism'], name: 'Земля людей' },
-      'kollektsiya': { brandId: 64923, categories: ['culture', 'education'], name: 'Коллекция' },
+      'kollektsiya': { brandId: 64923, categories: ['culture', 'society'], name: 'Коллекция' },
       'bolshaya-opera': { brandId: 71651, categories: ['culture'], name: 'Большая опера' },
     }
   },
@@ -100,12 +101,12 @@ const SITES = {
     usesRutube: true,  // Use Rutube channel for video content (RSS only has text articles)
     rutubeChannelId: 23174740,  // RT на русском channel (18,826 videos) - NOT 25547249 which is English
     sources: {
-      'news': { url: 'https://russian.rt.com/', categories: ['politics', 'world'] },
+      'news': { url: 'https://russian.rt.com/', categories: ['politics', 'society'] },
       'russia': { url: 'https://russian.rt.com/russia', categories: ['politics', 'society'] },
-      'world': { url: 'https://russian.rt.com/world', categories: ['world', 'politics'] },
+      'world': { url: 'https://russian.rt.com/world', categories: ['politics', 'society'] },
       'business': { url: 'https://russian.rt.com/business', categories: ['economy'] },
       'sport': { url: 'https://russian.rt.com/sport', categories: ['sports'] },
-      'video': { categories: ['politics', 'world', 'society'] },  // Rutube channel
+      'video': { categories: ['politics', 'society'] },  // Rutube channel
     },
     liveStreams: {
       'news': 'https://rt-glb.rttv.com/dvr/rtnews/playlist.m3u8',
@@ -121,7 +122,7 @@ const SITES = {
     usesRutube: true,
     rutubeChannelId: 23178409,  // 19,147+ videos
     sources: {
-      'video': { categories: ['politics', 'society', 'world'] },
+      'video': { categories: ['politics', 'society'] },
       'news': { url: 'https://ntv.ru/novosti/', categories: ['politics', 'society'] },
     }
   },
@@ -133,7 +134,7 @@ const SITES = {
     usesRutube: true,
     rutubeChannelId: 23950585,  // 28,769+ videos
     sources: {
-      'video': { categories: ['politics', 'society', 'world'] },
+      'video': { categories: ['politics', 'society'] },
     }
   },
   'izvestia': {
@@ -143,7 +144,7 @@ const SITES = {
     usesRutube: true,
     rutubeChannelId: 23872322,  // 31,528+ videos
     sources: {
-      'video': { categories: ['politics', 'society', 'world'] },
+      'video': { categories: ['politics', 'society'] },
     }
   },
   // 'kommersant' removed - videos don't match expected economy category well
@@ -165,7 +166,7 @@ const SITES = {
       'culture': 7,
     },
     sources: {
-      'news': { categoryId: 13, categories: ['politics', 'world'] },
+      'news': { categoryId: 13, categories: ['politics', 'society'] },
       'politics': { categoryId: 42, categories: ['politics'] },
       'society': { categoryId: 21, categories: ['society'] },
       'sports': { categoryId: 14, categories: ['sports'] },
@@ -243,7 +244,7 @@ const SITES = {
     domain: 'tretyakovgallery.ru',
     usesRutube: true,
     rutubeChannelId: 25592111,  // 193 videos - art tours, lectures
-    sources: { 'video': { categories: ['culture', 'education'] } }
+    sources: { 'video': { categories: ['culture', 'society'] } }
   },
   'mosfilm': {
     name: 'Mosfilm',
@@ -259,7 +260,7 @@ const SITES = {
     domain: 'rtd.rt.com',
     usesRutube: true,
     rutubeChannelId: 23239684,  // 856+ documentaries
-    sources: { 'video': { categories: ['culture', 'world', 'society'] } }
+    sources: { 'video': { categories: ['culture', 'society'] } }
   },
   'kultura-tv': {
     name: 'Russia Kultura TV',
@@ -267,7 +268,7 @@ const SITES = {
     domain: 'tvkultura.ru',
     usesRutube: true,
     rutubeChannelId: 24620649,  // 243 videos
-    sources: { 'video': { categories: ['culture', 'education'] } }
+    sources: { 'video': { categories: ['culture', 'society'] } }
   },
   'culture-rf': {
     name: 'Culture.RF',
@@ -275,7 +276,7 @@ const SITES = {
     domain: 'culture.ru',
     usesRutube: true,
     rutubeChannelId: 23630594,  // 299 videos
-    sources: { 'video': { categories: ['culture', 'education', 'tourism'] } }
+    sources: { 'video': { categories: ['culture', 'society', 'tourism'] } }
   },
   'digital-history': {
     name: 'Digital History',
@@ -283,7 +284,7 @@ const SITES = {
     domain: 'digitalhistory.ru',
     usesRutube: true,
     rutubeChannelId: 23600725,  // 1,177 videos - historical lectures
-    sources: { 'video': { categories: ['education', 'culture'] } }
+    sources: { 'video': { categories: ['society', 'culture'] } }
   },
   'gorky-lit': {
     name: 'Gorky Literary Institute',
@@ -291,7 +292,7 @@ const SITES = {
     domain: 'litinstitut.ru',
     usesRutube: true,
     rutubeChannelId: 24195139,  // 1,456 videos - poetry, lectures
-    sources: { 'video': { categories: ['culture', 'education'] } }
+    sources: { 'video': { categories: ['culture', 'society'] } }
   },
   'mmdm': {
     name: 'Moscow House of Music',
@@ -311,7 +312,7 @@ const SITES = {
     domain: 'pervyobraz.ru',
     usesRutube: true,
     rutubeChannelId: 831005,  // 4,876 videos!
-    sources: { 'video': { categories: ['education'] } }
+    sources: { 'video': { categories: ['society'] } }
   },
   'spbgu': {
     name: 'St. Petersburg State University',
@@ -319,7 +320,7 @@ const SITES = {
     domain: 'spbu.ru',
     usesRutube: true,
     rutubeChannelId: 24725063,  // 1,596 videos
-    sources: { 'video': { categories: ['education', 'science'] } }
+    sources: { 'video': { categories: ['society', 'science'] } }
   },
   'bauman': {
     name: 'Bauman University',
@@ -327,7 +328,7 @@ const SITES = {
     domain: 'bmstu.ru',
     usesRutube: true,
     rutubeChannelId: 24869232,  // 344 videos
-    sources: { 'video': { categories: ['education', 'technology', 'science'] } }
+    sources: { 'video': { categories: ['society', 'technology', 'science'] } }
   },
   'infourok': {
     name: 'Infourok',
@@ -335,7 +336,7 @@ const SITES = {
     domain: 'infourok.ru',
     usesRutube: true,
     rutubeChannelId: 23464093,  // 1,366 videos - #1 education platform
-    sources: { 'video': { categories: ['education'] } }
+    sources: { 'video': { categories: ['society'] } }
   },
   'pushkin-institute': {
     name: 'Pushkin Institute',
@@ -343,7 +344,7 @@ const SITES = {
     domain: 'pushkin.institute',
     usesRutube: true,
     rutubeChannelId: 28373461,  // 67 videos - Russian language teaching
-    sources: { 'video': { categories: ['education'] } }
+    sources: { 'video': { categories: ['society'] } }
   },
   'naukatv': {
     name: 'Nauka TV',
@@ -351,7 +352,7 @@ const SITES = {
     domain: 'naukatv.ru',
     usesRutube: true,
     rutubeChannelId: 26552402,
-    sources: { 'video': { categories: ['science', 'technology', 'education'] } }
+    sources: { 'video': { categories: ['science', 'technology', 'society'] } }
   },
 
   // ============================================================================
@@ -379,7 +380,7 @@ const SITES = {
     domain: 'rutube.ru',
     usesRutube: true,
     rutubeChannelId: 37122400,  // 323 videos
-    sources: { 'video': { categories: ['tourism', 'world'] } }
+    sources: { 'video': { categories: ['tourism', 'society'] } }
   },
 
   // ============================================================================
@@ -423,7 +424,7 @@ const SITES = {
     domain: 'rutube.ru',
     usesRutube: true,
     rutubeChannelId: 63827681,  // 612 videos - parenting
-    sources: { 'video': { categories: ['society', 'education'] } }
+    sources: { 'video': { categories: ['society', 'society'] } }
   },
   'rospotrebnadzor': {
     name: 'Rospotrebnadzor',
@@ -693,170 +694,9 @@ const CATEGORY_DETECTION = {
     negative: ['спорт', 'футбол', 'культур', 'театр', 'sport', 'futbol', 'kultur', 'teatr'],
     requiredScore: 3,
   },
-  world: {
-    positive: [
-      // === GENERAL INTERNATIONAL TERMS ===
-      { keywords: ['международн', 'мировой', 'глобальн'], weight: 3 },
-      { keywords: ['зарубеж', 'иностран'], weight: 2 },
-
-      // === MAJOR POWERS (existing) ===
-      { keywords: ['сша', 'америк', 'вашингтон', 'белый дом'], weight: 3 },
-      { keywords: ['китай', 'пекин', 'кнр', 'си цзиньпин'], weight: 3 },
-
-      // === EUROPE ===
-      { keywords: ['европ', 'евросоюз', 'брюссел', 'ес', 'еврокомисс'], weight: 3 },
-      { keywords: ['великобритан', 'лондон', 'британ', 'англи'], weight: 3 },
-      { keywords: ['германи', 'берлин', 'фрг', 'немец', 'бундестаг'], weight: 3 },
-      { keywords: ['франци', 'париж', 'франц', 'елисейск'], weight: 3 },
-      { keywords: ['итали', 'рим', 'итальян'], weight: 3 },
-      { keywords: ['испани', 'мадрид', 'испан'], weight: 3 },
-      { keywords: ['польш', 'варшав', 'польск'], weight: 3 },
-      { keywords: ['белорус', 'минск', 'беларус'], weight: 3 },
-      { keywords: ['молдов', 'кишинев'], weight: 3 },
-      { keywords: ['грузи', 'тбилиси', 'грузинск'], weight: 2 },
-      { keywords: ['армени', 'ереван', 'армянск'], weight: 3 },
-      { keywords: ['азербайджан', 'баку'], weight: 3 },
-      { keywords: ['латви', 'рига', 'латвийск'], weight: 3 },
-      { keywords: ['литв', 'вильнюс', 'литовск'], weight: 3 },
-      { keywords: ['эстони', 'таллин', 'эстонск'], weight: 3 },
-      { keywords: ['финлянди', 'хельсинки', 'финск'], weight: 3 },
-      { keywords: ['швеци', 'стокгольм', 'шведск'], weight: 3 },
-      { keywords: ['норвеги', 'осло', 'норвежск'], weight: 3 },
-      { keywords: ['дани', 'копенгаген', 'датск'], weight: 3 },
-      { keywords: ['нидерланд', 'амстердам', 'голланд'], weight: 3 },
-      { keywords: ['бельги', 'брюссел'], weight: 3 },
-      { keywords: ['австри', 'вена', 'австрийск'], weight: 3 },
-      { keywords: ['швейцари', 'берн', 'женева', 'цюрих'], weight: 3 },
-      { keywords: ['чехи', 'прага', 'чешск'], weight: 3 },
-      { keywords: ['словаки', 'братислав'], weight: 3 },
-      { keywords: ['венгри', 'будапешт', 'венгерск'], weight: 3 },
-      { keywords: ['румыни', 'бухарест'], weight: 3 },
-      { keywords: ['болгари', 'софи', 'болгарск'], weight: 3 },
-      { keywords: ['греци', 'афин', 'греческ'], weight: 3 },
-      { keywords: ['сербия', 'белград', 'сербск'], weight: 3 },
-      { keywords: ['хорвати', 'загреб'], weight: 3 },
-      { keywords: ['словени', 'любляна'], weight: 3 },
-      { keywords: ['португали', 'лиссабон'], weight: 3 },
-      { keywords: ['ирланди', 'дублин'], weight: 3 },
-
-      // === CIS / POST-SOVIET ===
-      { keywords: ['казахстан', 'астана', 'нур-султан', 'казахск'], weight: 3 },
-      { keywords: ['узбекистан', 'ташкент', 'узбекск'], weight: 3 },
-      { keywords: ['туркменистан', 'ашхабад'], weight: 3 },
-      { keywords: ['таджикистан', 'душанбе'], weight: 3 },
-      { keywords: ['киргизи', 'бишкек', 'киргизск'], weight: 3 },
-
-      // === ASIA ===
-      { keywords: ['япони', 'токио', 'японск'], weight: 3 },
-      { keywords: ['южная корея', 'сеул', 'южнокорейск'], weight: 3 },
-      { keywords: ['северная корея', 'пхеньян', 'кндр', 'северокорейск'], weight: 3 },
-      { keywords: ['инди', 'дели', 'индийск', 'моди'], weight: 3 },
-      { keywords: ['пакистан', 'исламабад', 'пакистанск'], weight: 3 },
-      { keywords: ['индонези', 'джакарта'], weight: 3 },
-      { keywords: ['вьетнам', 'ханой', 'вьетнамск'], weight: 3 },
-      { keywords: ['таиланд', 'бангкок', 'таиландск'], weight: 3 },
-      { keywords: ['малайзи', 'куала-лумпур'], weight: 3 },
-      { keywords: ['сингапур'], weight: 3 },
-      { keywords: ['филиппин', 'манила'], weight: 3 },
-      { keywords: ['тайван', 'тайбэй', 'тайваньск'], weight: 3 },
-      { keywords: ['монголи', 'улан-батор'], weight: 3 },
-      { keywords: ['бангладеш', 'дакка'], weight: 3 },
-      { keywords: ['мьянма', 'бирм'], weight: 3 },
-      { keywords: ['афганистан', 'кабул', 'афганск', 'талиб'], weight: 3 },
-
-      // === MIDDLE EAST ===
-      { keywords: ['иран', 'тегеран', 'иранск', 'персидск'], weight: 3 },
-      { keywords: ['ирак', 'багдад', 'иракск'], weight: 3 },
-      { keywords: ['сири', 'дамаск', 'сирийск'], weight: 3 },
-      { keywords: ['израил', 'тель-авив', 'иерусалим', 'израильск'], weight: 3 },
-      { keywords: ['палестин', 'газа', 'хамас', 'палестинск'], weight: 3 },
-      { keywords: ['турци', 'анкара', 'стамбул', 'турецк', 'эрдоган'], weight: 3 },
-      { keywords: ['саудовская арави', 'эр-рияд', 'саудовск'], weight: 3 },
-      { keywords: ['оаэ', 'эмират', 'дубай', 'абу-даби'], weight: 3 },
-      { keywords: ['катар', 'доха'], weight: 3 },
-      { keywords: ['кувейт'], weight: 3 },
-      { keywords: ['бахрейн'], weight: 3 },
-      { keywords: ['оман', 'маскат'], weight: 3 },
-      { keywords: ['йемен', 'сана', 'хусит'], weight: 3 },
-      { keywords: ['ливан', 'бейрут', 'хезболла'], weight: 3 },
-      { keywords: ['иордани', 'амман'], weight: 3 },
-
-      // === AFRICA ===
-      { keywords: ['египет', 'каир', 'египетск'], weight: 3 },
-      { keywords: ['южная африк', 'йоханнесбург', 'претори', 'юар'], weight: 3 },
-      { keywords: ['нигери', 'лагос', 'абуджа'], weight: 3 },
-      { keywords: ['эфиопи', 'аддис-абеба'], weight: 3 },
-      { keywords: ['кени', 'найроби'], weight: 3 },
-      { keywords: ['марокко', 'рабат'], weight: 3 },
-      { keywords: ['алжир'], weight: 3 },
-      { keywords: ['туни'], weight: 3 },
-      { keywords: ['ливи', 'триполи', 'ливийск'], weight: 3 },
-      { keywords: ['судан', 'хартум'], weight: 3 },
-      { keywords: ['гана', 'аккра'], weight: 3 },
-      { keywords: ['танзани'], weight: 3 },
-      { keywords: ['конго', 'киншаса'], weight: 3 },
-
-      // === AMERICAS ===
-      { keywords: ['канад', 'оттава', 'торонто', 'канадск'], weight: 3 },
-      { keywords: ['мексик', 'мехико', 'мексиканск'], weight: 3 },
-      { keywords: ['бразили', 'бразилья', 'рио', 'бразильск'], weight: 3 },
-      { keywords: ['аргентин', 'буэнос-айрес', 'аргентинск'], weight: 3 },
-      { keywords: ['чили', 'сантьяго', 'чилийск'], weight: 3 },
-      { keywords: ['перу', 'лима', 'перуанск'], weight: 3 },
-      { keywords: ['колумби', 'богота', 'колумбийск'], weight: 3 },
-      { keywords: ['венесуэл', 'каракас', 'мадуро'], weight: 3 },
-      { keywords: ['куба', 'гавана', 'кубинск'], weight: 3 },
-      { keywords: ['эквадор', 'кито'], weight: 3 },
-      { keywords: ['боливи', 'ла-пас'], weight: 3 },
-      { keywords: ['уругвай', 'монтевидео'], weight: 3 },
-
-      // === OCEANIA ===
-      { keywords: ['австрали', 'сидней', 'канберра', 'мельбурн', 'австралийск'], weight: 3 },
-      { keywords: ['новая зеланди', 'веллингтон', 'окленд', 'новозеландск'], weight: 3 },
-
-      // === INTERNATIONAL ORGANIZATIONS ===
-      { keywords: ['нато', 'оон', 'совбез', 'генассамбле'], weight: 3 },
-      { keywords: ['асеан', 'мвф', 'всемирный банк', 'вто'], weight: 3 },
-      { keywords: ['магатэ', 'юнеско', 'воз', 'юнисеф'], weight: 3 },
-      { keywords: ['интерпол', 'международный суд', 'гаага'], weight: 3 },
-      { keywords: ['брикс', 'шос', 'снг', 'еаэс'], weight: 3 },
-      { keywords: ['g7', 'g20', 'большая семерка', 'большая двадцатка'], weight: 3 },
-
-      // === WORLD LEADERS ===
-      { keywords: ['байден', 'трамп', 'макрон', 'шольц'], weight: 2 },
-
-      // === LATIN TRANSLITERATIONS (key ones) ===
-      { keywords: ['mezhdunarodn', 'mirovoy', 'globaln'], weight: 3 },
-      { keywords: ['ssha', 'amerika', 'vashington'], weight: 3 },
-      { keywords: ['kitay', 'pekin', 'knr'], weight: 3 },
-      { keywords: ['evrop', 'evrosoyuz', 'bryussel'], weight: 3 },
-      { keywords: ['velikobritan', 'london', 'britan'], weight: 3 },
-      { keywords: ['germani', 'berlin', 'frg'], weight: 3 },
-      { keywords: ['franci', 'parizh'], weight: 3 },
-      { keywords: ['itali', 'rim'], weight: 3 },
-      { keywords: ['ispani', 'madrid'], weight: 3 },
-      { keywords: ['polsh', 'varshav'], weight: 3 },
-      { keywords: ['yaponi', 'tokio'], weight: 3 },
-      { keywords: ['yuzhnaya koreya', 'seul'], weight: 3 },
-      { keywords: ['indi', 'deli', 'indiysk'], weight: 3 },
-      { keywords: ['iran', 'tegeran'], weight: 3 },
-      { keywords: ['izrail', 'tel-aviv', 'ierusalim'], weight: 3 },
-      { keywords: ['turci', 'ankara', 'stambul'], weight: 3 },
-      { keywords: ['egipet', 'kair'], weight: 3 },
-      { keywords: ['brazili', 'rio'], weight: 3 },
-      { keywords: ['kanada', 'ottava', 'toronto'], weight: 3 },
-      { keywords: ['meksik', 'mekhiko'], weight: 3 },
-      { keywords: ['nato', 'oon', 'sovbez'], weight: 3 },
-      { keywords: ['briks', 'shos', 'sng', 'eaes'], weight: 3 },
-    ],
-    negative: [
-      'спорт', 'футбол', 'культур', 'sport', 'futbol', 'kultur',
-      'турист', 'turist', 'отдых', 'otdykh',
-    ],
-    requiredScore: 3,
-  },
-  // SOCIETY: Everyday life, human interest, community, health, family, social welfare
-  // NOT government policy - that's politics. NOT formal education - that's education.
+  // NOTE: "world" category removed - international news is tagged by its specific category (politics, economy, etc.)
+  // SOCIETY: Everyday life, human interest, community, health, family, social welfare, education
+  // NOT government policy - that's politics.
   society: {
     positive: [
       // Cyrillic - social issues and everyday life
@@ -869,14 +709,6 @@ const CATEGORY_DETECTION = {
       { keywords: ['волонтер', 'благотвор', 'помощь', 'донор'], weight: 3 },
       { keywords: ['голод', 'бездомн', 'сирот', 'инвалид', 'нищет'], weight: 3 },
       { keywords: ['праздник', 'юбилей', 'годовщин', 'торжеств'], weight: 2 },
-      { keywords: ['авари', 'дтп', 'пожар', 'катастроф', 'трагед'], weight: 3 },
-      { keywords: ['преступлен', 'убийств', 'кража', 'мошенник', 'арест'], weight: 3 },
-      // Missing persons / crime news (HIGH WEIGHT - very specific to society/crime)
-      { keywords: ['пропал', 'пропавш', 'исчез'], weight: 4 },
-      { keywords: ['тело найден', 'тело обнаружен', 'найден труп', 'обнаружен труп'], weight: 5 },
-      { keywords: ['нападен', 'стрельб', 'ранен', 'пострадал'], weight: 3 },
-      // School attacks / violence - definitely society news
-      { keywords: ['нападение на школ', 'стрельба в школ', 'школьный стрелок'], weight: 5 },
       // Mental health
       { keywords: ['психолог', 'депресс', 'тревожност', 'стресс', 'ментальн'], weight: 3 },
       // Social movements
@@ -885,7 +717,7 @@ const CATEGORY_DETECTION = {
       { keywords: ['рождаемост', 'смертност', 'миграц', 'демограф'], weight: 3 },
       // Disability and inclusion
       { keywords: ['инклюзи', 'доступная сред', 'ограничен возможност'], weight: 3 },
-      // Diet, nutrition, health lifestyle (HIGH WEIGHT - very specific to society)
+      // Diet, nutrition, health lifestyle
       { keywords: ['диетолог', 'диетическ', 'диета'], weight: 5 },
       { keywords: ['питани', 'рацион', 'калори', 'белок', 'углевод'], weight: 4 },
       { keywords: ['похудеть', 'похудени', 'набрать вес', 'сбросить вес', 'лишний вес'], weight: 5 },
@@ -896,6 +728,22 @@ const CATEGORY_DETECTION = {
       { keywords: ['еда', 'продукт', 'пища', 'кулинар'], weight: 2 },
       // Consumer/lifestyle surveys
       { keywords: ['опрос', 'исследовани', 'аналитик', 'россиян'], weight: 2 },
+      // Education (merged from education category)
+      { keywords: ['образован', 'обучен'], weight: 4 },
+      { keywords: ['егэ', 'огэ'], weight: 5 },
+      { keywords: ['учител', 'преподаватель', 'педагог'], weight: 4 },
+      { keywords: ['университет', 'вуз', 'школ', 'студент'], weight: 3 },
+      { keywords: ['экзамен', 'контрольн', 'зачет', 'стипенди'], weight: 3 },
+      // Infrastructure/transport projects (society, not technology)
+      { keywords: ['проект', 'инфраструктур'], weight: 2 },
+      { keywords: ['поезд', 'всм', 'железнодорожн', 'железная дорог', 'жд'], weight: 3 },
+      { keywords: ['транспорт', 'метро', 'автобус', 'трамвай', 'троллейбус'], weight: 3 },
+      { keywords: ['мост', 'тоннель', 'дорог', 'шоссе', 'автомагистрал'], weight: 3 },
+      { keywords: ['строительств', 'реконструкц', 'инженер', 'возведен'], weight: 2 },
+      // Animals / nature stories
+      { keywords: ['животн', 'зоопарк', 'питомец', 'собак', 'кошк', 'кот '], weight: 3 },
+      { keywords: ['пингвин', 'медведь', 'волк', 'лис', 'тигр', 'леопард'], weight: 3 },
+      { keywords: ['птиц', 'рыб', 'дельфин', 'кит', 'акул'], weight: 3 },
       // Latin transliterations
       { keywords: ['obschestvo', 'socialn', 'socium'], weight: 4 },
       { keywords: ['grazhdan', 'naselen', 'zhitel', 'narod'], weight: 2 },
@@ -906,14 +754,6 @@ const CATEGORY_DETECTION = {
       { keywords: ['volonter', 'blagotvor', 'pomosch', 'donor'], weight: 3 },
       { keywords: ['golod', 'bezdomn', 'sirot', 'invalid', 'nischet'], weight: 3 },
       { keywords: ['prazdnik', 'yubiley', 'godovshin', 'torzhestvo'], weight: 2 },
-      { keywords: ['avari', 'dtp', 'pozhar', 'katastro', 'traged'], weight: 3 },
-      { keywords: ['prestuplen', 'ubiystvo', 'krazh', 'moshennik', 'arest'], weight: 3 },
-      // Missing persons / crime news - Latin
-      { keywords: ['propal', 'propavsh', 'ischez'], weight: 4 },
-      { keywords: ['telo nayden', 'telo obnaruzhen', 'nayden trup', 'obnaruzhen trup'], weight: 5 },
-      { keywords: ['napaden', 'strelba', 'ranen', 'postradal'], weight: 3 },
-      // School attacks - Latin
-      { keywords: ['napadeniye na shkol', 'strelba v shkol', 'shkolny strelok'], weight: 5 },
       // Mental health/movements/demographics - Latin
       { keywords: ['psikholog', 'depress', 'trevozhnost', 'stress', 'mentaln'], weight: 3 },
       { keywords: ['protest', 'miting', 'demonstrac', 'petici'], weight: 3 },
@@ -929,83 +769,69 @@ const CATEGORY_DETECTION = {
       { keywords: ['blin', 'maslenica', 'recept'], weight: 3 },
       { keywords: ['eda', 'produkt', 'pischa', 'kulinar'], weight: 2 },
       { keywords: ['opros', 'issledovani', 'analitik', 'rossiyan'], weight: 2 },
+      // Education - Latin
+      { keywords: ['obrazovan', 'obuchen'], weight: 4 },
+      { keywords: ['ege', 'oge'], weight: 5 },
+      { keywords: ['uchitel', 'prepodavatel', 'pedagog'], weight: 4 },
+      { keywords: ['universitet', 'vuz', 'shkol', 'student'], weight: 3 },
+      // Animals/nature - Latin
+      { keywords: ['zhivotn', 'zoopark', 'pitomec', 'sobak', 'koshk'], weight: 3 },
+      { keywords: ['pingvin', 'medved', 'volk', 'lis', 'tigr', 'leopard'], weight: 3 },
     ],
     negative: ['спорт', 'дума', 'законопроект', 'военн', 'армия', 'министр',
                'sport', 'duma', 'zakonoproekt', 'voenn', 'armiya', 'ministr'],
     requiredScore: 3,
   },
-  // EDUCATION: Schools, universities, students, teachers, exams, academic life
-  // NOTE: Generic "school" terms have LOW weight - need additional education context
-  education: {
+  // CRIME: Criminal activity, law enforcement, court cases, fraud, violence
+  crime: {
     positive: [
-      // HIGH WEIGHT - Unambiguous education terms (rarely appear in non-education contexts)
-      { keywords: ['образован', 'обучен'], weight: 5 },  // education, learning/training
-      { keywords: ['егэ', 'огэ'], weight: 6 },  // Russian standardized exams - very specific
-      { keywords: ['учител', 'преподаватель', 'педагог'], weight: 5 },  // teacher, instructor, educator
-      { keywords: ['учебник', 'учебн', 'учебный'], weight: 5 },  // textbook, educational
-      { keywords: ['урок', 'лекци', 'семинар'], weight: 4 },  // lesson, lecture, seminar
-      { keywords: ['экзамен', 'контрольн', 'зачет', 'сессия'], weight: 4 },  // exam, test, credit, exam period
-      { keywords: ['аттестат', 'диплом'], weight: 4 },  // certificate, diploma (academic context)
-      { keywords: ['стипенди'], weight: 4 },  // scholarship
-      { keywords: ['минобр', 'минпросвещ'], weight: 6 },  // Ministry of Education - definitive
-
-      // MEDIUM WEIGHT - Generally education-related
-      { keywords: ['университет', 'вуз'], weight: 4 },  // university, higher ed institution
-      { keywords: ['профессор', 'доцент', 'ректор', 'декан'], weight: 4 },  // professor, dean, etc.
-      { keywords: ['студент', 'студентк', 'аспирант', 'магистр', 'бакалавр'], weight: 3 },
-      { keywords: ['колледж', 'техникум', 'лицей', 'гимназ'], weight: 3 },
-      { keywords: ['выпускной', 'выпускник'], weight: 3 },  // graduation, graduate
-      { keywords: ['грант'], weight: 3 },  // grant (educational context)
-
-      // LOW WEIGHT - Ambiguous terms (appear in accident/crime news too)
-      // "школ" alone is NOT enough - need other education terms to confirm
-      { keywords: ['школ'], weight: 2 },  // school - reduced from 4 to 2
-      { keywords: ['школьник', 'школьниц', 'ученик', 'ученица'], weight: 2 },  // students - reduced
-      { keywords: ['институт'], weight: 2 },  // can be research institute, not education
-
-      // Latin transliterations - same weight structure
-      { keywords: ['obrazovan', 'obuchen'], weight: 5 },
-      { keywords: ['ege', 'oge'], weight: 6 },
-      { keywords: ['uchitel', 'prepodavatel', 'pedagog'], weight: 5 },
-      { keywords: ['uchebnik', 'uchebn', 'uchebnyy'], weight: 5 },
-      { keywords: ['urok', 'lekci', 'seminar'], weight: 4 },
-      { keywords: ['ekzamen', 'kontroln', 'zachet', 'sessiya'], weight: 4 },
-      { keywords: ['attestat', 'diplom'], weight: 4 },
-      { keywords: ['stipendi'], weight: 4 },
-      { keywords: ['minobr', 'minprosvesh'], weight: 6 },
-      { keywords: ['universitet', 'vuz'], weight: 4 },
-      { keywords: ['professor', 'docent', 'rektor', 'dekan'], weight: 4 },
-      { keywords: ['student', 'studentk', 'aspirant', 'magistr', 'bakalavr'], weight: 3 },
-      { keywords: ['kolledzh', 'tekhnikum', 'licey', 'gimnaz'], weight: 3 },
-      { keywords: ['vypusknoy', 'vypusknik'], weight: 3 },
-      { keywords: ['grant'], weight: 3 },
-      { keywords: ['shkol'], weight: 2 },
-      { keywords: ['shkolnik', 'shkolnic', 'uchenik', 'uchenica'], weight: 2 },
-      { keywords: ['institut'], weight: 2 },
+      // Cyrillic - Core crime terms
+      { keywords: ['преступлен', 'преступник', 'криминал', 'уголовн'], weight: 5 },
+      { keywords: ['убийств', 'убит', 'убил'], weight: 5 },
+      { keywords: ['кража', 'грабеж', 'ограблен', 'разбой', 'воровств'], weight: 5 },
+      { keywords: ['мошенник', 'мошенничеств', 'аферист', 'обман'], weight: 5 },
+      { keywords: ['арест', 'задержан', 'задержали'], weight: 4 },
+      { keywords: ['подозреваем', 'обвиняем', 'осужден', 'приговор'], weight: 4 },
+      { keywords: ['суд', 'судебн', 'судья', 'присяжн', 'вердикт'], weight: 3 },
+      { keywords: ['следствие', 'следователь', 'расследован'], weight: 4 },
+      { keywords: ['прокуратур', 'прокурор'], weight: 4 },
+      // Law enforcement
+      { keywords: ['полиц', 'полицейск'], weight: 3 },
+      { keywords: ['мвд', 'фсб', 'скр', 'следственный комитет'], weight: 4 },
+      // Specific crimes
+      { keywords: ['нападен', 'стрельб', 'ранен'], weight: 3 },
+      { keywords: ['наркотик', 'наркоторговл', 'контрабанд'], weight: 5 },
+      { keywords: ['террор', 'терракт', 'экстремизм', 'радикал'], weight: 4 },
+      { keywords: ['взятк', 'коррупц', 'хищен', 'растрат'], weight: 4 },
+      { keywords: ['похищен', 'заложник', 'захват', 'вымогательств'], weight: 5 },
+      // Missing persons / bodies found
+      { keywords: ['пропал', 'пропавш', 'исчез'], weight: 4 },
+      { keywords: ['тело найден', 'тело обнаружен', 'найден труп', 'обнаружен труп'], weight: 5 },
+      // Cybercrime
+      { keywords: ['кибермошенник', 'фишинг', 'онлайн мошенничеств'], weight: 5 },
+      // Latin transliterations
+      { keywords: ['prestuplen', 'prestupnik', 'kriminal', 'ugolovn'], weight: 5 },
+      { keywords: ['ubiystvo', 'ubit', 'ubil'], weight: 5 },
+      { keywords: ['krazha', 'grabezh', 'ograblen', 'razboy', 'vorovstv'], weight: 5 },
+      { keywords: ['moshennik', 'moshennichestvo', 'aferist', 'obman'], weight: 5 },
+      { keywords: ['arest', 'zaderzhan', 'zaderzhali'], weight: 4 },
+      { keywords: ['podozrevaem', 'obvinyaem', 'osuzhden', 'prigovor'], weight: 4 },
+      { keywords: ['sud', 'sudebn', 'sudya', 'prisyazhn', 'verdikt'], weight: 3 },
+      { keywords: ['sledstvie', 'sledovatel', 'rassledovan'], weight: 4 },
+      { keywords: ['prokuratur', 'prokuror'], weight: 4 },
+      { keywords: ['polic', 'policeysk'], weight: 3 },
+      { keywords: ['mvd', 'fsb', 'skr', 'sledstvennyy komitet'], weight: 4 },
+      { keywords: ['napaden', 'strelba', 'ranen'], weight: 3 },
+      { keywords: ['narkotik', 'narkotorgovl', 'kontrabanda'], weight: 5 },
+      { keywords: ['terror', 'terrakt', 'ekstremizm', 'radikal'], weight: 4 },
+      { keywords: ['vzyatk', 'korrupc', 'khishchen', 'rastrat'], weight: 4 },
+      { keywords: ['pokhishchen', 'zalozhnik', 'zakhvat', 'vymogatelstv'], weight: 5 },
+      { keywords: ['propal', 'propavsh', 'ischez'], weight: 4 },
+      { keywords: ['telo nayden', 'telo obnaruzhen', 'nayden trup', 'obnaruzhen trup'], weight: 5 },
     ],
-    // Avoid matching military/sports content AND accident/crime stories that mention schools
-    negative: [
-      // Sports/military (original)
-      'спорт', 'военн', 'армия', 'sport', 'voenn', 'armiya',
-      // Military commissars/conscription - NOT education
-      'военком', 'воeнком', 'призыв', 'облав', 'мобилизац',
-      'voenkom', 'prizyv', 'oblav', 'mobilizac',
-      // Design bureaus/engineering - NOT education (e.g., "konstruktorskomu byuro")
-      'конструкторск', 'кб', 'бюро', 'konstruktorsk', 'byuro',
-      // Accidents and incidents - school bus crash, fire at school, etc.
-      'авари', 'дтп', 'пожар', 'взрыв', 'катастроф', 'трагед', 'погиб', 'жертв',
-      'avari', 'dtp', 'pozhar', 'vzryv', 'katastro', 'traged', 'pogib', 'zhertv',
-      // Crimes - robbery at school, assault, etc.
-      'убийств', 'нападен', 'ограблен', 'кража', 'преступлен', 'арест', 'задержан',
-      'ubiystvo', 'napaden', 'ograblen', 'krazh', 'prestuplen', 'arest', 'zaderzhan',
-      // Emergency situations
-      'эвакуац', 'мчс', 'спасател', 'скорая', 'реанимац', 'больниц',
-      'evakuac', 'mchs', 'spasatel', 'skoraya', 'reanimac', 'bolnic',
-      // Violence/danger
-      'стрельб', 'угроз', 'бомб', 'террор', 'захват', 'заложник',
-      'strelba', 'ugroz', 'bomb', 'terror', 'zakhvat', 'zalozhnik',
-    ],
-    requiredScore: 3,  // Standard threshold (disambiguation rules handle edge cases)
+    negative: ['спорт', 'военн', 'армия', 'сво', 'всу', 'минобороны',
+               'sport', 'voenn', 'armiya', 'svo', 'vsu', 'minoborony'],
+    requiredScore: 4,
   },
   culture: {
     positive: [
@@ -1214,12 +1040,20 @@ const CATEGORY_DETECTION = {
   weather: {
     positive: [
       // Cyrillic - using more specific terms to avoid false positives
-      { keywords: ['погода', 'погодн', 'метео'], weight: 4 },
-      { keywords: ['прогноз погоды', 'температур воздух', 'градус мороз'], weight: 3 },
-      { keywords: ['дожд', 'снегопад', 'ветер сильн', 'гроза', 'туман', 'облачн'], weight: 3 },
-      { keywords: ['климат', 'потеплен', 'похолодан', 'заморозк'], weight: 3 },
-      { keywords: ['гидрометцентр', 'синоптик', 'росгидромет'], weight: 4 },
-      { keywords: ['ураган', 'шторм', 'наводнен', 'засух'], weight: 3 },
+      { keywords: ['погода', 'погодн', 'метео'], weight: 5 },
+      { keywords: ['прогноз погоды', 'температур воздух', 'градус мороз'], weight: 5 },
+      { keywords: ['температурн', 'температура'], weight: 4 },
+      { keywords: ['морозы', 'мороз', 'холод', 'жара', 'зной'], weight: 4 },
+      { keywords: ['дожд', 'снегопад', 'снег', 'метель', 'пург', 'вьюга'], weight: 4 },
+      { keywords: ['ветер', 'гроза', 'туман', 'облачн', 'осадк'], weight: 3 },
+      { keywords: ['климат', 'потеплен', 'похолодан', 'заморозк'], weight: 4 },
+      { keywords: ['гидрометцентр', 'синоптик', 'росгидромет'], weight: 5 },
+      { keywords: ['ураган', 'шторм', 'наводнен', 'засух', 'тайфун', 'циклон'], weight: 5 },
+      // Temperature-specific terms (avoid politics false positive)
+      { keywords: ['качели', 'температурные качели'], weight: 5 },
+      { keywords: ['аномальн', 'аномалия', 'рекордн температур'], weight: 4 },
+      { keywords: ['оттепель', 'потепление', 'потеплен', 'резкое похолодан'], weight: 4 },
+      { keywords: ['переправ', 'ледов переправ', 'ледоход'], weight: 4 },
       // Climate change
       { keywords: ['глобальн потеплен', 'парников эффект', 'углеродн след', 'выбросы co2'], weight: 4 },
       // Extreme weather
@@ -1414,6 +1248,14 @@ const DISAMBIGUATION_RULES = {
     // "ugroza" = threat, NOT "groza" (thunderstorm)
     { pattern: /ugroz[auy]/gi, adjust: -10 },
     { pattern: /угроз[ау|ой|ы]/gi, adjust: -10 },
+    // Temperature content - strong boost
+    { pattern: /температурн[а-яё]*\s*(качел|перепад|рекорд|аномал)/gi, adjust: +15 },
+    { pattern: /temperatur[a-z]*\s*(kachel|perepad|rekord|anomal)/gi, adjust: +15 },
+    // City + weather phenomenon = weather news
+    { pattern: /(новосибирск|москва|петербург|екатеринбург|казань|сочи)[а-яё]*[\s\S]{0,20}(температурн|морозы|снег|дожд|штор|ураган|метел|пурга)/gi, adjust: +10 },
+    // Hurricanes with names - always weather
+    { pattern: /ураган[а-яё]*\s*["«]?[А-ЯЁA-Z]/gi, adjust: +15 },
+    { pattern: /uragan[a-z]*\s*["«]?[A-Z]/gi, adjust: +15 },
   ],
   military: [
     // "veteran" contains "veter" (wind) but is military
@@ -1472,50 +1314,7 @@ const DISAMBIGUATION_RULES = {
     { pattern: /(передов|фронт|боев|наступлен|оборон)/gi, adjust: +8 },
     { pattern: /(peredov|front|boev|nastuplen|oboron)/gi, adjust: +8 },
   ],
-  education: [
-    // "vypusk novostey" = news broadcast, NOT graduation
-    { pattern: /vypusk.*novost/gi, adjust: -15 },
-    { pattern: /выпуск.*новост/gi, adjust: -15 },
-    // TV program mentions
-    { pattern: /programm.*perv/gi, adjust: -10 },
-    { pattern: /программ.*перв/gi, adjust: -10 },
-    // "Вести. Эфир" / "Vesti" news broadcasts - NOT education even if they mention students day
-    { pattern: /вести\.\s*эфир/gi, adjust: -20 },
-    { pattern: /vesti\.\s*efir/gi, adjust: -20 },
-    { pattern: /вести\s+в\s+\d/gi, adjust: -15 },  // "Вести в 20:00" etc.
-
-    // SCHOOL BUS / TRANSPORT accidents - "school" + transport/accident terms
-    { pattern: /школьн[ыа-я]*\s*(автобус|транспорт|машин|авто)/gi, adjust: -20 },
-    { pattern: /shkoln[a-z]*\s*(avtobus|transport|mashin|avto)/gi, adjust: -20 },
-    { pattern: /(автобус|транспорт)[а-яё]*\s*(со\s+)?школьник/gi, adjust: -20 },
-    { pattern: /(avtobus|transport)[a-z]*\s*(so\s+)?shkolnik/gi, adjust: -20 },
-
-    // School + accident/crash/incident context
-    { pattern: /школ[а-яё]*[\s\S]{0,30}(авари|дтп|столкн|перевернул|съехал)/gi, adjust: -20 },
-    { pattern: /shkol[a-z]*[\s\S]{0,30}(avari|dtp|stolkn|perevernul|syekhal)/gi, adjust: -20 },
-    { pattern: /(авари|дтп|столкн)[\s\S]{0,30}школ[а-яё]*/gi, adjust: -20 },
-    { pattern: /(avari|dtp|stolkn)[\s\S]{0,30}shkol[a-z]*/gi, adjust: -20 },
-
-    // School + fire/emergency context
-    { pattern: /школ[а-яё]*[\s\S]{0,30}(пожар|возгоран|эвакуац|горел|загорел)/gi, adjust: -20 },
-    { pattern: /shkol[a-z]*[\s\S]{0,30}(pozhar|vozgoran|evakuac|gorel|zagorel)/gi, adjust: -20 },
-    { pattern: /(пожар|возгоран)[\s\S]{0,30}школ[а-яё]*/gi, adjust: -20 },
-    { pattern: /(pozhar|vozgoran)[\s\S]{0,30}shkol[a-z]*/gi, adjust: -20 },
-
-    // School + crime/violence context
-    { pattern: /школ[а-яё]*[\s\S]{0,30}(нападен|стрельб|убийств|ранен|пострадал)/gi, adjust: -20 },
-    { pattern: /shkol[a-z]*[\s\S]{0,30}(napaden|strelb|ubiystvo|ranen|postradal)/gi, adjust: -20 },
-
-    // Student injured/killed - news about accidents, not education
-    { pattern: /(школьник|ученик|ученица)[а-яё]*[\s\S]{0,20}(погиб|ранен|пострадал|госпитализ)/gi, adjust: -20 },
-    { pattern: /(shkolnik|uchenik|uchenica)[a-z]*[\s\S]{0,20}(pogib|ranen|postradal|gospitaliz)/gi, adjust: -20 },
-
-    // Boost for actual education content - curriculum, reform, teaching
-    { pattern: /(образовательн|учебн)[а-яё]*\s*(програм|реформ|стандарт|план)/gi, adjust: +8 },
-    { pattern: /(obrazovateln|uchebn)[a-z]*\s*(program|reform|standart|plan)/gi, adjust: +8 },
-    { pattern: /(министерств|минобр)[а-яё]*\s*(образован|просвещен)/gi, adjust: +10 },
-    { pattern: /ege|егэ|огэ|oge/gi, adjust: +8 },
-  ],
+  // education disambiguation removed - education merged into society
   politics: [
     // Boost when clear government terms present
     { pattern: /gosduma|госдума/gi, adjust: +5 },
@@ -1531,6 +1330,9 @@ const DISAMBIGUATION_RULES = {
     { pattern: /(военн[а-яё]*\s*ответ|воен\s*действ)[а-яё]*/gi, adjust: +8 },
     // Election/voting context
     { pattern: /(выбор|голосован|референдум|избиратель)[а-яё]*/gi, adjust: +5 },
+    // Weather content should NOT be politics
+    { pattern: /(температурн|погод|метель|ураган|шторм|морозы|похолодан|потеплен|снегопад)[а-яё]*/gi, adjust: -20 },
+    { pattern: /(temperatur|pogod|metel|uragan|shtorm|morozy|pokholodan|poteplen|snegopad)[a-z]*/gi, adjust: -20 },
   ],
   economy: [
     // Reduce score when politicians making statements (not economy news)
@@ -1553,17 +1355,7 @@ const DISAMBIGUATION_RULES = {
     { pattern: /(курс|рубл|доллар|евро|биржа|акци|индекс)[а-яё]*/gi, adjust: +5 },
     { pattern: /(kurs|rubl|dollar|evro|birzha|akci|indeks)[a-z]*/gi, adjust: +5 },
   ],
-  world: [
-    // Boost when foreign countries/leaders mentioned with conflict/crisis terms
-    { pattern: /(европ|нато|сша|америк|китай|украин)[а-яё]*[\s\S]{0,30}(угроз|кризис|напряжен|конфликт|санкци)/gi, adjust: +10 },
-    { pattern: /(evrop|nato|ssha|amerika|kitay|ukrain)[a-z]*[\s\S]{0,30}(ugroz|krizis|napryazhen|konflikt|sankci)/gi, adjust: +10 },
-    // International diplomacy context
-    { pattern: /(переговор|визит|саммит|встреч)[а-яё]*[\s\S]{0,20}(лидер|президент|премьер|министр)/gi, adjust: +8 },
-    { pattern: /(peregovor|vizit|sammit|vstrech)[a-z]*[\s\S]{0,20}(lider|prezident|premyer|ministr)/gi, adjust: +8 },
-    // Reduce when domestic Russian content
-    { pattern: /(россиян|россияне|жители росси|граждан росси)[а-яё]*/gi, adjust: -8 },
-    { pattern: /(rossiyan|rossiyane|zhiteli rossi|grazhdan rossi)[a-z]*/gi, adjust: -8 },
-  ],
+  // world disambiguation removed - world category eliminated
   science: [
     // BOOKS/LITERATURE - "открытие" can mean book launch, "выход книги" context
     { pattern: /(откры[лтв][а-яё]*|выход[а-яё]*|выше[лш][а-яё]*|презентаци[а-яё]*)[\s\S]{0,20}(книг[а-яё]*|роман[а-яё]*|повест[а-яё]*)/gi, adjust: -20 },
@@ -1626,11 +1418,12 @@ function inferCategory(text, url) {
     '/politika/': 'politics', '/politics/': 'politics',
     '/sport/': 'sports', '/sports/': 'sports',
     '/kultura/': 'culture', '/culture/': 'culture',
-    '/v-mire/': 'world', '/world/': 'world', '/mir/': 'world',
+    '/v-mire/': 'politics', '/world/': 'politics', '/mir/': 'politics',
     '/obschestvo/': 'society', '/society/': 'society',
     '/nauka/': 'science', '/science/': 'science', '/tech/': 'technology',
-    '/obrazovanie/': 'education', '/education/': 'education',
+    '/obrazovanie/': 'society', '/education/': 'society',
     '/armiya/': 'military', '/military/': 'military', '/voennye/': 'military',
+    '/proisshestviya/': 'crime', '/crime/': 'crime', '/kriminal/': 'crime',
   };
 
   for (const [urlPattern, category] of Object.entries(URL_CATEGORY_MAP)) {
@@ -2137,7 +1930,7 @@ function estimatePedagogicalLevel(metadata) {
       scores.advanced += 4;
     }
     // ILR 2 topics: world events, science, technology, sports
-    else if (['world', 'science', 'technology', 'sports', 'society'].includes(lowerCat)) {
+    else if (['science', 'technology', 'sports', 'society', 'weather', 'crime'].includes(lowerCat)) {
       scores.intermediate += 3;
     }
     // ILR 1 topics: weather, tourism, culture (everyday, predictable)
@@ -2721,8 +2514,7 @@ async function discover1tv(sourceKey, maxItems = 20) {
     'news': ['новости', 'сегодня', 'россия'],
     'politics': ['политика', 'путин', 'правительство', 'госдума'],
     'economy': ['экономика', 'рубль', 'инфляция', 'бизнес'],
-    'society': ['общество', 'социальный', 'люди'],
-    'world': ['мир', 'международный', 'сша', 'европа', 'украина'],
+    'society': ['общество', 'социальный', 'люди', 'образование'],
     'sports': ['спорт', 'футбол', 'хоккей', 'олимпиада', 'чемпионат'],
     'culture': ['культура', 'театр', 'кино', 'музей', 'искусство'],
     'vremya': ['время', 'новости'],
@@ -4607,7 +4399,7 @@ async function handleSources() {
           siteNameRu: site.nameRu,
           url: streamUrl,
           isLive: true,
-          categories: ['politics', 'world'],
+          categories: ['politics', 'society'],
         });
       }
     }
@@ -4780,7 +4572,7 @@ async function discoverNaukatv(sourceKey = 'video', maxItems = 20) {
             publishDate: item.created_ts || null,
             duration,
             category: inferredCat,
-            categories: inferredCat ? [inferredCat] : ['science', 'technology', 'education'],
+            categories: inferredCat ? [inferredCat] : ['science', 'technology', 'society'],
             contentType,
             pedagogicalLevel,
           });
@@ -5119,7 +4911,7 @@ async function handleDiscover(url, request) {
     // Smart source selection based on requested categories
     // Use specialized sources for specific categories, general sources for mixed queries
     const hasSpecializedCategory = requestedCategories.some(cat =>
-      ['sports', 'economy', 'science', 'technology', 'culture', 'tourism', 'weather', 'education', 'society', 'military', 'world', 'politics'].includes(cat)
+      ['sports', 'economy', 'science', 'technology', 'culture', 'tourism', 'weather', 'crime', 'society', 'military', 'politics'].includes(cat)
     );
 
     if (requestedCategories.length > 0 && hasSpecializedCategory) {
@@ -5147,7 +4939,7 @@ async function handleDiscover(url, request) {
             sourcesByCategory[cat] = ['travel-interesting:video', 'family-travel:video', 'journey-countries:video', 'sport-marathon:video', 'smotrim:news'];
             break;
           case 'weather':
-            sourcesByCategory[cat] = ['mchs:video', '1tv:news', 'rt:news'];
+            sourcesByCategory[cat] = ['mchs:video', '1tv:news', 'rt:news', 'smotrim:news', 'tass:video'];
             break;
           case 'politics':
             sourcesByCategory[cat] = ['1tv:politics', 'rt:news', 'tass:video'];
@@ -5155,14 +4947,11 @@ async function handleDiscover(url, request) {
           case 'military':
             sourcesByCategory[cat] = ['1tv:news', 'rt:news', 'ria:video'];
             break;
-          case 'world':
-            sourcesByCategory[cat] = ['rt:world', '1tv:world', 'tass:video', 'rtd:video'];
-            break;
           case 'society':
-            sourcesByCategory[cat] = ['recipes:video', 'parenting:video', 'health-school:video', 'dr-evdokimenko:video', 'kitchen-studio:video', 'rospotrebnadzor:video', 'smotrim:news', '1tv:society', 'izvestia:video'];
+            sourcesByCategory[cat] = ['smotrim:news', '1tv:society', 'izvestia:video', 'rt:russia', 'tass:video'];
             break;
-          case 'education':
-            sourcesByCategory[cat] = ['edu-tv:video', 'infourok:video', 'spbgu:video', 'pushkin-institute:video', 'bauman:video', 'digital-history:video', 'tretyakov:video', 'rutube:science', 'smotrim:news'];
+          case 'crime':
+            sourcesByCategory[cat] = ['1tv:news', 'rt:news', 'izvestia:video', 'tass:video'];
             break;
           default:
             sourcesByCategory[cat] = ['1tv:news', 'rt:news'];
@@ -5391,7 +5180,53 @@ async function handleDiscover(url, request) {
     seenUrls.add(normalizedUrl);
     return true;
   });
-  log(`After deduplication: ${filtered.length} items`);
+  log(`After URL deduplication: ${filtered.length} items`);
+
+  // Filter out general news recap/compilation videos
+  // These are full broadcasts or "60 seconds" summaries, not specific stories
+  const beforeRecapFilter = filtered.length;
+  filtered = filtered.filter(item => {
+    const title = (item.title || '').toLowerCase();
+    // Full broadcast episodes: "Вести. Эфир от 10.02.2026 (16:30)"
+    if (/(?:эфир|efir)\s+(?:от|ot)\s+\d/i.test(title)) return false;
+    // "Новости за 60 секунд" / "Новости за минуту"
+    if (/(?:новост|novost)[а-яёa-z]*\s+(?:за\s+)?(?:\d+\s+секунд|минуту|\d+\s+sekund|minutu)/i.test(title)) return false;
+    // "Выпуск новостей" / general news roundups
+    if (/(?:выпуск|vypusk)\s+(?:новостей|novostey)/i.test(title)) return false;
+    // General "Вести" full broadcast without specific topic
+    if (/^вести\.\s*эфир/i.test(title)) return false;
+    // "Итоги дня" / "Итоги недели" - summary compilations
+    if (/(?:итоги|itogi)\s+(?:дня|недели|dnya|nedeli)/i.test(title)) return false;
+    return true;
+  });
+  if (beforeRecapFilter !== filtered.length) {
+    log(`Filtered out ${beforeRecapFilter - filtered.length} recap/compilation videos`);
+  }
+
+  // Deduplicate by title similarity (same story from same source)
+  const seenTitles = new Map(); // normalized title -> first item
+  const beforeTitleDedup = filtered.length;
+  filtered = filtered.filter(item => {
+    if (!item.title) return true;
+    // Normalize title: remove "Вести." prefix, dates, timestamps, lowercase
+    const normalized = item.title.toLowerCase()
+      .replace(/^вести\.\s*/i, '')
+      .replace(/\d{2}[.\-/]\d{2}[.\-/]\d{2,4}/g, '')
+      .replace(/\(\d{2}:\d{2}\)/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 60);  // Compare first 60 chars
+    const key = `${item.source}:${normalized}`;
+    if (seenTitles.has(key)) {
+      log('Removing title duplicate:', item.title?.substring(0, 50));
+      return false;
+    }
+    seenTitles.set(key, item);
+    return true;
+  });
+  if (beforeTitleDedup !== filtered.length) {
+    log(`After title deduplication: ${filtered.length} items (removed ${beforeTitleDedup - filtered.length} duplicates)`);
+  }
 
   // Filter out text-only content (no video/audio) - REQUIRE duration > 0
   const beforeVideoFilter = filtered.length;
