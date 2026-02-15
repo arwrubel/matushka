@@ -5346,50 +5346,36 @@ async function handleDiscover(url, request) {
         Object.entries(categoryBuckets).map(([k, v]) => [k, v.length])
       ));
 
-      // Find the minimum available items across all requested categories
-      // This determines the maximum we can take from EACH category while staying even
-      const minAvailable = Math.min(
-        ...requestedCategories.map(cat => (categoryBuckets[cat] || []).length)
-      );
-
-      // The actual per-category limit is the lesser of: ideal distribution OR min available
-      const perCategory = Math.min(idealPerCategory, minAvailable);
-
-      log('Even distribution: ideal=', idealPerCategory, 'minAvailable=', minAvailable, 'using=', perCategory);
-
-      // Take exactly perCategory from each bucket (TRULY EVEN)
+      // Take up to idealPerCategory from each bucket that has items
+      // Categories with fewer items just contribute what they have
       for (const cat of requestedCategories) {
         const bucket = categoryBuckets[cat] || [];
-        for (let i = 0; i < perCategory && i < bucket.length; i++) {
+        const take = Math.min(idealPerCategory, bucket.length);
+        for (let i = 0; i < take; i++) {
           finalResults.push(bucket[i]);
         }
-        distributionInfo[cat] = Math.min(perCategory, bucket.length);
+        distributionInfo[cat] = take;
       }
 
-      // Handle remainder: if we have room for more items and all categories have extras
-      const totalTaken = finalResults.length;
-      let remainder = maxItems - totalTaken;
+      log('Even distribution: ideal=', idealPerCategory, 'taken=', JSON.stringify(distributionInfo));
 
+      // Redistribute remaining quota round-robin from categories that have extras
+      let remainder = maxItems - finalResults.length;
       if (remainder > 0) {
-        // Try to add one more from each category in round-robin fashion
-        // Only add if ALL categories can contribute (to stay even)
-        let canAddMore = requestedCategories.every(cat =>
-          (categoryBuckets[cat] || []).length > distributionInfo[cat]
-        );
-
-        while (remainder >= numCategories && canAddMore) {
+        let added = true;
+        while (remainder > 0 && added) {
+          added = false;
           for (const cat of requestedCategories) {
+            if (remainder <= 0) break;
             const bucket = categoryBuckets[cat] || [];
             const alreadyTaken = distributionInfo[cat];
-            if (bucket[alreadyTaken]) {
+            if (alreadyTaken < bucket.length) {
               finalResults.push(bucket[alreadyTaken]);
               distributionInfo[cat]++;
               remainder--;
+              added = true;
             }
           }
-          canAddMore = requestedCategories.every(cat =>
-            (categoryBuckets[cat] || []).length > distributionInfo[cat]
-          );
         }
       }
 
@@ -5494,6 +5480,16 @@ async function handleDiscover(url, request) {
       type: 'historical_search_note',
       reason: `Searching ${daysSinceStart} days ago. RSS-based sources (RT, Smotrim) only retain recent content. For historical searches, 1tv and Rutube-based sources have better archives. Try expanding your date range or using sources like 1tv:news, tass:video.`,
     });
+  }
+
+  // Normalize publishDate to ISO format for frontend compatibility
+  for (const item of finalResults) {
+    if (typeof item.publishDate === 'string') {
+      const m = item.publishDate.match(/^(\d{2})-(\d{2})-(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?$/);
+      if (m) {
+        item.publishDate = `${m[3]}-${m[2]}-${m[1]}T${m[4] || '00'}:${m[5] || '00'}:${m[6] || '00'}`;
+      }
+    }
   }
 
   // Build response data
