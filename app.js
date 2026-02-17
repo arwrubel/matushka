@@ -143,6 +143,7 @@ const TRANSLATIONS = {
     noResults: 'No results found',
     selected: '{count} selected',
     selectSource: 'Please select at least one source',
+    selectVideos: 'Please select at least one video first',
     copySuccess: 'Copied to clipboard',
     copyFailed: 'Copy failed - check permissions',
 
@@ -279,6 +280,7 @@ const TRANSLATIONS = {
     noResults: 'Ничего не найдено',
     selected: '{count} выбрано',
     selectSource: 'Выберите хотя бы один источник',
+    selectVideos: 'Сначала выберите хотя бы одно видео',
     copySuccess: 'Скопировано в буфер обмена',
     copyFailed: 'Не удалось скопировать',
 
@@ -462,7 +464,7 @@ function formatDate(dateStr) {
 }
 
 function generateId(url) {
-  return btoa(url).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+  return btoa(url).replace(/[^a-zA-Z0-9]/g, '');
 }
 
 function extractSource(url) {
