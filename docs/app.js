@@ -705,20 +705,12 @@ function renderResults(results) {
         <p class="video-description">${escapeHtml((item.description || item.program || '').substring(0, 120))}${(item.description || item.program || '').length > 120 ? '...' : ''}</p>
         <div class="video-footer">
           <time class="video-date">${formatDate(item.publishedAt)}</time>
-          <div class="video-actions">
-            <button class="btn-analyze" data-url="${escapeHtml(item.url)}" title="${t('analyzeBtn')}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-              </svg>
-              ${t('analyzeBtn')}
-            </button>
-            <a href="${escapeHtml(item.url)}" class="video-link" target="_blank" rel="noopener">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
-              </svg>
-              Watch
-            </a>
-          </div>
+          <a href="${escapeHtml(item.url)}" class="video-link" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Watch
+          </a>
         </div>
       </div>
     </article>
@@ -729,9 +721,14 @@ function renderResults(results) {
     checkbox.addEventListener('change', handleSelectionChange);
   });
 
-  // Attach analyze button handlers
-  grid.querySelectorAll('.btn-analyze').forEach(btn => {
-    btn.addEventListener('click', handleAnalyzeClick);
+  // Attach card click → modal handlers
+  grid.querySelectorAll('.video-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.card-select, a, button')) return;
+      const id = card.dataset.id;
+      const item = state.currentResults.find(r => r.id === id);
+      if (item) openVideoModal(item);
+    });
   });
 
   announce(`${results.length} ${t('resultsTitle').toLowerCase()}`);
@@ -800,26 +797,80 @@ async function convertAudioToWav(audioArrayBuffer) {
   return { base64: btoa(binary), duration, sampleRate };
 }
 
-async function handleAnalyzeClick(e) {
-  const btn = e.currentTarget;
-  const videoUrl = btn.dataset.url;
-  const card = btn.closest('.video-card');
-  if (!card || !videoUrl) return;
+/**
+ * Open a modal detail view for a video item.
+ */
+function openVideoModal(item) {
+  // Remove any existing modal
+  const existing = document.querySelector('.modal-overlay');
+  if (existing) existing.remove();
 
-  // Prevent double-click
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-content" role="dialog" aria-modal="true">
+      <button class="modal-close" aria-label="Close">&times;</button>
+      <div class="modal-header">
+        <div class="modal-thumbnail">
+          ${item.thumbnail
+            ? `<img src="${escapeHtml(item.thumbnail)}" alt="">`
+            : `<div style="width:100%;height:100%;background:#e2e8f0;"></div>`}
+          ${item.duration ? `<span class="video-duration">${formatDuration(item.duration)}</span>` : ''}
+        </div>
+        <div class="modal-meta">
+          <h2 class="modal-title">${escapeHtml(item.title)}</h2>
+          <div class="modal-badges">
+            <span class="video-source">${escapeHtml(item.source?.toUpperCase() || '')}</span>
+            ${item.category ? `<span class="video-category">${escapeHtml(item.category)}</span>` : ''}
+            ${item.pedagogicalLevel ? `<span class="video-level ${item.pedagogicalLevel}">${escapeHtml(item.pedagogicalLevel)}</span>` : ''}
+          </div>
+          <time class="modal-date">${formatDate(item.publishedAt)}</time>
+        </div>
+      </div>
+      <p class="modal-description">${escapeHtml(item.description || item.program || '')}</p>
+      <div class="modal-actions">
+        <button class="btn-analyze" data-url="${escapeHtml(item.url)}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          ${t('analyzeBtn')}
+        </button>
+        <a href="${escapeHtml(item.url)}" class="video-link" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          Watch
+        </a>
+      </div>
+      <div class="modal-analysis"></div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+
+  // Close handlers
+  const close = () => { overlay.remove(); document.body.style.overflow = ''; };
+  overlay.querySelector('.modal-close').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  const onKey = (e) => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
+
+  // Analyze button
+  overlay.querySelector('.btn-analyze').addEventListener('click', (e) => {
+    handleAnalyzeInModal(e.currentTarget, overlay.querySelector('.modal-analysis'));
+  });
+}
+
+async function handleAnalyzeInModal(btn, panel) {
+  const videoUrl = btn.dataset.url;
+  if (!videoUrl) return;
+
   if (btn.disabled) return;
   btn.disabled = true;
-  btn.classList.add('analyzing');
   const originalText = btn.innerHTML;
   btn.innerHTML = `<span class="spinner-small"></span> ${t('analyzingAudio')}`;
 
-  // Create or find analysis panel
-  let panel = card.querySelector('.analysis-panel');
-  if (!panel) {
-    panel = document.createElement('div');
-    panel.className = 'analysis-panel';
-    card.querySelector('.video-content').appendChild(panel);
-  }
   panel.innerHTML = `<div class="analysis-loading"><span class="spinner-small"></span> ${t('analyzingAudio')}</div>`;
 
   try {
@@ -829,6 +880,8 @@ async function handleAnalyzeClick(e) {
     if (cacheData.success && cacheData.cached) {
       panel.innerHTML = renderAnalysisResults(cacheData);
       attachTranscriptToggle(panel);
+      btn.disabled = false;
+      btn.innerHTML = originalText;
       return;
     }
 
@@ -839,7 +892,6 @@ async function handleAnalyzeClick(e) {
     let audioBase64, audioDuration;
 
     if (audioResp.headers.get('content-type')?.includes('json')) {
-      // MP4 source — server returns JSON with stream URL
       const audioJson = await audioResp.json();
       if (audioJson.streamUrl) {
         const mp4Resp = await fetch(audioJson.streamUrl);
@@ -851,7 +903,6 @@ async function handleAnalyzeClick(e) {
         throw new Error('No stream URL for MP4 source');
       }
     } else {
-      // HLS source — server returns raw AAC audio
       const aacBuffer = await audioResp.arrayBuffer();
       const wav = await convertAudioToWav(aacBuffer);
       audioBase64 = wav.base64;
@@ -875,7 +926,6 @@ async function handleAnalyzeClick(e) {
     panel.innerHTML = `<div class="analysis-error">${t('analyzeError')}: ${escapeHtml(err.message)}</div>`;
   } finally {
     btn.disabled = false;
-    btn.classList.remove('analyzing');
     btn.innerHTML = originalText;
   }
 }
