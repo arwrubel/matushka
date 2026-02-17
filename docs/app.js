@@ -1123,32 +1123,57 @@ async function handleDownloadAudio() {
 // CITATIONS
 // =============================================================================
 
+function getCitationSourceName(source) {
+  const names = {
+    '1tv': 'Первый канал', 'smotrim': 'Смотрим', 'rt': 'RT',
+    'ntv': 'НТВ', 'tass': 'ТАСС', 'izvestia': 'Известия',
+    'kommersant': 'Коммерсантъ', 'euronews': 'Euronews',
+    'bbc': 'BBC Russian', 'rutube': 'Rutube',
+  };
+  return names[(source || '').toLowerCase()] || source;
+}
+
+function formatMlaDate(date) {
+  const months = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'June',
+    'July', 'Aug.', 'Sept.', 'Oct.', 'Nov.', 'Dec.'];
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+}
+
 function formatCitation(item, format) {
   const date = new Date(item.publishedAt || Date.now());
   const year = date.getFullYear();
-  const dateFormatted = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const accessDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const monthDay = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  const pubDateFull = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const isoDate = date.toISOString().split('T')[0];
+  const now = new Date();
+  const accessIso = now.toISOString().split('T')[0];
+  const source = getCitationSourceName(item.source);
 
   switch (format) {
+    // MLA 9th: "Title." Source, Day Mon. Year, URL. Accessed Day Mon. Year.
     case 'mla':
-      return `"${item.title}." ${item.source}, ${dateFormatted}. Web. ${accessDate}. <${item.url}>.`;
+      return `"${item.title}." ${source}, ${formatMlaDate(date)}, ${item.url}. Accessed ${formatMlaDate(now)}.`;
 
+    // Chicago 17th (Bibliography): Source. "Title." Source video. Month Day, Year. URL.
     case 'chicago':
-      return `${item.source}. "${item.title}." Accessed ${accessDate}. ${item.url}.`;
+      return `${source}. "${item.title}." ${source} video. ${pubDateFull}. ${item.url}.`;
 
+    // BibLaTeX @online: ISO dates, double-braced corporate author
     case 'bibtex':
       const key = (item.title || 'video').toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 12);
       return `@online{${key}${year},
   title = {${item.title}},
-  author = {${item.source}},
-  year = {${year}},
+  author = {{${source}}},
+  date = {${isoDate}},
   url = {${item.url}},
-  urldate = {${accessDate}}
+  urldate = {${accessIso}},
+  note = {Video}
 }`;
 
+    // APA 7th: Source. (Year, Month Day). Title [Video]. URL
     case 'apa':
     default:
-      return `${item.source}. (${year}, ${dateFormatted}). ${item.title}. Retrieved ${accessDate}, from ${item.url}`;
+      return `${source}. (${year}, ${monthDay}). ${item.title} [Video]. ${item.url}`;
   }
 }
 
