@@ -4416,6 +4416,466 @@ async function extractAudio(videoUrl) {
 }
 
 // ============================================================================
+// TRANSCRIPT-BASED ILR ANALYSIS
+// ============================================================================
+
+// Global AI binding (set in fetch handler alongside KV_CACHE)
+let AI_BINDING = null;
+
+/**
+ * Transcribe audio from a video URL using Cloudflare Workers AI Whisper.
+ * @param {string} videoUrl - URL of the video to transcribe
+ * @returns {Promise<{text: string, word_count: number, duration: number}>}
+ */
+async function transcribeAudio(videoUrl) {
+  if (!AI_BINDING) {
+    throw new Error('AI binding not available. Transcription requires Workers AI.');
+  }
+
+  log('Transcribing audio for:', videoUrl);
+
+  // Get metadata to find stream URL
+  const meta = await extractMetadata(videoUrl);
+
+  let audioBytes;
+  let segmentBuffers = [];
+
+  if (meta.mp4Url && !meta.m3u8Url) {
+    // For MP4 sources: fetch directly (limit to 10MB)
+    log('Fetching MP4 for transcription:', meta.mp4Url);
+    const resp = await fetchWithHeaders(meta.mp4Url, {
+      headers: { 'Range': 'bytes=0-10485760' }
+    });
+    audioBytes = new Uint8Array(await resp.arrayBuffer());
+  } else if (meta.m3u8Url) {
+    // For HLS sources: fetch raw TS segments (Whisper handles MPEG-TS natively)
+    let m3u8Url = meta.m3u8Url;
+    if (typeof m3u8Url === 'object' && m3u8Url !== null) {
+      m3u8Url = m3u8Url.auto || m3u8Url.hls || m3u8Url.default || Object.values(m3u8Url)[0];
+    }
+
+    log('Fetching m3u8 for transcription:', m3u8Url);
+    const m3u8Response = await fetchWithHeaders(m3u8Url);
+    if (!m3u8Response.ok) throw new Error(`Failed to fetch m3u8: ${m3u8Response.status}`);
+    const m3u8Content = await m3u8Response.text();
+    const finalM3u8Url = m3u8Response.url || m3u8Url;
+    const playlist = parseM3u8(m3u8Content, finalM3u8Url);
+
+    // Get lowest bandwidth variant for faster processing
+    let segmentPlaylist = playlist;
+    if (playlist.isMaster && playlist.variants.length > 0) {
+      const sorted = playlist.variants.sort((a, b) => a.bandwidth - b.bandwidth);
+      const variantUrl = sorted[0].url;
+      const variantResponse = await fetchWithHeaders(variantUrl);
+      if (!variantResponse.ok) throw new Error(`Failed to fetch variant: ${variantResponse.status}`);
+      const variantContent = await variantResponse.text();
+      const finalVariantUrl = variantResponse.url || variantUrl;
+      segmentPlaylist = parseM3u8(variantContent, finalVariantUrl);
+    }
+
+    // Fetch raw TS segments (up to 10, ~40-60 seconds of audio)
+    const segmentsToFetch = segmentPlaylist.segments.slice(0, CONFIG.maxSegments);
+    log('Fetching', segmentsToFetch.length, 'raw TS segments for transcription');
+
+    segmentBuffers = [];
+    let totalSize = 0;
+    for (const segment of segmentsToFetch) {
+      try {
+        const segResponse = await fetch(segment.url, {
+          headers: { 'User-Agent': USER_AGENT }
+        });
+        if (!segResponse.ok) continue;
+        const segData = new Uint8Array(await segResponse.arrayBuffer());
+        if (segData.length > CONFIG.maxSegmentSize) continue;
+        segmentBuffers.push(segData);
+        totalSize += segData.length;
+      } catch (e) {
+        log('Segment fetch error:', e.message);
+      }
+    }
+
+    if (segmentBuffers.length === 0) {
+      throw new Error('No audio segments could be fetched');
+    }
+
+    // Concatenate raw TS segments into single buffer
+    audioBytes = new Uint8Array(totalSize);
+    let offset = 0;
+    for (const buf of segmentBuffers) {
+      audioBytes.set(buf, offset);
+      offset += buf.length;
+    }
+  } else {
+    throw new Error('No stream URL found for this video');
+  }
+
+  log('Raw audio bytes for transcription:', audioBytes.length);
+
+  // Also extract AAC-ADTS audio from the TS data for a second attempt
+  // (The raw TS includes video which may confuse Whisper)
+  const allAacFrames = [];
+  if (meta.m3u8Url) {
+    // Re-demux the TS segments to get clean AAC-ADTS audio
+    for (const segData of segmentBuffers) {
+      try {
+        const frames = demuxTsAudio(segData);
+        allAacFrames.push(...frames);
+      } catch (e) {
+        log('Demux error:', e.message);
+      }
+    }
+  }
+
+  // Try multiple audio formats with Whisper
+  const audioVariants = [];
+
+  // Variant 1: Raw TS data (MPEG-TS container)
+  audioVariants.push({ data: audioBytes, label: 'raw-ts' });
+
+  // Variant 2: Demuxed AAC-ADTS frames (if available)
+  if (allAacFrames.length > 0) {
+    const totalLen = allAacFrames.reduce((s, f) => s + f.length, 0);
+    const aacData = new Uint8Array(totalLen);
+    let pos = 0;
+    for (const frame of allAacFrames) {
+      aacData.set(frame, pos);
+      pos += frame.length;
+    }
+    audioVariants.push({ data: aacData, label: 'aac-adts' });
+  }
+
+  // Helper to convert bytes to base64
+  function toBase64(bytes) {
+    let binaryStr = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+      binaryStr += String.fromCharCode.apply(null, chunk);
+    }
+    return btoa(binaryStr);
+  }
+
+  // Use AAC-ADTS (audio-only, with headers) as preferred format
+  const aacVariant = audioVariants.find(v => v.label === 'aac-adts');
+  const tsVariant = audioVariants.find(v => v.label === 'raw-ts');
+
+  // Try multiple combinations of format + encoding + model
+  const attempts = [];
+  if (aacVariant) {
+    attempts.push({ data: aacVariant.data, label: 'aac-base64', encoding: 'base64' });
+  }
+  if (tsVariant) {
+    attempts.push({ data: tsVariant.data, label: 'ts-base64', encoding: 'base64' });
+  }
+
+  for (const attempt of attempts) {
+    try {
+      let audioInput;
+      if (attempt.encoding === 'base64') {
+        audioInput = toBase64(attempt.data);
+      }
+
+      log(`Whisper attempt: ${attempt.label} (${attempt.data.length} bytes, base64=${audioInput.length})...`);
+
+      // Try without language hint first (let auto-detect)
+      const result = await AI_BINDING.run('@cf/openai/whisper-large-v3-turbo', {
+        audio: audioInput
+      });
+
+      log(`Result: word_count=${result.word_count}, text_len=${(result.text || '').length}`);
+      if (result.text && result.text.trim().length > 0) return result;
+
+      // If auto-detect failed, try with explicit Russian
+      const result2 = await AI_BINDING.run('@cf/openai/whisper-large-v3-turbo', {
+        audio: audioInput,
+        language: 'ru'
+      });
+
+      log(`Result (ru): word_count=${result2.word_count}, text_len=${(result2.text || '').length}`);
+      if (result2.text && result2.text.trim().length > 0) return result2;
+    } catch (e) {
+      log(`${attempt.label} error:`, e.message);
+    }
+  }
+
+  // All attempts failed — return empty result
+  log('All Whisper attempts returned empty text');
+  return { text: '', word_count: 0 };
+}
+
+/**
+ * Assess ILR reading level of Russian text using MIT Auto-ILR API.
+ * This is the same engine behind DLIFLC's Auto-ILR Instant tool.
+ *
+ * @param {string} transcript - Russian text to assess (75-70000 chars)
+ * @returns {Promise<{level: number|null, label: string, error?: string}>}
+ */
+async function assessIlrLevel(transcript) {
+  const text = (transcript || '').trim();
+
+  // Auto-ILR requires 75-70000 characters
+  if (text.length < 75) {
+    return { level: null, label: '', error: 'Transcript too short for ILR assessment (min 75 chars)' };
+  }
+
+  const truncated = text.substring(0, 70000);
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);  // 8s timeout
+
+    const response = await fetch('https://auto-ilr.ll.mit.edu/instant/summary3', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ Language: 'Russian', Text: truncated }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    const html = await response.text();
+
+    // Parse "estimated ilr level: N" from response
+    const match = html.match(/estimated\s+ilr\s+level[:\s]*(\d)/i);
+    if (!match) {
+      log('Auto-ILR response did not contain level. Response length:', html.length);
+      return { level: null, label: '', error: 'Could not parse ILR level from Auto-ILR response' };
+    }
+
+    const level = parseInt(match[1]);
+    const labels = {
+      0: 'ILR 0+ — Memorized Proficiency',
+      1: 'ILR 1 — Elementary Proficiency',
+      2: 'ILR 2 — Limited Working Proficiency',
+      3: 'ILR 3 — General Professional Proficiency',
+      4: 'ILR 4 — Advanced Professional Proficiency',
+      5: 'ILR 5 — Functionally Native Proficiency'
+    };
+
+    log('Auto-ILR level:', level);
+    return { level, label: labels[level] || `ILR ${level}` };
+  } catch (e) {
+    log('Auto-ILR API error:', e.message);
+    return { level: null, label: '', error: `Auto-ILR API error: ${e.message}` };
+  }
+}
+
+/**
+ * Count how many words in a list match any term in a vocabulary array.
+ * @param {string[]} words - Lowercase word list from transcript
+ * @param {string[]} vocabList - Vocabulary stems to match
+ * @returns {number} Percentage of words matching (0-100)
+ */
+function vocabMatchPercent(words, vocabList) {
+  if (words.length === 0) return 0;
+  const matched = words.filter(w => vocabList.some(v => w.includes(v)));
+  return +((matched.length / words.length) * 100).toFixed(1);
+}
+
+/**
+ * Analyze transcript text to produce supplementary linguistic metrics.
+ * Reuses existing ILR vocabulary arrays for consistency with heuristic system.
+ *
+ * @param {string} text - Full transcript text
+ * @param {number} durationSeconds - Audio duration in seconds
+ * @returns {object} Linguistic metrics
+ */
+function analyzeTranscript(text, durationSeconds) {
+  const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const uniqueWords = new Set(words);
+
+  return {
+    wordCount: words.length,
+    speechRate: durationSeconds > 0 ? Math.round(words.length / (durationSeconds / 60)) : null,
+    typeTokenRatio: words.length > 0 ? +(uniqueWords.size / words.length).toFixed(2) : 0,
+    avgSentenceLength: sentences.length > 0 ? +(words.length / sentences.length).toFixed(1) : 0,
+    advancedVocabPercent: vocabMatchPercent(words, ILR_ADVANCED_VOCAB),
+    intermediateVocabPercent: vocabMatchPercent(words, ILR_INTERMEDIATE_VOCAB),
+    beginnerVocabPercent: vocabMatchPercent(words, ILR_BEGINNER_VOCAB),
+  };
+}
+
+/**
+ * Estimate ILR level from transcript linguistic metrics.
+ * Uses speech rate, vocabulary diversity, sentence complexity, and vocab tier distribution.
+ * This is our built-in fallback when the MIT Auto-ILR API is unavailable.
+ *
+ * @param {object} metrics - Output from analyzeTranscript()
+ * @returns {{level: number, label: string, method: string}}
+ */
+function estimateIlrFromMetrics(metrics) {
+  let score = 0;
+
+  // Speech rate: slow = easier, fast = harder
+  if (metrics.speechRate !== null) {
+    if (metrics.speechRate < 90) score += 0;       // Very slow → ILR 1
+    else if (metrics.speechRate < 120) score += 1;  // Moderate → ILR 2
+    else if (metrics.speechRate < 150) score += 2;  // Fast → ILR 3
+    else score += 3;                                 // Very fast → ILR 3+
+  }
+
+  // Type-token ratio: higher = more diverse vocabulary
+  if (metrics.typeTokenRatio < 0.35) score += 0;
+  else if (metrics.typeTokenRatio < 0.50) score += 1;
+  else if (metrics.typeTokenRatio < 0.65) score += 2;
+  else score += 3;
+
+  // Average sentence length: longer = more complex
+  if (metrics.avgSentenceLength < 8) score += 0;
+  else if (metrics.avgSentenceLength < 14) score += 1;
+  else if (metrics.avgSentenceLength < 20) score += 2;
+  else score += 3;
+
+  // Vocabulary tier distribution (strongest signal)
+  // Advanced vocab presence is a strong indicator
+  if (metrics.advancedVocabPercent > 5) score += 4;
+  else if (metrics.advancedVocabPercent > 2) score += 2;
+  else if (metrics.advancedVocabPercent > 0.5) score += 1;
+
+  // High beginner vocab with low advanced = lower level
+  if (metrics.beginnerVocabPercent > 15 && metrics.advancedVocabPercent < 1) score -= 1;
+
+  // Intermediate vocab presence
+  if (metrics.intermediateVocabPercent > 8) score += 2;
+  else if (metrics.intermediateVocabPercent > 3) score += 1;
+
+  // Map score to ILR level (0-15+ range → 1-4)
+  let level;
+  if (score <= 2) level = 1;
+  else if (score <= 5) level = 2;
+  else if (score <= 9) level = 3;
+  else level = 4;
+
+  const labels = {
+    1: 'ILR 1 — Elementary Proficiency',
+    2: 'ILR 2 — Limited Working Proficiency',
+    3: 'ILR 3 — General Professional Proficiency',
+    4: 'ILR 4 — Advanced Professional Proficiency'
+  };
+
+  return { level, label: labels[level], method: 'transcript-analysis' };
+}
+
+/**
+ * Handle /api/analyze requests — transcribe audio and assess ILR level.
+ */
+async function handleAnalyze(url, request) {
+  const targetUrl = url.searchParams.get('url');
+  if (!targetUrl) {
+    return errorResponse('Missing required parameter: url');
+  }
+
+  if (!AI_BINDING) {
+    return errorResponse('AI transcription not available. Workers AI binding not configured.', 503);
+  }
+
+  // Check KV cache first
+  const cacheKey = `analysis:${btoa(targetUrl).replace(/[^a-zA-Z0-9]/g, '')}`;
+  if (KV_CACHE) {
+    try {
+      const cached = await KV_CACHE.get(cacheKey, 'json');
+      if (cached) {
+        log('Returning cached analysis for:', targetUrl);
+        return jsonResponse({ ...cached, cached: true });
+      }
+    } catch (e) {
+      log('Cache read error:', e.message);
+    }
+  }
+
+  try {
+    let transcriptText = '';
+    let audioDuration = 0;
+
+    // POST: Frontend sends pre-converted WAV audio (browser decoded AAC → WAV)
+    if (request && request.method === 'POST') {
+      log('Received POST with audio data from frontend');
+      const body = await request.json();
+      const audioBase64 = body.audio;  // base64-encoded WAV
+      audioDuration = body.duration || 0;
+
+      if (!audioBase64) {
+        return errorResponse('POST body must include "audio" (base64 WAV)');
+      }
+
+      log('Audio base64 length:', audioBase64.length, 'duration:', audioDuration);
+      const whisperResult = await AI_BINDING.run('@cf/openai/whisper-large-v3-turbo', {
+        audio: audioBase64,
+        language: 'ru',
+        task: 'transcribe'
+      });
+
+      transcriptText = (whisperResult.text || '').trim();
+      audioDuration = whisperResult.duration || audioDuration;
+      log('Whisper result: word_count=', whisperResult.word_count, 'text_len=', transcriptText.length);
+    } else {
+      // GET: Server-side extraction (works for MP4 sources)
+      log('Step 1: Server-side transcription...');
+      const whisperResult = await transcribeAudio(targetUrl);
+      transcriptText = (whisperResult.text || '').trim();
+      audioDuration = whisperResult.duration || whisperResult.word_count * 0.4 || 0;
+    }
+
+    if (!transcriptText) {
+      return errorResponse('Transcription produced no text. The audio may be music-only or too short.');
+    }
+
+    // Step 2: Compute linguistic metrics
+    log('Step 2: Computing linguistic metrics...');
+    const metrics = analyzeTranscript(transcriptText, audioDuration);
+
+    // Step 3: Assess ILR level — try MIT Auto-ILR first, fall back to our own estimation
+    log('Step 3: Assessing ILR level...');
+    let ilrResult = await assessIlrLevel(transcriptText);
+
+    // If MIT API failed, use our transcript-based estimation
+    if (ilrResult.level === null) {
+      log('MIT Auto-ILR unavailable, using transcript-based estimation');
+      ilrResult = estimateIlrFromMetrics(metrics);
+    }
+
+    // Build response
+    const result = {
+      success: true,
+      url: targetUrl,
+      ilrLevel: ilrResult.level,
+      ilrLabel: ilrResult.label,
+      ilrMethod: ilrResult.method || 'auto-ilr',
+      ilrError: ilrResult.error || null,
+      transcript: {
+        text: transcriptText,
+        wordCount: metrics.wordCount,
+        duration: audioDuration
+      },
+      metrics: {
+        speechRate: metrics.speechRate,
+        typeTokenRatio: metrics.typeTokenRatio,
+        avgSentenceLength: metrics.avgSentenceLength,
+        advancedVocabPercent: metrics.advancedVocabPercent,
+        intermediateVocabPercent: metrics.intermediateVocabPercent,
+        beginnerVocabPercent: metrics.beginnerVocabPercent,
+      },
+      cached: false
+    };
+
+    // Cache result for 24 hours
+    if (KV_CACHE) {
+      try {
+        await KV_CACHE.put(cacheKey, JSON.stringify(result), { expirationTtl: 86400 });
+        log('Analysis cached for:', targetUrl);
+      } catch (e) {
+        log('Cache write error:', e.message);
+      }
+    }
+
+    return jsonResponse(result);
+  } catch (e) {
+    log('Analysis error:', e);
+    return errorResponse(`Analysis failed: ${e.message}`, 500);
+  }
+}
+
+// ============================================================================
 // API HANDLERS
 // ============================================================================
 
@@ -6067,6 +6527,11 @@ function handleRoot() {
     <p>Extract audio from video. Returns AAC for HLS sources, or MP4 stream URL for direct download.</p>
   </div>
 
+  <div class="endpoint">
+    <p><span class="method">GET</span> <code>/api/analyze?url=...</code></p>
+    <p>Transcribe audio and assess ILR level. Uses Whisper for transcription and MIT Auto-ILR for level assessment. Returns ILR level, transcript, and linguistic metrics. Results cached 24h.</p>
+  </div>
+
   <h2>Supported Sources</h2>
   <div class="source-grid">
     <div class="source-card">
@@ -6165,12 +6630,13 @@ async function handleRequest(request) {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
-  if (request.method !== 'GET') {
-    return errorResponse('Method not allowed', 405);
-  }
-
   const url = new URL(request.url);
   const path = url.pathname;
+
+  // Allow POST for /api/analyze (receives audio data from frontend)
+  if (request.method !== 'GET' && !(request.method === 'POST' && path === '/api/analyze')) {
+    return errorResponse('Method not allowed', 405);
+  }
 
   try {
     switch (path) {
@@ -6188,6 +6654,8 @@ async function handleRequest(request) {
         return handleProxy(url);
       case '/api/audio':
         return handleAudio(url);
+      case '/api/analyze':
+        return handleAnalyze(url, request);
       default:
         return errorResponse(`Unknown endpoint: ${path}`, 404);
     }
@@ -6233,8 +6701,9 @@ async function warmCache(env) {
 export default {
   // Handle HTTP requests
   async fetch(request, env, ctx) {
-    // Set KV cache reference from environment binding
+    // Set KV cache and AI binding references from environment
     KV_CACHE = env.MATUSHKA_CACHE || null;
+    AI_BINDING = env.AI || null;
 
     // Allow OPTIONS requests through without throttling (CORS preflight)
     if (request.method === 'OPTIONS') {

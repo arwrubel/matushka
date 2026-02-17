@@ -10,6 +10,10 @@ DEBUG = "true"
 binding = "MATUSHKA_CACHE"
 id = "13a156090ad84f55b2a7712fb39bd2af"
 
+# Workers AI for Whisper transcription
+[ai]
+binding = "AI"
+
 # Cron trigger to warm cache every 5 minutes (free tier allows this)
 [triggers]
 crons = ["*/5 * * * *"]

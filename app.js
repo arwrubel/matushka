@@ -147,6 +147,24 @@ const TRANSLATIONS = {
     copySuccess: 'Copied to clipboard',
     copyFailed: 'Copy failed - check permissions',
 
+    // ILR Analysis
+    analyzeBtn: 'Analyze ILR',
+    analyzingAudio: 'Transcribing and analyzing audio...',
+    analyzeError: 'Analysis failed',
+    ilrLevel: 'ILR Level',
+    speechRate: 'Speech Rate',
+    speechRateUnit: 'words/min',
+    vocabDiversity: 'Vocab Diversity',
+    avgSentence: 'Avg Sentence',
+    avgSentenceUnit: 'words',
+    advancedVocab: 'Advanced',
+    intermediateVocab: 'Intermediate',
+    beginnerVocab: 'Beginner',
+    showTranscript: 'Show transcript',
+    hideTranscript: 'Hide transcript',
+    cachedResult: 'Cached result',
+    transcriptTooShort: 'Transcript too short for ILR assessment',
+
     // Footer
     footerCopyright: 'Matushka 2024',
     versionLabel: 'Version'
@@ -283,6 +301,24 @@ const TRANSLATIONS = {
     selectVideos: 'Сначала выберите хотя бы одно видео',
     copySuccess: 'Скопировано в буфер обмена',
     copyFailed: 'Не удалось скопировать',
+
+    // ILR Analysis
+    analyzeBtn: 'Анализ ILR',
+    analyzingAudio: 'Транскрибирование и анализ аудио...',
+    analyzeError: 'Ошибка анализа',
+    ilrLevel: 'Уровень ILR',
+    speechRate: 'Темп речи',
+    speechRateUnit: 'слов/мин',
+    vocabDiversity: 'Разн. лексики',
+    avgSentence: 'Ср. предложение',
+    avgSentenceUnit: 'слов',
+    advancedVocab: 'Продвинутый',
+    intermediateVocab: 'Средний',
+    beginnerVocab: 'Начальный',
+    showTranscript: 'Показать текст',
+    hideTranscript: 'Скрыть текст',
+    cachedResult: 'Из кэша',
+    transcriptTooShort: 'Текст слишком короткий для оценки ILR',
 
     // Footer
     footerCopyright: 'Матушка 2024',
@@ -669,12 +705,20 @@ function renderResults(results) {
         <p class="video-description">${escapeHtml((item.description || item.program || '').substring(0, 120))}${(item.description || item.program || '').length > 120 ? '...' : ''}</p>
         <div class="video-footer">
           <time class="video-date">${formatDate(item.publishedAt)}</time>
-          <a href="${escapeHtml(item.url)}" class="video-link" target="_blank" rel="noopener">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-            Watch
-          </a>
+          <div class="video-actions">
+            <button class="btn-analyze" data-url="${escapeHtml(item.url)}" title="${t('analyzeBtn')}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+              ${t('analyzeBtn')}
+            </button>
+            <a href="${escapeHtml(item.url)}" class="video-link" target="_blank" rel="noopener">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              Watch
+            </a>
+          </div>
         </div>
       </div>
     </article>
@@ -683,6 +727,11 @@ function renderResults(results) {
   // Attach checkbox handlers
   grid.querySelectorAll('.video-select').forEach(checkbox => {
     checkbox.addEventListener('change', handleSelectionChange);
+  });
+
+  // Attach analyze button handlers
+  grid.querySelectorAll('.btn-analyze').forEach(btn => {
+    btn.addEventListener('click', handleAnalyzeClick);
   });
 
   announce(`${results.length} ${t('resultsTitle').toLowerCase()}`);
@@ -696,6 +745,207 @@ function handleSelectionChange(e) {
     state.selectedItems.delete(id);
   }
   updateSelectionCount();
+}
+
+// =============================================================================
+// ILR ANALYSIS
+// =============================================================================
+
+/**
+ * Convert AAC audio to WAV format using the browser's AudioContext.
+ * Returns a base64-encoded WAV string suitable for Whisper.
+ */
+async function convertAudioToWav(audioArrayBuffer) {
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+  const audioBuffer = await audioCtx.decodeAudioData(audioArrayBuffer);
+  const channelData = audioBuffer.getChannelData(0);  // mono
+  const sampleRate = audioBuffer.sampleRate;
+  const duration = audioBuffer.duration;
+
+  // Create WAV file
+  const wavBuffer = new ArrayBuffer(44 + channelData.length * 2);
+  const view = new DataView(wavBuffer);
+
+  // WAV header
+  const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + channelData.length * 2, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, channelData.length * 2, true);
+
+  for (let i = 0; i < channelData.length; i++) {
+    const s = Math.max(-1, Math.min(1, channelData[i]));
+    view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+
+  const bytes = new Uint8Array(wavBuffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 8192) {
+    const chunk = bytes.subarray(i, Math.min(i + 8192, bytes.length));
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+
+  audioCtx.close();
+  return { base64: btoa(binary), duration, sampleRate };
+}
+
+async function handleAnalyzeClick(e) {
+  const btn = e.currentTarget;
+  const videoUrl = btn.dataset.url;
+  const card = btn.closest('.video-card');
+  if (!card || !videoUrl) return;
+
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.classList.add('analyzing');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = `<span class="spinner-small"></span> ${t('analyzingAudio')}`;
+
+  let panel = card.querySelector('.analysis-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.className = 'analysis-panel';
+    card.querySelector('.video-content').appendChild(panel);
+  }
+  panel.innerHTML = `<div class="analysis-loading"><span class="spinner-small"></span> ${t('analyzingAudio')}</div>`;
+
+  try {
+    const cacheResp = await fetch(`${WORKER_URL}/api/analyze?url=${encodeURIComponent(videoUrl)}`);
+    const cacheData = await cacheResp.json();
+    if (cacheData.success && cacheData.cached) {
+      panel.innerHTML = renderAnalysisResults(cacheData);
+      attachTranscriptToggle(panel);
+      return;
+    }
+
+    panel.innerHTML = `<div class="analysis-loading"><span class="spinner-small"></span> ${t('downloading')}...</div>`;
+    const audioResp = await fetch(`${WORKER_URL}/api/audio?url=${encodeURIComponent(videoUrl)}`);
+
+    let audioBase64, audioDuration;
+
+    if (audioResp.headers.get('content-type')?.includes('json')) {
+      const audioJson = await audioResp.json();
+      if (audioJson.streamUrl) {
+        const mp4Resp = await fetch(audioJson.streamUrl);
+        const mp4Buffer = await mp4Resp.arrayBuffer();
+        const wav = await convertAudioToWav(mp4Buffer);
+        audioBase64 = wav.base64;
+        audioDuration = wav.duration;
+      } else {
+        throw new Error('No stream URL for MP4 source');
+      }
+    } else {
+      const aacBuffer = await audioResp.arrayBuffer();
+      const wav = await convertAudioToWav(aacBuffer);
+      audioBase64 = wav.base64;
+      audioDuration = wav.duration;
+    }
+
+    panel.innerHTML = `<div class="analysis-loading"><span class="spinner-small"></span> ${t('analyzingAudio')}</div>`;
+    const analyzeResp = await fetch(`${WORKER_URL}/api/analyze?url=${encodeURIComponent(videoUrl)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audio: audioBase64, duration: audioDuration })
+    });
+    const data = await analyzeResp.json();
+
+    if (!data.success) throw new Error(data.message || data.error || t('analyzeError'));
+
+    panel.innerHTML = renderAnalysisResults(data);
+    attachTranscriptToggle(panel);
+  } catch (err) {
+    panel.innerHTML = `<div class="analysis-error">${t('analyzeError')}: ${escapeHtml(err.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('analyzing');
+    btn.innerHTML = originalText;
+  }
+}
+
+function attachTranscriptToggle(panel) {
+  const toggleBtn = panel.querySelector('.transcript-toggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const excerpt = panel.querySelector('.transcript-excerpt');
+      if (excerpt) {
+        const isExpanded = excerpt.classList.toggle('expanded');
+        excerpt.textContent = isExpanded ? excerpt.dataset.full : excerpt.dataset.short;
+        toggleBtn.textContent = isExpanded ? t('hideTranscript') : t('showTranscript');
+      }
+    });
+  }
+}
+
+function renderAnalysisResults(data) {
+  const ilrLevel = data.ilrLevel;
+  const ilrLabel = data.ilrLabel || '';
+  const metrics = data.metrics || {};
+  const transcript = data.transcript || {};
+  const transcriptText = transcript.text || '';
+  const excerpt = transcriptText.substring(0, 200);
+  const hasMore = transcriptText.length > 200;
+
+  // ILR badge color class
+  let badgeClass = 'ilr-na';
+  if (ilrLevel !== null && ilrLevel !== undefined) {
+    if (ilrLevel <= 2) badgeClass = 'ilr-low';
+    else if (ilrLevel === 3) badgeClass = 'ilr-mid';
+    else badgeClass = 'ilr-high';
+  }
+
+  const ilrDisplay = ilrLevel !== null && ilrLevel !== undefined
+    ? `<span class="ilr-badge ${badgeClass}">ILR ${ilrLevel}</span>
+       <span class="ilr-label">${escapeHtml(ilrLabel)}</span>`
+    : `<span class="ilr-badge ilr-na">—</span>
+       <span class="ilr-label">${escapeHtml(data.ilrError || t('transcriptTooShort'))}</span>`;
+
+  return `
+    <div class="analysis-header">
+      ${ilrDisplay}
+      ${data.cached ? `<span class="cached-badge">${t('cachedResult')}</span>` : ''}
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-value">${metrics.speechRate ?? '—'}</div>
+        <div class="metric-label">${t('speechRate')}<br><small>${t('speechRateUnit')}</small></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.typeTokenRatio ?? '—'}</div>
+        <div class="metric-label">${t('vocabDiversity')}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.avgSentenceLength ?? '—'}</div>
+        <div class="metric-label">${t('avgSentence')}<br><small>${t('avgSentenceUnit')}</small></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.advancedVocabPercent ?? 0}%</div>
+        <div class="metric-label">${t('advancedVocab')}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.intermediateVocabPercent ?? 0}%</div>
+        <div class="metric-label">${t('intermediateVocab')}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.beginnerVocabPercent ?? 0}%</div>
+        <div class="metric-label">${t('beginnerVocab')}</div>
+      </div>
+    </div>
+    ${transcriptText ? `
+      <div class="transcript-section">
+        <div class="transcript-excerpt" data-full="${escapeHtml(transcriptText)}" data-short="${escapeHtml(excerpt)}${hasMore ? '...' : ''}">${escapeHtml(excerpt)}${hasMore ? '...' : ''}</div>
+        ${hasMore ? `<button class="transcript-toggle">${t('showTranscript')}</button>` : ''}
+      </div>
+    ` : ''}
+  `;
 }
 
 // =============================================================================
