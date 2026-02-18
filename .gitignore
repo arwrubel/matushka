@@ -153,3 +153,48 @@ configs/*.json
 *.mp3
 *.mp4
 *.m4a
+
+# Node.js
+node_modules/
+package.json
+package-lock.json
+
+# Cloudflare Worker build artifacts
+worker/.wrangler/
+worker/worker.js.bak
+
+# Playwright MCP
+.playwright-mcp/
+
+# Test output files
+test_*.json
+*test_results.json
+*test_output.json
+*test_response.json
+*test_even_dist.json
+multi_test.json
+culture_test.json
+test_encoding.html
+tests/
+
+# Local dev scripts
+scripts/
+src/
+docs_source/
+config/
+requirements.txt
+check_ntv.py
+matushka.py
+nul
+
+# Claude Code
+.claude/
+
+# Files with path-encoded names (Windows path artifacts)
+cmatushka*
+Cmatushka*
+matushkatest_*.json
+
+# OS
+.DS_Store
+Thumbs.db
