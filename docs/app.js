@@ -160,6 +160,9 @@ const TRANSLATIONS = {
     advancedVocab: 'Advanced',
     intermediateVocab: 'Intermediate',
     beginnerVocab: 'Beginner',
+    avgWordLength: 'Avg Word Length',
+    polysyllabicRatio: 'Polysyllabic %',
+    clauseComplexity: 'Clause Complexity',
     showTranscript: 'Show transcript',
     hideTranscript: 'Hide transcript',
     cachedResult: 'Cached result',
@@ -315,6 +318,9 @@ const TRANSLATIONS = {
     advancedVocab: 'Продвинутый',
     intermediateVocab: 'Средний',
     beginnerVocab: 'Начальный',
+    avgWordLength: 'Ср. длина слова',
+    polysyllabicRatio: 'Многосложные %',
+    clauseComplexity: 'Сложность предл.',
     showTranscript: 'Показать текст',
     hideTranscript: 'Скрыть текст',
     cachedResult: 'Из кэша',
@@ -953,16 +959,21 @@ function renderAnalysisResults(data) {
   const excerpt = transcriptText.substring(0, 200);
   const hasMore = transcriptText.length > 200;
 
-  // ILR badge color class
+  // ILR badge color class (supports plus levels like 1.5, 2.5, 3.5)
   let badgeClass = 'ilr-na';
   if (ilrLevel !== null && ilrLevel !== undefined) {
-    if (ilrLevel <= 2) badgeClass = 'ilr-low';
-    else if (ilrLevel === 3) badgeClass = 'ilr-mid';
+    if (ilrLevel <= 1.5) badgeClass = 'ilr-low';
+    else if (ilrLevel <= 2.5) badgeClass = 'ilr-mid';
     else badgeClass = 'ilr-high';
   }
 
-  const ilrDisplay = ilrLevel !== null && ilrLevel !== undefined
-    ? `<span class="ilr-badge ${badgeClass}">ILR ${ilrLevel}</span>
+  // Format plus levels: 1.5 → "1+", 2.5 → "2+", etc.
+  const ilrLevelDisplay = ilrLevel !== null && ilrLevel !== undefined
+    ? (ilrLevel % 1 === 0.5 ? Math.floor(ilrLevel) + '+' : ilrLevel)
+    : null;
+
+  const ilrDisplay = ilrLevelDisplay !== null
+    ? `<span class="ilr-badge ${badgeClass}">ILR ${ilrLevelDisplay}</span>
        <span class="ilr-label">${escapeHtml(ilrLabel)}</span>`
     : `<span class="ilr-badge ilr-na">—</span>
        <span class="ilr-label">${escapeHtml(data.ilrError || t('transcriptTooShort'))}</span>`;
@@ -996,6 +1007,18 @@ function renderAnalysisResults(data) {
       <div class="metric-card">
         <div class="metric-value">${metrics.beginnerVocabPercent ?? 0}%</div>
         <div class="metric-label">${t('beginnerVocab')}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.avgWordLength ?? '—'}</div>
+        <div class="metric-label">${t('avgWordLength')}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.polysyllabicRatio ?? 0}%</div>
+        <div class="metric-label">${t('polysyllabicRatio')}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.clauseComplexity ?? '—'}</div>
+        <div class="metric-label">${t('clauseComplexity')}</div>
       </div>
     </div>
     ${transcriptText ? `

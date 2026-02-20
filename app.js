@@ -160,6 +160,9 @@ const TRANSLATIONS = {
     advancedVocab: 'Advanced',
     intermediateVocab: 'Intermediate',
     beginnerVocab: 'Beginner',
+    avgWordLength: 'Avg Word Length',
+    polysyllabicRatio: 'Polysyllabic %',
+    clauseComplexity: 'Clause Complexity',
     showTranscript: 'Show transcript',
     hideTranscript: 'Hide transcript',
     cachedResult: 'Cached result',
@@ -315,6 +318,9 @@ const TRANSLATIONS = {
     advancedVocab: 'Продвинутый',
     intermediateVocab: 'Средний',
     beginnerVocab: 'Начальный',
+    avgWordLength: 'Ср. длина слова',
+    polysyllabicRatio: 'Многосложные %',
+    clauseComplexity: 'Сложность предл.',
     showTranscript: 'Показать текст',
     hideTranscript: 'Скрыть текст',
     cachedResult: 'Из кэша',
@@ -769,21 +775,23 @@ async function convertAudioToWav(audioArrayBuffer) {
   view.setUint32(4, 36 + channelData.length * 2, true);
   writeStr(8, 'WAVE');
   writeStr(12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
+  view.setUint32(16, 16, true);           // chunk size
+  view.setUint16(20, 1, true);            // PCM
+  view.setUint16(22, 1, true);            // mono
+  view.setUint32(24, sampleRate, true);    // sample rate
+  view.setUint32(28, sampleRate * 2, true); // byte rate
+  view.setUint16(32, 2, true);            // block align
+  view.setUint16(34, 16, true);           // bits per sample
   writeStr(36, 'data');
   view.setUint32(40, channelData.length * 2, true);
 
+  // Convert float32 PCM to int16
   for (let i = 0; i < channelData.length; i++) {
     const s = Math.max(-1, Math.min(1, channelData[i]));
     view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
   }
 
+  // Convert to base64
   const bytes = new Uint8Array(wavBuffer);
   let binary = '';
   for (let i = 0; i < bytes.length; i += 8192) {
@@ -951,16 +959,21 @@ function renderAnalysisResults(data) {
   const excerpt = transcriptText.substring(0, 200);
   const hasMore = transcriptText.length > 200;
 
-  // ILR badge color class
+  // ILR badge color class (supports plus levels like 1.5, 2.5, 3.5)
   let badgeClass = 'ilr-na';
   if (ilrLevel !== null && ilrLevel !== undefined) {
-    if (ilrLevel <= 2) badgeClass = 'ilr-low';
-    else if (ilrLevel === 3) badgeClass = 'ilr-mid';
+    if (ilrLevel <= 1.5) badgeClass = 'ilr-low';
+    else if (ilrLevel <= 2.5) badgeClass = 'ilr-mid';
     else badgeClass = 'ilr-high';
   }
 
-  const ilrDisplay = ilrLevel !== null && ilrLevel !== undefined
-    ? `<span class="ilr-badge ${badgeClass}">ILR ${ilrLevel}</span>
+  // Format plus levels: 1.5 → "1+", 2.5 → "2+", etc.
+  const ilrLevelDisplay = ilrLevel !== null && ilrLevel !== undefined
+    ? (ilrLevel % 1 === 0.5 ? Math.floor(ilrLevel) + '+' : ilrLevel)
+    : null;
+
+  const ilrDisplay = ilrLevelDisplay !== null
+    ? `<span class="ilr-badge ${badgeClass}">ILR ${ilrLevelDisplay}</span>
        <span class="ilr-label">${escapeHtml(ilrLabel)}</span>`
     : `<span class="ilr-badge ilr-na">—</span>
        <span class="ilr-label">${escapeHtml(data.ilrError || t('transcriptTooShort'))}</span>`;
@@ -994,6 +1007,18 @@ function renderAnalysisResults(data) {
       <div class="metric-card">
         <div class="metric-value">${metrics.beginnerVocabPercent ?? 0}%</div>
         <div class="metric-label">${t('beginnerVocab')}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.avgWordLength ?? '—'}</div>
+        <div class="metric-label">${t('avgWordLength')}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.polysyllabicRatio ?? 0}%</div>
+        <div class="metric-label">${t('polysyllabicRatio')}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.clauseComplexity ?? '—'}</div>
+        <div class="metric-label">${t('clauseComplexity')}</div>
       </div>
     </div>
     ${transcriptText ? `
@@ -1435,7 +1460,7 @@ function getCitationSourceName(source) {
     '1tv': 'Первый канал', 'smotrim': 'Смотрим', 'rt': 'RT',
     'ntv': 'НТВ', 'tass': 'ТАСС', 'izvestia': 'Известия',
     'kommersant': 'Коммерсантъ', 'euronews': 'Euronews',
-    'bbc': 'BBC Russian', 'bbc': 'BBC Russian', 'rutube': 'Rutube',
+    'bbc': 'BBC Russian', 'rutube': 'Rutube',
   };
   return names[(source || '').toLowerCase()] || source;
 }

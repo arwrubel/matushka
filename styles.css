@@ -1144,6 +1144,10 @@ body {
   margin-bottom: var(--space-sm);
 }
 
+.modal-badges .video-level {
+  position: static;
+}
+
 .modal-date {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);

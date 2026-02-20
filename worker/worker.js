@@ -863,7 +863,10 @@ const CATEGORY_DETECTION = {
       { keywords: ['telo nayden', 'telo obnaruzhen', 'nayden trup', 'obnaruzhen trup'], weight: 5 },
     ],
     negative: ['спорт', 'военн', 'армия', 'сво', 'всу', 'минобороны',
-               'sport', 'voenn', 'armiya', 'svo', 'vsu', 'minoborony'],
+               'лавин', 'наводнен', 'землетрясен', 'ураган', 'шторм', 'стихийн',
+               'погод', 'циклон', 'тайфун', 'цунами', 'извержен',
+               'sport', 'voenn', 'armiya', 'svo', 'vsu', 'minoborony',
+               'lavin', 'navodnin', 'zemletryasen', 'uragan', 'shtorm', 'stikhiyn'],
     requiredScore: 4,
   },
   culture: {
@@ -875,6 +878,11 @@ const CATEGORY_DETECTION = {
       { keywords: ['кино', 'фильм', 'режиссер', 'актер', 'актрис'], weight: 3 },
       { keywords: ['музей', 'выставк', 'галере', 'экспозиц'], weight: 3 },
       { keywords: ['концерт', 'фестивал', 'музык', 'песн', 'певец', 'певиц'], weight: 3 },
+      { keywords: ['карнавал', 'масленица', 'маскарад'], weight: 4 },
+      { keywords: ['праздник', 'праздничн', 'празднован', 'торжеств'], weight: 3 },
+      { keywords: ['шествие', 'процессия'], weight: 3 },
+      { keywords: ['традиц', 'обычай', 'обряд', 'ритуал', 'фольклор'], weight: 3 },
+      { keywords: ['народн праздник', 'народн гулянье', 'народн традиц'], weight: 4 },
       { keywords: ['балет', 'опера', 'оперн', 'оперетт', 'танц', 'хореограф'], weight: 3 },
       { keywords: ['литератур', 'писател', 'книг', 'роман'], weight: 2 },
       // Architecture
@@ -892,6 +900,10 @@ const CATEGORY_DETECTION = {
       { keywords: ['kino', 'film', 'rezhisser', 'akter', 'aktris'], weight: 3 },
       { keywords: ['muzey', 'vystavk', 'galere', 'ekspozic'], weight: 3 },
       { keywords: ['koncert', 'festival', 'muzyk', 'pesn', 'pevec', 'pevic'], weight: 3 },
+      { keywords: ['karnaval', 'maslenitsa', 'maskarad'], weight: 4 },
+      { keywords: ['prazdnik', 'prazdnichn', 'prazdnovan', 'torzhestvo'], weight: 3 },
+      { keywords: ['shestvie', 'protsessiya'], weight: 3 },
+      { keywords: ['tradits', 'obychay', 'obryad', 'ritual', 'folklor'], weight: 3 },
       { keywords: ['balet', 'opera', 'opern', 'operett', 'tanc', 'khoreograf'], weight: 3 },
       { keywords: ['literatur', 'pisatel', 'knig', 'roman'], weight: 2 },
       // Architecture/fashion/awards - Latin
@@ -1113,7 +1125,9 @@ const CATEGORY_DETECTION = {
       { keywords: ['землетрясен', 'сейсмическ', 'афтершок'], weight: 4 },
       { keywords: ['эвакуац', 'эвакуирова'], weight: 3 },
       { keywords: ['чс', 'чрезвычайн', 'катастроф', 'бедстви'], weight: 4 },
-      { keywords: ['оползень', 'сель', 'лавина', 'обвал'], weight: 3 },
+      { keywords: ['оползень', 'сель', 'обвал'], weight: 4 },
+      { keywords: ['лавина', 'лавин', 'сошла лавин', 'погибли в лавин'], weight: 5 },
+      { keywords: ['погибли в лавин', 'погибли при наводнен', 'погибли при землетрясен', 'жертвы стихи'], weight: 5 },
       { keywords: ['затоплен', 'подтоплен', 'разлив'], weight: 3 },
       { keywords: ['лесной пожар', 'природный пожар', 'ландшафтный пожар'], weight: 4 },
       // Latin transliterations
@@ -1134,7 +1148,8 @@ const CATEGORY_DETECTION = {
       { keywords: ['zemletryasen', 'seismichesk', 'aftershok'], weight: 4 },
       { keywords: ['evakuac', 'evakuirova'], weight: 3 },
       { keywords: ['chs', 'chrezvychayn', 'katastrofa', 'bedstvi'], weight: 4 },
-      { keywords: ['opolzen', 'sel', 'lavina', 'obval'], weight: 3 },
+      { keywords: ['opolzen', 'sel', 'obval'], weight: 4 },
+      { keywords: ['lavina', 'lavin', 'soshla lavin', 'pogibli v lavin'], weight: 5 },
       { keywords: ['zatoplen', 'podtoplen', 'razliv'], weight: 3 },
       { keywords: ['lesnoy pozhar', 'prirodny pozhar', 'landshaftny pozhar'], weight: 4 },
     ],
@@ -4604,59 +4619,40 @@ async function transcribeAudio(videoUrl) {
 }
 
 /**
- * Assess ILR reading level of Russian text using MIT Auto-ILR API.
- * This is the same engine behind DLIFLC's Auto-ILR Instant tool.
- *
- * @param {string} transcript - Russian text to assess (75-70000 chars)
- * @returns {Promise<{level: number|null, label: string, error?: string}>}
+ * Get human-readable ILR level label, including plus levels.
+ * @param {number} level - ILR level (e.g., 1, 1.5, 2, 2.5, 3, 3.5, 4)
+ * @returns {string} Label like "ILR 2+ — Limited Working Proficiency, Plus"
  */
-async function assessIlrLevel(transcript) {
-  const text = (transcript || '').trim();
+function ilrLevelLabel(level) {
+  const labels = {
+    0: 'ILR 0 — No Proficiency',
+    0.5: 'ILR 0+ — Memorized Proficiency',
+    1: 'ILR 1 — Elementary Proficiency',
+    1.5: 'ILR 1+ — Elementary Proficiency, Plus',
+    2: 'ILR 2 — Limited Working Proficiency',
+    2.5: 'ILR 2+ — Limited Working Proficiency, Plus',
+    3: 'ILR 3 — General Professional Proficiency',
+    3.5: 'ILR 3+ — General Professional Proficiency, Plus',
+    4: 'ILR 4 — Advanced Professional Proficiency',
+    4.5: 'ILR 4+ — Advanced Professional Proficiency, Plus',
+    5: 'ILR 5 — Functionally Native Proficiency'
+  };
+  return labels[level] || `ILR ${level % 1 === 0.5 ? Math.floor(level) + '+' : level}`;
+}
 
-  // Auto-ILR requires 75-70000 characters
-  if (text.length < 75) {
-    return { level: null, label: '', error: 'Transcript too short for ILR assessment (min 75 chars)' };
-  }
-
-  const truncated = text.substring(0, 70000);
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);  // 8s timeout
-
-    const response = await fetch('https://auto-ilr.ll.mit.edu/instant/summary3', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ Language: 'Russian', Text: truncated }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-    const html = await response.text();
-
-    // Parse "estimated ilr level: N" from response
-    const match = html.match(/estimated\s+ilr\s+level[:\s]*(\d)/i);
-    if (!match) {
-      log('Auto-ILR response did not contain level. Response length:', html.length);
-      return { level: null, label: '', error: 'Could not parse ILR level from Auto-ILR response' };
-    }
-
-    const level = parseInt(match[1]);
-    const labels = {
-      0: 'ILR 0+ — Memorized Proficiency',
-      1: 'ILR 1 — Elementary Proficiency',
-      2: 'ILR 2 — Limited Working Proficiency',
-      3: 'ILR 3 — General Professional Proficiency',
-      4: 'ILR 4 — Advanced Professional Proficiency',
-      5: 'ILR 5 — Functionally Native Proficiency'
-    };
-
-    log('Auto-ILR level:', level);
-    return { level, label: labels[level] || `ILR ${level}` };
-  } catch (e) {
-    log('Auto-ILR API error:', e.message);
-    return { level: null, label: '', error: `Auto-ILR API error: ${e.message}` };
-  }
+/**
+ * Clean transcript text for linguistic analysis.
+ * Removes URLs, hashtags, mentions, and non-linguistic elements.
+ * Based on DLI Auto-ILR manual recommendation to avoid agrammatical elements.
+ */
+function cleanTranscriptForAnalysis(text) {
+  return text
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/#\S+/g, '')
+    .replace(/@\S+/g, '')
+    .replace(/[^\p{L}\p{N}\s.,!?;:\u2014\u2013\-()""«»]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
@@ -4682,13 +4678,36 @@ function vocabMatchPercent(words, vocabList) {
 function analyzeTranscript(text, durationSeconds) {
   const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 0);
   const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
   const uniqueWords = new Set(words);
+
+  // DLI-inspired: average word length (longer words = harder text)
+  const avgWordLength = words.length > 0
+    ? +(words.reduce((sum, w) => sum + w.replace(/[^а-яёa-z]/gi, '').length, 0) / words.length).toFixed(1)
+    : 0;
+
+  // DLI-inspired: polysyllabic ratio (Russian syllables ≈ vowel count)
+  const russianVowels = /[аеёиоуыэюя]/gi;
+  const polysyllabicCount = words.filter(w => {
+    const vowels = (w.match(russianVowels) || []).length;
+    return vowels >= 4; // 4+ syllables = polysyllabic
+  }).length;
+  const polysyllabicRatio = words.length > 0 ? +(polysyllabicCount / words.length * 100).toFixed(1) : 0;
+
+  // DLI-inspired: clause complexity (subordinating conjunctions per sentence)
+  const subordinators = /\b(?:который|которая|которое|которые|которых|которому|которой|потому что|так как|если|хотя|несмотря|когда|пока|чтобы|где|куда|откуда|поскольку|причём|притом|ибо|ведь)\b/gi;
+  const clauseCount = (text.match(subordinators) || []).length;
+  const clauseComplexity = sentences.length > 0 ? +(clauseCount / sentences.length).toFixed(2) : 0;
 
   return {
     wordCount: words.length,
     speechRate: durationSeconds > 0 ? Math.round(words.length / (durationSeconds / 60)) : null,
     typeTokenRatio: words.length > 0 ? +(uniqueWords.size / words.length).toFixed(2) : 0,
     avgSentenceLength: sentences.length > 0 ? +(words.length / sentences.length).toFixed(1) : 0,
+    avgWordLength,
+    polysyllabicRatio,
+    clauseComplexity,
+    paragraphCount: paragraphs.length,
     advancedVocabPercent: vocabMatchPercent(words, ILR_ADVANCED_VOCAB),
     intermediateVocabPercent: vocabMatchPercent(words, ILR_INTERMEDIATE_VOCAB),
     beginnerVocabPercent: vocabMatchPercent(words, ILR_BEGINNER_VOCAB),
@@ -4706,54 +4725,60 @@ function analyzeTranscript(text, durationSeconds) {
 function estimateIlrFromMetrics(metrics) {
   let score = 0;
 
-  // Speech rate: slow = easier, fast = harder
+  // Speech rate: slow = easier, fast = harder (0-3 points)
   if (metrics.speechRate !== null) {
-    if (metrics.speechRate < 90) score += 0;       // Very slow → ILR 1
-    else if (metrics.speechRate < 120) score += 1;  // Moderate → ILR 2
-    else if (metrics.speechRate < 150) score += 2;  // Fast → ILR 3
-    else score += 3;                                 // Very fast → ILR 3+
+    if (metrics.speechRate < 90) score += 0;
+    else if (metrics.speechRate < 120) score += 1;
+    else if (metrics.speechRate < 150) score += 2;
+    else score += 3;
   }
 
-  // Type-token ratio: higher = more diverse vocabulary
+  // Type-token ratio: higher = more diverse vocabulary (0-3 points)
   if (metrics.typeTokenRatio < 0.35) score += 0;
   else if (metrics.typeTokenRatio < 0.50) score += 1;
   else if (metrics.typeTokenRatio < 0.65) score += 2;
   else score += 3;
 
-  // Average sentence length: longer = more complex
+  // Average sentence length: longer = more complex (0-3 points)
   if (metrics.avgSentenceLength < 8) score += 0;
   else if (metrics.avgSentenceLength < 14) score += 1;
   else if (metrics.avgSentenceLength < 20) score += 2;
   else score += 3;
 
-  // Vocabulary tier distribution (strongest signal)
-  // Advanced vocab presence is a strong indicator
+  // DLI-inspired: Average word length (0-2 points) — shallow length feature
+  if (metrics.avgWordLength >= 7) score += 2;
+  else if (metrics.avgWordLength >= 5.5) score += 1;
+
+  // DLI-inspired: Polysyllabic ratio (0-3 points) — key DLI feature
+  if (metrics.polysyllabicRatio > 20) score += 3;
+  else if (metrics.polysyllabicRatio > 12) score += 2;
+  else if (metrics.polysyllabicRatio > 5) score += 1;
+
+  // DLI-inspired: Clause complexity (0-2 points) — embedded clauses per sentence
+  if (metrics.clauseComplexity > 1.5) score += 2;
+  else if (metrics.clauseComplexity > 0.5) score += 1;
+
+  // Vocabulary tier distribution — strongest signal (0-6 points)
   if (metrics.advancedVocabPercent > 5) score += 4;
   else if (metrics.advancedVocabPercent > 2) score += 2;
   else if (metrics.advancedVocabPercent > 0.5) score += 1;
 
-  // High beginner vocab with low advanced = lower level
   if (metrics.beginnerVocabPercent > 15 && metrics.advancedVocabPercent < 1) score -= 1;
 
-  // Intermediate vocab presence
   if (metrics.intermediateVocabPercent > 8) score += 2;
   else if (metrics.intermediateVocabPercent > 3) score += 1;
 
-  // Map score to ILR level (0-15+ range → 1-4)
+  // Map score to ILR level WITH plus levels (0-25+ range → 1 to 4+)
   let level;
   if (score <= 2) level = 1;
-  else if (score <= 5) level = 2;
-  else if (score <= 9) level = 3;
+  else if (score <= 4) level = 1.5;   // 1+
+  else if (score <= 6) level = 2;
+  else if (score <= 8) level = 2.5;   // 2+
+  else if (score <= 11) level = 3;
+  else if (score <= 14) level = 3.5;  // 3+
   else level = 4;
 
-  const labels = {
-    1: 'ILR 1 — Elementary Proficiency',
-    2: 'ILR 2 — Limited Working Proficiency',
-    3: 'ILR 3 — General Professional Proficiency',
-    4: 'ILR 4 — Advanced Professional Proficiency'
-  };
-
-  return { level, label: labels[level], method: 'transcript-analysis' };
+  return { level, label: ilrLevelLabel(level), method: 'transcript-analysis' };
 }
 
 /**
@@ -4820,19 +4845,16 @@ async function handleAnalyze(url, request) {
       return errorResponse('Transcription produced no text. The audio may be music-only or too short.');
     }
 
-    // Step 2: Compute linguistic metrics
+    // Step 2: Clean transcript for analysis (DLI manual: avoid agrammatical elements)
+    const cleanedText = cleanTranscriptForAnalysis(transcriptText);
+
+    // Step 3: Compute linguistic metrics using DLI-inspired features
     log('Step 2: Computing linguistic metrics...');
-    const metrics = analyzeTranscript(transcriptText, audioDuration);
+    const metrics = analyzeTranscript(cleanedText, audioDuration);
 
-    // Step 3: Assess ILR level — try MIT Auto-ILR first, fall back to our own estimation
+    // Step 4: Estimate ILR level using our DLI-inspired scorer
     log('Step 3: Assessing ILR level...');
-    let ilrResult = await assessIlrLevel(transcriptText);
-
-    // If MIT API failed, use our transcript-based estimation
-    if (ilrResult.level === null) {
-      log('MIT Auto-ILR unavailable, using transcript-based estimation');
-      ilrResult = estimateIlrFromMetrics(metrics);
-    }
+    const ilrResult = estimateIlrFromMetrics(metrics);
 
     // Build response
     const result = {
@@ -4840,7 +4862,7 @@ async function handleAnalyze(url, request) {
       url: targetUrl,
       ilrLevel: ilrResult.level,
       ilrLabel: ilrResult.label,
-      ilrMethod: ilrResult.method || 'auto-ilr',
+      ilrMethod: ilrResult.method || 'transcript-analysis',
       ilrError: ilrResult.error || null,
       transcript: {
         text: transcriptText,
@@ -4851,6 +4873,9 @@ async function handleAnalyze(url, request) {
         speechRate: metrics.speechRate,
         typeTokenRatio: metrics.typeTokenRatio,
         avgSentenceLength: metrics.avgSentenceLength,
+        avgWordLength: metrics.avgWordLength,
+        polysyllabicRatio: metrics.polysyllabicRatio,
+        clauseComplexity: metrics.clauseComplexity,
         advancedVocabPercent: metrics.advancedVocabPercent,
         intermediateVocabPercent: metrics.intermediateVocabPercent,
         beginnerVocabPercent: metrics.beginnerVocabPercent,
@@ -5228,7 +5253,8 @@ async function discoverEuronews(sourceKey = 'video', maxItems = 20) {
 
     // Step 4: Map URL path to category
     function euronewsUrlCategory(url) {
-      if (url.includes('/my-europe/')) return 'politics';
+      // /my-europe/ is too broad — stories about European culture, weather, etc.
+      // Let keyword inference handle it instead of blindly assigning politics
       if (url.includes('/business/')) return 'economy';
       if (url.includes('/culture/')) return 'culture';
       if (url.includes('/travel/')) return 'tourism';
@@ -6015,10 +6041,27 @@ async function handleDiscover(url, request) {
       return false;
     }
 
-    // --- "Кадры" (footage) clips under 30s - usually raw CCTV/footage with music ---
-    if (/^кадры\s/i.test(title) && dur > 0 && dur <= 30) {
-      log('Filtering short footage clip:', title.substring(0, 60), `(${dur}s)`);
+    // --- Raw footage / B-roll at any duration ---
+    if (/(?:^кадры\b|видеокадры|^видео\s|видеозапись|видеозаписи)/i.test(title)) {
+      // Only filter if no narration indicators
+      if (!/(?:сообщ|заяви|рассказ|объясн|коммент|корреспондент|сюжет|репортаж)/i.test(text)) {
+        log('Filtering footage/recording:', title.substring(0, 60), `(${dur}s)`);
+        return false;
+      }
+    }
+
+    // --- Live streams / direct broadcasts ---
+    if (/(?:прямой\s+эфир|прямая\s+трансляция|live\s+stream|livestream|стрим\b)/i.test(text) && dur > 1800) {
+      log('Filtering live stream:', title.substring(0, 60), `(${dur}s)`);
       return false;
+    }
+
+    // --- Hashtag-only or very short descriptions suggesting no editorial content ---
+    if (desc && desc.length < 30 && /^[#@\s\w]+$/.test(desc) && dur > 0 && dur < 60) {
+      if (!/(?:сообщ|заяви|рассказ|объясн)/i.test(title)) {
+        log('Filtering hashtag-only short clip:', title.substring(0, 60));
+        return false;
+      }
     }
 
     // --- Very short clips (under 15s) - almost always just footage with music ---
