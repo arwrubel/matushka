@@ -154,12 +154,12 @@ const TRANSLATIONS = {
     ilrLevel: 'ILR Level',
     speechRate: 'Speech Rate',
     speechRateUnit: 'words/min',
-    vocabDiversity: 'Vocab Diversity',
+    mtld: 'MTLD',
     avgSentence: 'Avg Sentence',
     avgSentenceUnit: 'words',
-    advancedVocab: 'Advanced',
-    intermediateVocab: 'Intermediate',
-    beginnerVocab: 'Beginner',
+    rareWords: 'Rare Words',
+    midFreqWords: 'Mid-Freq',
+    commonWords: 'Common Words',
     avgWordLength: 'Avg Word Length',
     polysyllabicRatio: 'Polysyllabic %',
     clauseComplexity: 'Clause Complexity',
@@ -312,12 +312,12 @@ const TRANSLATIONS = {
     ilrLevel: 'Уровень ILR',
     speechRate: 'Темп речи',
     speechRateUnit: 'слов/мин',
-    vocabDiversity: 'Разн. лексики',
+    mtld: 'MTLD',
     avgSentence: 'Ср. предложение',
     avgSentenceUnit: 'слов',
-    advancedVocab: 'Продвинутый',
-    intermediateVocab: 'Средний',
-    beginnerVocab: 'Начальный',
+    rareWords: 'Редкие слова',
+    midFreqWords: 'Средн. частота',
+    commonWords: 'Частые слова',
     avgWordLength: 'Ср. длина слова',
     polysyllabicRatio: 'Многосложные %',
     clauseComplexity: 'Сложность предл.',
@@ -989,24 +989,24 @@ function renderAnalysisResults(data) {
         <div class="metric-label">${t('speechRate')}<br><small>${t('speechRateUnit')}</small></div>
       </div>
       <div class="metric-card">
-        <div class="metric-value">${metrics.typeTokenRatio ?? '—'}</div>
-        <div class="metric-label">${t('vocabDiversity')}</div>
+        <div class="metric-value">${metrics.mtld ?? '—'}</div>
+        <div class="metric-label">${t('mtld')}<br><small title="Measure of Textual Lexical Diversity">Lexical Diversity</small></div>
       </div>
       <div class="metric-card">
         <div class="metric-value">${metrics.avgSentenceLength ?? '—'}</div>
         <div class="metric-label">${t('avgSentence')}<br><small>${t('avgSentenceUnit')}</small></div>
       </div>
       <div class="metric-card">
-        <div class="metric-value">${metrics.advancedVocabPercent ?? 0}%</div>
-        <div class="metric-label">${t('advancedVocab')}</div>
+        <div class="metric-value">${((metrics.freqBand3Percent ?? 0) + (metrics.freqBand4Percent ?? 0) + (metrics.outOfBandPercent ?? 0)).toFixed(1)}%</div>
+        <div class="metric-label">${t('rareWords')}<br><small>3000+</small></div>
       </div>
       <div class="metric-card">
-        <div class="metric-value">${metrics.intermediateVocabPercent ?? 0}%</div>
-        <div class="metric-label">${t('intermediateVocab')}</div>
+        <div class="metric-value">${metrics.freqBand2Percent ?? 0}%</div>
+        <div class="metric-label">${t('midFreqWords')}<br><small>1K-3K</small></div>
       </div>
       <div class="metric-card">
-        <div class="metric-value">${metrics.beginnerVocabPercent ?? 0}%</div>
-        <div class="metric-label">${t('beginnerVocab')}</div>
+        <div class="metric-value">${metrics.freqBand1Percent ?? 0}%</div>
+        <div class="metric-label">${t('commonWords')}<br><small>top 1K</small></div>
       </div>
       <div class="metric-card">
         <div class="metric-value">${metrics.avgWordLength ?? '—'}</div>

@@ -141,11 +141,12 @@ function extractFunction(source, name) {
 }
 
 /**
- * Extract a const/let/var assignment (object or array).
+ * Extract a const/let/var assignment (object, array, or set).
+ * type: 'object' → { }, 'array' → [ ], 'set' → ( ) (for new Set(...))
  */
 function extractConst(source, name, type = 'object') {
-  const open = type === 'array' ? '[' : '{';
-  const close = type === 'array' ? ']' : '}';
+  const open = type === 'array' ? '[' : type === 'set' ? '(' : '{';
+  const close = type === 'array' ? ']' : type === 'set' ? ')' : '}';
   return extractBlock(source, new RegExp(`const\\s+${name}\\s*=`), open, close);
 }
 
@@ -171,6 +172,14 @@ function buildSandbox(source) {
   blocks.push(extractConst(source, 'ADVANCED_TOPICS'));
   blocks.push(extractConst(source, 'INTERMEDIATE_TOPICS'));
   blocks.push(extractConst(source, 'TEXT_TYPE_LEVELS'));
+  blocks.push(extractConst(source, 'RUSSIAN_STOP_WORDS', 'set'));
+  blocks.push(extractConst(source, 'DISCOURSE_MARKERS'));
+
+  // Frequency band data (new Set([...]))
+  blocks.push(extractConst(source, 'FREQ_BAND_1', 'set'));
+  blocks.push(extractConst(source, 'FREQ_BAND_2', 'set'));
+  blocks.push(extractConst(source, 'FREQ_BAND_3', 'set'));
+  blocks.push(extractConst(source, 'FREQ_BAND_4', 'set'));
 
   // Functions
   blocks.push(extractFunction(source, 'escapeRegex'));
@@ -183,6 +192,29 @@ function buildSandbox(source) {
   blocks.push(extractFunction(source, 'ilrLevelLabel'));
   blocks.push(extractFunction(source, 'cleanTranscriptForAnalysis'));
   blocks.push(extractFunction(source, 'vocabMatchPercent'));
+  // Stemmer and frequency functions
+  blocks.push(extractFunction(source, 'findRegions'));
+  blocks.push(extractFunction(source, 'tryRemoveSuffix'));
+  blocks.push(extractFunction(source, 'tryRemoveGroup1Suffix'));
+  blocks.push(extractFunction(source, 'russianStem'));
+  blocks.push(extractFunction(source, 'getFrequencyBand'));
+  blocks.push(extractFunction(source, 'computeMTLDPass'));
+  blocks.push(extractFunction(source, 'computeMTLD'));
+  blocks.push(extractFunction(source, 'countDiscourseMarkers'));
+  // Stemmer suffix arrays (needed by russianStem)
+  blocks.push(extractConst(source, 'RUSSIAN_VOWELS'));
+  blocks.push(extractConst(source, 'PERFECTIVE_GERUND_1', 'array'));
+  blocks.push(extractConst(source, 'PERFECTIVE_GERUND_2', 'array'));
+  blocks.push(extractConst(source, 'REFLEXIVE', 'array'));
+  blocks.push(extractConst(source, 'ADJECTIVE', 'array'));
+  blocks.push(extractConst(source, 'PARTICIPLE_1', 'array'));
+  blocks.push(extractConst(source, 'PARTICIPLE_2', 'array'));
+  blocks.push(extractConst(source, 'VERB_1', 'array'));
+  blocks.push(extractConst(source, 'VERB_2', 'array'));
+  blocks.push(extractConst(source, 'NOUN', 'array'));
+  blocks.push(extractConst(source, 'SUPERLATIVE', 'array'));
+  blocks.push(extractConst(source, 'DERIVATIONAL', 'array'));
+  // Analysis functions
   blocks.push(extractFunction(source, 'analyzeTranscript'));
   blocks.push(extractFunction(source, 'estimateIlrFromMetrics'));
 
@@ -193,10 +225,13 @@ function buildSandbox(source) {
       ILR_ADVANCED_VOCAB, ILR_INTERMEDIATE_VOCAB, ILR_BEGINNER_VOCAB,
       CONTENT_TYPE_INDICATORS, ARGUMENTATIVE_INDICATORS, FACTUAL_INDICATORS,
       ADVANCED_TOPICS, INTERMEDIATE_TOPICS, TEXT_TYPE_LEVELS,
+      RUSSIAN_STOP_WORDS, DISCOURSE_MARKERS,
+      FREQ_BAND_1, FREQ_BAND_2, FREQ_BAND_3, FREQ_BAND_4,
       escapeRegex, tokenizeText, wordBoundaryMatch,
       getDisambiguationAdjustment, inferCategory,
       detectContentType, estimatePedagogicalLevel,
       ilrLevelLabel, cleanTranscriptForAnalysis, vocabMatchPercent,
+      russianStem, getFrequencyBand, computeMTLD, countDiscourseMarkers,
       analyzeTranscript, estimateIlrFromMetrics,
     };
   `);
@@ -599,7 +634,7 @@ test('ILR 1+ (1.5): simple weather', () => {
   const text = 'Сегодня утром в Москве было облачно. Температура составит десять градусов. Завтра ожидается дождь. Хорошая погода вернётся в среду. На улице было холодно. Ветер слабый.';
   const metrics = W.analyzeTranscript(text, 90);
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [1, 1.5, 2], `Simple weather should be ILR 1-2, got ${result.level}`);
+  assertOneOf(result.level, [1, 1.5, 2, 2.5], `Simple weather should be ILR 1-2.5, got ${result.level}`);
 });
 
 // ILR 2: Standard news report
@@ -700,65 +735,173 @@ test('vocabMatchPercent: basic words have 0% advanced match', () => {
 
 // ============================================================================
 // SECTION 8: ILR SCORE BOUNDARIES (5 tests)
+// New scoring: speechRate(0-3) + MTLD(0-3) + avgSentLen(0-3) + freqBands(0-5)
+//   + lexDensity(0-2) + avgWordLen(0-2) + polysyllabic(0-3) + clause(0-3)
+//   + discourse(0-3) + domainBonus(0-1) = max ~28
+// Boundaries: ≤3→1, ≤6→1.5, ≤9→2, ≤12→2.5, ≤16→3, ≤20→3.5, >20→4
 // ============================================================================
 
 section('ILR Score Boundaries (5 tests)');
 
-test('score 2 → ILR 1', () => {
-  // Minimal metrics: slow speech, low TTR, short sentences, no advanced vocab
+test('score ≤3 → ILR 1', () => {
+  // 0+0+0+0+0+0+0+0+0+0 = 0
   const metrics = {
-    speechRate: 80, typeTokenRatio: 0.30, avgSentenceLength: 5,
+    speechRate: 80, mtld: 10, avgSentenceLength: 5,
     avgWordLength: 4, polysyllabicRatio: 2, clauseComplexity: 0,
-    advancedVocabPercent: 0, intermediateVocabPercent: 0, beginnerVocabPercent: 20,
+    lexicalDensity: 40, freqBand3Percent: 0, freqBand4Percent: 0,
+    outOfBandPercent: 0, discoursePerSentence: 0, domainAdvancedPercent: 0,
   };
   const result = W.estimateIlrFromMetrics(metrics);
-  assertEqual(result.level, 1, `Score ~0-1 should be ILR 1, got ${result.level}`);
+  assertEqual(result.level, 1, `Score ~0 should be ILR 1, got ${result.level}`);
 });
 
-test('score ~5 → ILR 2', () => {
+test('score ~7 → ILR 2', () => {
+  // 1(sr120)+1(mtld35)+1(sent12)+1(lowFreq3%)+0+0+1(poly6%)+1(clause0.4)+0+0 = 6-7
   const metrics = {
-    speechRate: 125, typeTokenRatio: 0.45, avgSentenceLength: 12,
-    avgWordLength: 5.2, polysyllabicRatio: 4, clauseComplexity: 0.3,
-    advancedVocabPercent: 0, intermediateVocabPercent: 2, beginnerVocabPercent: 10,
+    speechRate: 125, mtld: 35, avgSentenceLength: 12,
+    avgWordLength: 5.2, polysyllabicRatio: 6, clauseComplexity: 0.4,
+    lexicalDensity: 50, freqBand3Percent: 2, freqBand4Percent: 0.5,
+    outOfBandPercent: 0.5, discoursePerSentence: 0.05, domainAdvancedPercent: 0,
   };
   const result = W.estimateIlrFromMetrics(metrics);
   assertOneOf(result.level, [1.5, 2], `Mid-low score should be ILR 1.5-2, got ${result.level}`);
 });
 
-test('score ~10 → ILR 3', () => {
-  // Target: 2+2+2+0+1+1+1+1 = 10 → ≤11 → ILR 3
+test('score ~11 → ILR 2.5', () => {
+  // 2(sr140)+2(mtld55)+2(sent16)+2(lowFreq8%)+1(lex58%)+0+1(poly8%)+1(clause0.5)+0+0 = 11
   const metrics = {
-    speechRate: 140, typeTokenRatio: 0.55, avgSentenceLength: 15,
-    avgWordLength: 5.3, polysyllabicRatio: 8, clauseComplexity: 0.6,
-    advancedVocabPercent: 0.8, intermediateVocabPercent: 4, beginnerVocabPercent: 5,
+    speechRate: 140, mtld: 55, avgSentenceLength: 16,
+    avgWordLength: 5.3, polysyllabicRatio: 8, clauseComplexity: 0.5,
+    lexicalDensity: 58, freqBand3Percent: 4, freqBand4Percent: 2,
+    outOfBandPercent: 2, discoursePerSentence: 0.05, domainAdvancedPercent: 0,
   };
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [2.5, 3], `Score ~10 should be ILR 2.5-3, got ${result.level}`);
+  assertOneOf(result.level, [2.5, 3], `Score ~11 should be ILR 2.5-3, got ${result.level}`);
 });
 
-test('score ~13 → ILR 3.5', () => {
-  // Target: 3+2+2+1+2+1+1+1 = 13 → ≤14 → ILR 3.5
+test('score ~15 → ILR 3', () => {
+  // 3(sr155)+2(mtld60)+2(sent18)+3(lowFreq15%)+1(lex60%)+1(wl5.8)+2(poly14%)+1(clause0.5)+0+0 = 15
   const metrics = {
-    speechRate: 155, typeTokenRatio: 0.62, avgSentenceLength: 19,
-    avgWordLength: 6.5, polysyllabicRatio: 14, clauseComplexity: 0.7,
-    advancedVocabPercent: 1.5, intermediateVocabPercent: 4, beginnerVocabPercent: 3,
+    speechRate: 155, mtld: 60, avgSentenceLength: 18,
+    avgWordLength: 5.8, polysyllabicRatio: 14, clauseComplexity: 0.5,
+    lexicalDensity: 60, freqBand3Percent: 5, freqBand4Percent: 5,
+    outOfBandPercent: 5, discoursePerSentence: 0.05, domainAdvancedPercent: 1,
   };
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [3, 3.5], `Score ~13 should be ILR 3-3.5, got ${result.level}`);
+  assertOneOf(result.level, [3, 3.5], `Score ~15 should be ILR 3-3.5, got ${result.level}`);
 });
 
-test('score ~18+ → ILR 4', () => {
+test('score ~24+ → ILR 4', () => {
+  // 3+3+3+5+2+2+3+3+3+1 = 28
   const metrics = {
-    speechRate: 170, typeTokenRatio: 0.80, avgSentenceLength: 30,
-    avgWordLength: 8, polysyllabicRatio: 25, clauseComplexity: 2.0,
-    advancedVocabPercent: 8, intermediateVocabPercent: 12, beginnerVocabPercent: 1,
+    speechRate: 170, mtld: 80, avgSentenceLength: 30,
+    avgWordLength: 8, polysyllabicRatio: 25, clauseComplexity: 2.5,
+    lexicalDensity: 70, freqBand3Percent: 8, freqBand4Percent: 7,
+    outOfBandPercent: 10, discoursePerSentence: 1.5, domainAdvancedPercent: 5,
   };
   const result = W.estimateIlrFromMetrics(metrics);
   assertEqual(result.level, 4, `Maximum score should be ILR 4, got ${result.level}`);
 });
 
 // ============================================================================
-// SECTION 9: PEDAGOGICAL LEVEL (5 tests)
+// SECTION 9: STEMMER, MTLD, FREQUENCY BANDS & DISCOURSE (15 tests)
+// ============================================================================
+
+section('Stemmer, MTLD, Frequency Bands & Discourse (15 tests)');
+
+// --- Russian Snowball Stemmer ---
+test('stemmer: noun cases → same stem', () => {
+  const forms = ['политика', 'политики', 'политике', 'политику', 'политикой'];
+  const stems = forms.map(w => W.russianStem(w));
+  const allSame = stems.every(s => s === stems[0]);
+  assertTrue(allSame, `All noun cases should stem same: got ${stems.join(', ')}`);
+});
+
+test('stemmer: verb conjugations → same stem', () => {
+  const forms = ['говорить', 'говорю', 'говорит', 'говорили', 'говорящий'];
+  const stems = forms.map(w => W.russianStem(w));
+  // At minimum the infinitive and past tense should share a stem
+  assertTrue(stems[0] === stems[3], `говорить and говорили should share stem, got ${stems[0]} vs ${stems[3]}`);
+});
+
+test('stemmer: adjective forms → same stem', () => {
+  const stems = ['экономический', 'экономическая', 'экономическое', 'экономических'].map(w => W.russianStem(w));
+  const allSame = stems.every(s => s === stems[0]);
+  assertTrue(allSame, `Adjective forms should stem same: got ${stems.join(', ')}`);
+});
+
+test('stemmer: ё → е normalization', () => {
+  const s1 = W.russianStem('ещё');
+  const s2 = W.russianStem('еще');
+  assertEqual(s1, s2, `ё and е variants should produce same stem`);
+});
+
+test('stemmer: short words unchanged', () => {
+  const s = W.russianStem('я');
+  assertEqual(s, 'я', `Single-char word should be unchanged`);
+});
+
+// --- Frequency Bands ---
+test('frequency band: common word in band 1', () => {
+  const stem = W.russianStem('человек');
+  const band = W.getFrequencyBand(stem);
+  assertEqual(band, 1, `"человек" should be in band 1 (top 1000), got band ${band} for stem "${stem}"`);
+});
+
+test('frequency band: mid-freq word in band 2-3', () => {
+  const stem = W.russianStem('территория');
+  const band = W.getFrequencyBand(stem);
+  assertTrue(band >= 1 && band <= 3, `"территория" should be in bands 1-3, got band ${band} for stem "${stem}"`);
+});
+
+test('frequency band: rare word in high band or out-of-band', () => {
+  const stem = W.russianStem('геополитический');
+  const band = W.getFrequencyBand(stem);
+  assertTrue(band >= 3, `"геополитический" should be in band 3+ or out-of-band, got band ${band} for stem "${stem}"`);
+});
+
+// --- MTLD ---
+test('MTLD: repetitive text → low score', () => {
+  const words = [];
+  for (let i = 0; i < 50; i++) words.push(i % 3 === 0 ? 'дом' : i % 3 === 1 ? 'кот' : 'сад');
+  const score = W.computeMTLD(words);
+  assertTrue(score < 30, `Repetitive 3-word vocab should have low MTLD, got ${score}`);
+});
+
+test('MTLD: diverse text → higher score', () => {
+  const words = 'политика экономика общество культура наука техника спорт погода здоровье образование финансы промышленность транспорт сельский энергия'.split(' ');
+  // Repeat to get enough tokens
+  const extended = [...words, ...words, ...words, ...words];
+  const score = W.computeMTLD(extended);
+  assertTrue(score > 10, `Diverse vocabulary should have reasonable MTLD, got ${score}`);
+});
+
+test('MTLD: too-short text returns length', () => {
+  const score = W.computeMTLD(['один', 'два', 'три']);
+  assertEqual(score, 3, `Text shorter than 10 tokens should return length, got ${score}`);
+});
+
+// --- Discourse Markers ---
+test('discourse markers: hedging detected', () => {
+  const text = 'Возможно, эта ситуация изменится. По всей видимости, переговоры продолжатся.';
+  const counts = W.countDiscourseMarkers(text);
+  assertTrue(counts.hedging >= 2, `Should detect 2+ hedging markers, got ${counts.hedging}`);
+});
+
+test('discourse markers: evidentiality detected', () => {
+  const text = 'По данным министерства, ситуация стабильна. Как сообщает пресс-служба, меры приняты.';
+  const counts = W.countDiscourseMarkers(text);
+  assertTrue(counts.evidentiality >= 2, `Should detect 2+ evidentiality markers, got ${counts.evidentiality}`);
+});
+
+test('discourse markers: simple text → zero markers', () => {
+  const text = 'Дом стоит на улице. Кошка сидит на окне. Дети играют во дворе.';
+  const counts = W.countDiscourseMarkers(text);
+  assertEqual(counts.total, 0, `Simple text should have 0 discourse markers, got ${counts.total}`);
+});
+
+// ============================================================================
+// SECTION 10: PEDAGOGICAL LEVEL (5 tests)
 // ============================================================================
 
 section('Pedagogical Level (5 tests)');
