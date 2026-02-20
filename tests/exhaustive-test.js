@@ -1,7 +1,7 @@
 /**
  * Matushka Exhaustive Test Suite
  *
- * Tests category detection, ILR scoring, speech filter, and pedagogical level
+ * Tests category detection, ILR scoring, speech filter, and pedagogical level estimation
  * by extracting pure functions from worker.js (which has no module exports).
  *
  * Usage: node tests/exhaustive-test.js

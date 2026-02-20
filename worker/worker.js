@@ -2716,7 +2716,6 @@ async function extract1tv(url) {
   const contentType = detectContentType(metadata);
   metadata.contentType = contentType;
   metadata.category = inferredCategory;
-  const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
   return {
     source: '1tv',
@@ -2730,7 +2729,6 @@ async function extract1tv(url) {
     category: inferredCategory,
     categories: inferredCategory ? [inferredCategory] : null,
     contentType: contentType,
-    pedagogicalLevel: pedagogicalLevel,
     m3u8Url,
     mp4Url,
     streamType: m3u8Url ? 'hls' : 'mp4',
@@ -2921,7 +2919,6 @@ async function discover1tv(sourceKey, maxItems = 20) {
         const inferredCategory = inferCategory(meta.title + ' ' + (meta.description || ''), url);
         const metadata = { title: meta.title, description: meta.description, url, duration: meta.duration, category: inferredCategory };
         const contentType = detectContentType(metadata);
-        const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
         return {
           url,
@@ -2936,7 +2933,6 @@ async function discover1tv(sourceKey, maxItems = 20) {
           category: inferredCategory || source.categories?.[0],
           categories: inferredCategory ? [inferredCategory] : source.categories || [],
           contentType,
-          pedagogicalLevel,
         };
       }
       return null;
@@ -3057,13 +3053,11 @@ async function discover1tv(sourceKey, maxItems = 20) {
         const metadata = { title: item.title, description: item.description, url: item.url, duration: item.duration, category: item.inferredCategory };
         const contentType = detectContentType(metadata);
         metadata.contentType = contentType;
-        const pedagogicalLevel = estimatePedagogicalLevel(metadata);
         results.push({
           ...item,
           category: item.inferredCategory,
           categories: [item.inferredCategory],
           contentType,
-          pedagogicalLevel,
         });
       }
     } else {
@@ -3074,13 +3068,11 @@ async function discover1tv(sourceKey, maxItems = 20) {
         const metadata = { title: item.title, description: item.description, url: item.url, duration: item.duration, category: itemCat };
         const contentType = detectContentType(metadata);
         metadata.contentType = contentType;
-        const pedagogicalLevel = estimatePedagogicalLevel(metadata);
         results.push({
           ...item,
           category: itemCat,
           categories: item.inferredCategory ? [item.inferredCategory] : targetCategories,
           contentType,
-          pedagogicalLevel,
         });
       }
     }
@@ -3114,7 +3106,6 @@ async function discover1tv(sourceKey, maxItems = 20) {
               const metadata = { title, url: fullUrl, duration: program.duration, category: inferredCat || source.categories[0] };
               const contentType = detectContentType(metadata);
               metadata.contentType = contentType;
-              const pedagogicalLevel = estimatePedagogicalLevel(metadata);
               results.push({
                 url: fullUrl,
                 source: '1tv',
@@ -3126,7 +3117,6 @@ async function discover1tv(sourceKey, maxItems = 20) {
                 category: inferredCat,
                 categories: inferredCat ? [inferredCat] : source.categories,
                 contentType,
-                pedagogicalLevel,
               });
             }
           }
@@ -3182,7 +3172,6 @@ async function discover1tv(sourceKey, maxItems = 20) {
                       const metadata = { title, description, url: fullUrl, duration: item.duration, category: inferredCat || source.categories[0] };
                       const contentType = detectContentType(metadata);
                       metadata.contentType = contentType;
-                      const pedagogicalLevel = estimatePedagogicalLevel(metadata);
                       results.push({
                         url: fullUrl,
                         source: '1tv',
@@ -3194,7 +3183,6 @@ async function discover1tv(sourceKey, maxItems = 20) {
                         category: inferredCat,
                         categories: inferredCat ? [inferredCat] : source.categories,
                         contentType,
-                        pedagogicalLevel,
                       });
                     }
                   }
@@ -3225,7 +3213,6 @@ async function discover1tv(sourceKey, maxItems = 20) {
               const metadata = { title, url, category: inferredCategory || source.categories[0] };
               const contentType = detectContentType(metadata);
               metadata.contentType = contentType;
-              const pedagogicalLevel = estimatePedagogicalLevel(metadata);
               results.push({
                 url,
                 source: '1tv',
@@ -3234,7 +3221,6 @@ async function discover1tv(sourceKey, maxItems = 20) {
                 category: inferredCategory,
                 categories: inferredCategory ? [inferredCategory] : source.categories,
                 contentType,
-                pedagogicalLevel,
               });
             }
           }
@@ -3285,7 +3271,6 @@ async function discoverSmotrim(sourceKey, maxItems = 20) {
             const metadata = { title, description, url, duration, program, category: inferredCat || source.categories[0] };
             const contentType = detectContentType(metadata);
             metadata.contentType = contentType;
-            const pedagogicalLevel = estimatePedagogicalLevel(metadata);
             results.push({
               url,
               source: 'smotrim',
@@ -3300,7 +3285,6 @@ async function discoverSmotrim(sourceKey, maxItems = 20) {
               category: inferredCat,  // SINGLE inferred category
               categories: inferredCat ? [inferredCat] : source.categories,
               contentType,
-              pedagogicalLevel,
             });
           }
         }
@@ -3415,7 +3399,6 @@ async function discoverSmotrim(sourceKey, maxItems = 20) {
             };
             const contentType = detectContentType(metadata);
             metadata.contentType = contentType;
-            const pedagogicalLevel = estimatePedagogicalLevel(metadata);
             results.push({
               url,
               source: 'smotrim',
@@ -3429,7 +3412,6 @@ async function discoverSmotrim(sourceKey, maxItems = 20) {
               category: inferredCat,
               categories: inferredCat ? [inferredCat] : source.categories,
               contentType,
-              pedagogicalLevel,
             });
           }
         }
@@ -3517,7 +3499,6 @@ async function extractSmotrim(url) {
   const contentType = detectContentType(metadata);
   metadata.contentType = contentType;
   metadata.category = inferredCategory;
-  const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
   return {
     source: 'smotrim',
@@ -3532,7 +3513,6 @@ async function extractSmotrim(url) {
     category: inferredCategory,
     categories: inferredCategory ? [inferredCategory] : null,
     contentType,
-    pedagogicalLevel,
     m3u8Url,
     mp4Url,
     streamType: m3u8Url ? 'hls' : (mp4Url ? 'mp4' : null),
@@ -3593,7 +3573,6 @@ async function discoverRt(sourceKey, maxItems = 20) {
             // Detect content type and pedagogical level
             const metadata = { title, description, url, duration: null, category: inferredCategory };
             const contentType = detectContentType(metadata);
-            const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
             results.push({
               url,
@@ -3607,7 +3586,6 @@ async function discoverRt(sourceKey, maxItems = 20) {
               category: inferredCategory,
               categories: inferredCategory ? [inferredCategory] : source.categories || [],
               contentType,
-              pedagogicalLevel,
             });
           }
 
@@ -3655,7 +3633,6 @@ async function discoverRt(sourceKey, maxItems = 20) {
           // Detect content type and pedagogical level
           const metadata = { title: slugTitle, description: null, url, duration: null, category: urlCategory };
           const contentType = detectContentType(metadata);
-          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
           results.push({
             url,
@@ -3666,7 +3643,6 @@ async function discoverRt(sourceKey, maxItems = 20) {
             category: urlCategory,
             categories: urlCategory ? [urlCategory] : source.categories,
             contentType,
-            pedagogicalLevel,
           });
 
           if (results.length >= maxItems) break;
@@ -3742,7 +3718,6 @@ async function extractRt(url) {
   const contentType = detectContentType(metadata);
   metadata.contentType = contentType;
   metadata.category = inferredCategory;
-  const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
   return {
     source: 'rt',
@@ -3755,7 +3730,6 @@ async function extractRt(url) {
     category: inferredCategory,
     categories: inferredCategory ? [inferredCategory] : null,
     contentType,
-    pedagogicalLevel,
     mp4Url,
     m3u8Url,
     streamType: mp4Url ? 'mp4' : (m3u8Url ? 'hls' : null),
@@ -3903,7 +3877,6 @@ async function discoverRutube(sourceKey, maxItems = 20) {
             // Detect content type and pedagogical level
             const metadata = { title, description, url, duration, category: inferredCategory };
             const contentType = detectContentType(metadata);
-            const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
             results.push({
               url,
@@ -3919,7 +3892,6 @@ async function discoverRutube(sourceKey, maxItems = 20) {
               category: inferredCategory,
               categories,
               contentType,
-              pedagogicalLevel,
             });
           }
         }
@@ -3961,7 +3933,6 @@ async function discoverRutube(sourceKey, maxItems = 20) {
             // Detect content type and pedagogical level
             const metadata = { title, description: null, url, duration, category: inferredCategory };
             const contentType = detectContentType(metadata);
-            const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
             results.push({
               url,
@@ -3974,7 +3945,6 @@ async function discoverRutube(sourceKey, maxItems = 20) {
               category: inferredCategory,
               categories,
               contentType,
-              pedagogicalLevel,
             });
           }
           log('Found', results.length, 'videos from search');
@@ -4023,7 +3993,6 @@ async function discoverIzvestia(sourceKey = 'video', maxItems = 20) {
             // Detect content type and pedagogical level
             const metadata = { title, description, url, duration: item.duration || null, category: inferredCategory };
             const contentType = detectContentType(metadata);
-            const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
             results.push({
               url,
@@ -4040,7 +4009,6 @@ async function discoverIzvestia(sourceKey = 'video', maxItems = 20) {
               category: inferredCategory,
               categories,
               contentType,
-              pedagogicalLevel,
             });
           }
         }
@@ -4226,7 +4194,6 @@ async function discoverNtv(sourceKey = 'video', maxItems = 20) {
         const decodedDesc = decodeHtmlEntities(description) || null;
         const metadata = { title: decodedTitle, description: decodedDesc, url, duration, category: inferredCategory };
         const contentType = detectContentType(metadata);
-        const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
         return {
           url,
@@ -4240,7 +4207,6 @@ async function discoverNtv(sourceKey = 'video', maxItems = 20) {
           category: inferredCategory,
           categories,
           contentType,
-          pedagogicalLevel,
         };
       }
     } catch (e) {
@@ -4390,7 +4356,6 @@ async function discoverTass(sourceKey = 'video', maxItems = 20) {
           // Detect content type and pedagogical level
           const metadata = { title, description, url, duration, category: inferredCat };
           const contentType = detectContentType(metadata);
-          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
           results.push({
             url,
@@ -4405,7 +4370,6 @@ async function discoverTass(sourceKey = 'video', maxItems = 20) {
             category: inferredCat,  // SINGLE inferred category
             categories: inferredCat ? [inferredCat] : SITES['tass'].sources[sourceKey]?.categories || ['politics', 'society'],
             contentType,
-            pedagogicalLevel,
           });
         }
         log('Found', results.length, 'videos from TASS Rutube channel');
@@ -4495,7 +4459,6 @@ async function discoverMchs(sourceKey = 'video', maxItems = 20) {
           // Detect content type and pedagogical level
           const metadata = { title, description, url, duration, category: inferredCat };
           const contentType = detectContentType(metadata);
-          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
           results.push({
             url,
@@ -4510,7 +4473,6 @@ async function discoverMchs(sourceKey = 'video', maxItems = 20) {
             category: inferredCat || 'weather',  // Default to weather for MChS
             categories: inferredCat ? [inferredCat] : ['weather', 'society'],
             contentType,
-            pedagogicalLevel,
           });
         }
         log('Found', results.length, 'videos from MChS Rutube channel');
@@ -5344,7 +5306,6 @@ async function discoverMatchtv(sourceKey = 'video', maxItems = 20) {
 
           const metadata = { title, description, url, duration, category: inferredCat };
           const contentType = detectContentType(metadata);
-          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
           results.push({
             url,
@@ -5359,7 +5320,6 @@ async function discoverMatchtv(sourceKey = 'video', maxItems = 20) {
             category: inferredCat,
             categories: inferredCat ? [inferredCat] : ['sports'],
             contentType,
-            pedagogicalLevel,
           });
         }
         log('Found', results.length, 'videos from Match TV Rutube channel');
@@ -5401,7 +5361,6 @@ async function discoverRbc(sourceKey = 'video', maxItems = 20) {
 
           const metadata = { title, description, url, duration, category: inferredCat };
           const contentType = detectContentType(metadata);
-          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
           results.push({
             url,
@@ -5416,7 +5375,6 @@ async function discoverRbc(sourceKey = 'video', maxItems = 20) {
             category: inferredCat,
             categories: inferredCat ? [inferredCat] : ['economy', 'politics'],
             contentType,
-            pedagogicalLevel,
           });
         }
         log('Found', results.length, 'videos from RBC Rutube channel');
@@ -5458,7 +5416,6 @@ async function discoverNaukatv(sourceKey = 'video', maxItems = 20) {
 
           const metadata = { title, description, url, duration, category: inferredCat };
           const contentType = detectContentType(metadata);
-          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
           results.push({
             url,
@@ -5473,7 +5430,6 @@ async function discoverNaukatv(sourceKey = 'video', maxItems = 20) {
             category: inferredCat,
             categories: inferredCat ? [inferredCat] : ['science', 'technology', 'society'],
             contentType,
-            pedagogicalLevel,
           });
         }
         log('Found', results.length, 'videos from Nauka TV Rutube channel');
@@ -5538,7 +5494,6 @@ async function discoverRutubeChannel(siteId, sourceKey = 'video', maxItems = 20)
 
           const metadata = { title, description, url, duration, category: inferredCat };
           const contentType = detectContentType(metadata);
-          const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
           results.push({
             url,
@@ -5553,7 +5508,6 @@ async function discoverRutubeChannel(siteId, sourceKey = 'video', maxItems = 20)
             category: inferredCat,
             categories: inferredCat ? [inferredCat] : defaultCategories,
             contentType,
-            pedagogicalLevel,
           });
         }
         log(`Found ${results.length} videos from ${site.name} Rutube channel`);
@@ -5688,7 +5642,6 @@ async function discoverEuronews(sourceKey = 'video', maxItems = 20) {
         category: inferredCat || defaultCategories[0] || null
       };
       const contentType = detectContentType(metadata);
-      const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
       return {
         url,
@@ -5703,7 +5656,6 @@ async function discoverEuronews(sourceKey = 'video', maxItems = 20) {
         category: inferredCat || defaultCategories[0] || null,
         categories: inferredCat ? [inferredCat] : defaultCategories,
         contentType,
-        pedagogicalLevel,
       };
     });
 
@@ -5809,7 +5761,6 @@ async function discoverBbc(sourceKey = 'video', maxItems = 20) {
           category: inferredCat || defaultCategories[0] || null
         };
         const contentType = detectContentType(metadata);
-        const pedagogicalLevel = estimatePedagogicalLevel(metadata);
 
         results.push({
           url,
@@ -5824,7 +5775,6 @@ async function discoverBbc(sourceKey = 'video', maxItems = 20) {
           category: inferredCat || defaultCategories[0] || null,
           categories: inferredCat ? [inferredCat] : defaultCategories,
           contentType,
-          pedagogicalLevel,
         });
 
         if (results.length >= maxItems) break;
@@ -5857,8 +5807,8 @@ function getCacheKey(url) {
   // Create a normalized cache key from URL params
   const params = new URLSearchParams(url.search);
   const keys = ['source', 'sources', 'category', 'categories', 'max', 'max_items',
-                'distribution', 'start_date', 'end_date', 'levels', 'content_types',
-                'pedagogicalLevel', 'contentType'];
+                'distribution', 'start_date', 'end_date', 'content_types',
+                'contentType'];
   const parts = keys.map(k => `${k}=${params.get(k) || ''}`).join('&');
   return 'discover:' + parts;
 }
@@ -5966,7 +5916,6 @@ async function handleDiscover(url, request) {
   const category = url.searchParams.get('category'); // Legacy single category
   const categoriesParam = url.searchParams.get('categories'); // New: comma-separated
   const contentTypesParam = url.searchParams.get('content_types'); // New: comma-separated
-  const levelsParam = url.searchParams.get('levels'); // New: comma-separated
   const distribution = url.searchParams.get('distribution') || 'even'; // New: even|weighted
   const maxItems = parseInt(url.searchParams.get('max') || url.searchParams.get('max_items') || url.searchParams.get('maxResults') || '20');
   const sourcesParam = url.searchParams.get('sources'); // Comma-separated sources
@@ -5996,14 +5945,12 @@ async function handleDiscover(url, request) {
       categories: null,
       dateRange: null,
       contentTypes: null,
-      pedagogicalLevels: null,
       maxItems: maxItems,
     },
     delivered: {
       categories: {},
       dateRange: null,
       contentTypes: {},
-      pedagogicalLevels: {},
       totalItems: 0,
     },
     adjustments: [],
@@ -6028,11 +5975,6 @@ async function handleDiscover(url, request) {
   }
   feedback.request.contentTypes = requestedContentTypes.length > 0 ? requestedContentTypes : null;
 
-  let requestedLevels = [];
-  if (levelsParam) {
-    requestedLevels = levelsParam.split(',').map(l => l.trim().toLowerCase());
-  }
-  feedback.request.pedagogicalLevels = requestedLevels.length > 0 ? requestedLevels : null;
 
   // Track date range request
   if (startDateParam || endDateParam) {
@@ -6538,12 +6480,6 @@ async function handleDiscover(url, request) {
     );
   }
 
-  // Filter by pedagogical level if requested
-  if (requestedLevels.length > 0) {
-    filtered = filtered.filter(r =>
-      !r.pedagogicalLevel || requestedLevels.includes(r.pedagogicalLevel.toLowerCase())
-    );
-  }
 
   // Sort by publish date (newest first) before category distribution
   filtered.sort((a, b) => {
@@ -6670,12 +6606,6 @@ async function handleDiscover(url, request) {
   for (const item of finalResults) {
     const ct = (item.contentType || 'unknown').toLowerCase();
     feedback.delivered.contentTypes[ct] = (feedback.delivered.contentTypes[ct] || 0) + 1;
-  }
-
-  // Calculate delivered pedagogical level distribution
-  for (const item of finalResults) {
-    const level = (item.pedagogicalLevel || 'unknown').toLowerCase();
-    feedback.delivered.pedagogicalLevels[level] = (feedback.delivered.pedagogicalLevels[level] || 0) + 1;
   }
 
   // Calculate date range of delivered items

@@ -82,15 +82,6 @@ const TRANSLATIONS = {
     catCrime: 'Crime',
     catTourism: 'Tourism',
 
-    // Pedagogical Level
-    levelTitle: 'Pedagogical Level',
-    levelBeginner: 'Beginner',
-    levelBeginnerDesc: '(slow, simple topics)',
-    levelIntermediate: 'Intermediate',
-    levelIntermediateDesc: '(standard news)',
-    levelAdvanced: 'Advanced',
-    levelAdvancedDesc: '(complex topics)',
-
     // Content Type
     contentTypeTitle: 'Content Type',
     typeNews: 'News Reports',
@@ -239,15 +230,6 @@ const TRANSLATIONS = {
     catWeather: 'Погода',
     catCrime: 'Криминал',
     catTourism: 'Туризм',
-
-    // Pedagogical Level
-    levelTitle: 'Уровень',
-    levelBeginner: 'Начальный',
-    levelBeginnerDesc: '(медленная речь)',
-    levelIntermediate: 'Средний',
-    levelIntermediateDesc: '(новости)',
-    levelAdvanced: 'Продвинутый',
-    levelAdvancedDesc: '(сложные темы)',
 
     // Content Type
     contentTypeTitle: 'Формат',
@@ -700,7 +682,6 @@ function renderResults(results) {
           : `<div style="width:100%;height:100%;background:#e2e8f0;"></div>`
         }
         ${item.duration ? `<span class="video-duration">${formatDuration(item.duration)}</span>` : ''}
-        ${item.pedagogicalLevel ? `<span class="video-level ${item.pedagogicalLevel}">${escapeHtml(item.pedagogicalLevel)}</span>` : ''}
       </div>
       <div class="video-content">
         <div class="video-badges">
@@ -828,7 +809,6 @@ function openVideoModal(item) {
           <div class="modal-badges">
             <span class="video-source">${escapeHtml(item.source?.toUpperCase() || '')}</span>
             ${item.category ? `<span class="video-category">${escapeHtml(item.category)}</span>` : ''}
-            ${item.pedagogicalLevel ? `<span class="video-level ${item.pedagogicalLevel}">${escapeHtml(item.pedagogicalLevel)}</span>` : ''}
           </div>
           <time class="modal-date">${formatDate(item.publishedAt)}</time>
         </div>
@@ -1049,9 +1029,6 @@ function calculateRelevanceScore(item) {
   if (item.category) score += 3;
   if (item.categories && item.categories.length > 0) score += 2;
 
-  // Prefer items with pedagogical level (indicates quality metadata)
-  if (item.pedagogicalLevel) score += 3;
-
   // Recency bonus: newer content gets slight boost
   const pubDate = new Date(item.publishDate || item.publishedAt || 0);
   const daysSincePublish = (Date.now() - pubDate.getTime()) / (1000 * 60 * 60 * 24);
@@ -1118,7 +1095,6 @@ function getFilterValues() {
     maxResults: parseInt(document.getElementById('maxResults')?.value) || 20,
     sources: Array.from(document.querySelectorAll('input[name="source"]:checked')).map(cb => cb.value),
     categories: Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value),
-    levels: Array.from(document.querySelectorAll('input[name="level"]:checked')).map(cb => cb.value),
     contentTypes: Array.from(document.querySelectorAll('input[name="contentType"]:checked')).map(cb => cb.value)
   };
 }
@@ -1258,9 +1234,6 @@ async function performSearch(e) {
     if (filters.categories.length > 0 && filters.categories.length < 11) {
       discoverParams.categories = filters.categories.join(',');
     }
-    if (filters.levels.length > 0 && filters.levels.length < 3) {
-      discoverParams.levels = filters.levels.join(',');
-    }
     if (filters.contentTypes.length > 0 && filters.contentTypes.length < 4) {
       discoverParams.content_types = filters.contentTypes.join(',');
     }
@@ -1300,10 +1273,9 @@ async function performSearch(e) {
       let program = item.program || '';
       let publishedAt = item.publishDate || item.publishedAt || null;
 
-      // Track category, content type, and pedagogical level
+      // Track category and content type
       let category = item.categories?.[0] || item.category || null;
       let contentType = item.contentType || null;
-      let pedagogicalLevel = item.pedagogicalLevel || null;
 
       // For sources with incomplete discovery data (like 1tv), scrape to get full metadata
       if (!title || title === 'Video' || !thumbnail || !category) {
@@ -1325,12 +1297,8 @@ async function performSearch(e) {
               category = meta.category;
               log('Got inferred category from scrape:', category);
             }
-            // Get content type and level from scrape
             if (!contentType && meta.contentType) {
               contentType = meta.contentType;
-            }
-            if (!pedagogicalLevel && meta.pedagogicalLevel) {
-              pedagogicalLevel = meta.pedagogicalLevel;
             }
           }
         } catch (e) {
@@ -1355,7 +1323,6 @@ async function performSearch(e) {
         publishedAt: publishedAt || new Date().toISOString(),
         category: category,
         contentType: contentType,
-        pedagogicalLevel: pedagogicalLevel,
         m3u8Url: null
       });
     }
@@ -1374,13 +1341,6 @@ async function performSearch(e) {
     if (filters.contentTypes.length > 0 && filters.contentTypes.length < 4) {
       filtered = filtered.filter(item =>
         !item.contentType || filters.contentTypes.includes(item.contentType.toLowerCase())
-      );
-    }
-
-    // Pedagogical level filter
-    if (filters.levels.length > 0 && filters.levels.length < 3) {
-      filtered = filtered.filter(item =>
-        !item.pedagogicalLevel || filters.levels.includes(item.pedagogicalLevel.toLowerCase())
       );
     }
 
@@ -1589,9 +1549,6 @@ function handleReset() {
     cb.checked = false;
   });
 
-  document.querySelectorAll('input[name="level"]').forEach(cb => {
-    cb.checked = false;
-  });
 
   document.querySelectorAll('input[name="contentType"]').forEach(cb => {
     cb.checked = false;
