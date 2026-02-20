@@ -1990,7 +1990,7 @@ function estimatePedagogicalLevel(metadata) {
       scores.advanced += 4;
     }
     // ILR 2 topics: world events, science, technology, sports
-    else if (['science', 'technology', 'sports', 'society', 'weather', 'crime'].includes(lowerCat)) {
+    else if (['science', 'technology', 'sports', 'society', 'crime'].includes(lowerCat)) {
       scores.intermediate += 3;
     }
     // ILR 1 topics: weather, tourism, culture (everyday, predictable)
@@ -6026,7 +6026,7 @@ async function handleDiscover(url, request) {
     if (/(?:слайд[-\s]?шоу|slideshow|фотогалере|photo\s*gallery)/i.test(text)) return false;
     if (/(?:без\s+комментари|без\s+слов|no\s+comment|no\s+words)/i.test(text)) return false;
     if (/(?:релакс|relax|ambient|медитаци|asmr|белый\s+шум|white\s+noise)/i.test(text)) return false;
-    if (/(?:^клип\b|музыкальный\s+клип|music\s+video)/i.test(text)) return false;
+    if (/(?:^клип(?=\s|$)|музыкальный\s+клип|music\s+video)/i.test(text)) return false;
     if (/(?:timelapse|таймлапс|аэросъёмк|аэросъемк)/i.test(text) && !/(?:репортаж|сюжет|корреспондент)/i.test(text)) return false;
 
     // --- Full broadcasts (too long, not individual segments) ---
@@ -6042,7 +6042,7 @@ async function handleDiscover(url, request) {
     }
 
     // --- Raw footage / B-roll at any duration ---
-    if (/(?:^кадры\b|видеокадры|^видео\s|видеозапись|видеозаписи)/i.test(title)) {
+    if (/(?:^кадры(?=\s|$)|видеокадры|^видео\s|видеозапись|видеозаписи)/i.test(title)) {
       // Only filter if no narration indicators
       if (!/(?:сообщ|заяви|рассказ|объясн|коммент|корреспондент|сюжет|репортаж)/i.test(text)) {
         log('Filtering footage/recording:', title.substring(0, 60), `(${dur}s)`);
@@ -6051,7 +6051,7 @@ async function handleDiscover(url, request) {
     }
 
     // --- Live streams / direct broadcasts ---
-    if (/(?:прямой\s+эфир|прямая\s+трансляция|live\s+stream|livestream|стрим\b)/i.test(text) && dur > 1800) {
+    if (/(?:прямой\s+эфир|прямая\s+трансляция|live\s+stream|livestream|стрим(?=\s|$))/i.test(text) && dur > 1800) {
       log('Filtering live stream:', title.substring(0, 60), `(${dur}s)`);
       return false;
     }
