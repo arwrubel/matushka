@@ -1,0 +1,8 @@
+.spinner {
+    position: fixed;
+    left: 50%;
+    top: 40px;
+    margin-left: -32px; /* -1 * image width / 2 */
+    margin-top: -32px;  /* -1 * image height / 2 */
+    z-index: 99999999;
+  }
