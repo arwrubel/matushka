@@ -618,7 +618,8 @@ const CATEGORY_DETECTION = {
       { keywords: ['kerling', 'skeleton', 'bobsley', 'snoubord', 'fristayl'], weight: 3 },
     ],
     negative: ['министр спорта', 'минспорт', 'правительств', 'дума', 'закон о спорте', 'голод', 'sim boks',
-               'ministr sporta', 'minsport', 'pravitelstv', 'golod', 'goloda', 'moshennik'],
+               'ministr sporta', 'minsport', 'pravitelstv', 'golod', 'goloda', 'moshennik',
+               'школ', 'учебн', 'ученик', 'образован', 'shkol', 'uchebn', 'uchenik', 'obrazovan'],
     requiredScore: 3,
   },
   // POLITICS: Government actions, legislation, elections, diplomacy, official statements
@@ -862,10 +863,8 @@ const CATEGORY_DETECTION = {
       { keywords: ['propal', 'propavsh', 'ischez'], weight: 4 },
       { keywords: ['telo nayden', 'telo obnaruzhen', 'nayden trup', 'obnaruzhen trup'], weight: 5 },
     ],
-    negative: ['спорт', 'военн', 'армия', 'сво', 'всу', 'минобороны',
-               'лавин', 'наводнен', 'землетрясен', 'ураган', 'шторм', 'стихийн',
+    negative: ['лавин', 'наводнен', 'землетрясен', 'ураган', 'шторм', 'стихийн',
                'погод', 'циклон', 'тайфун', 'цунами', 'извержен',
-               'sport', 'voenn', 'armiya', 'svo', 'vsu', 'minoborony',
                'lavin', 'navodnin', 'zemletryasen', 'uragan', 'shtorm', 'stikhiyn'],
     requiredScore: 4,
   },
@@ -1274,6 +1273,9 @@ function wordBoundaryMatch(text, word) {
 // These patterns, when matched, adjust the score for a category
 const DISAMBIGUATION_RULES = {
   sports: [
+    // School/education context - NOT sports even if "мест" or "открылась" appears
+    { pattern: /(школ[а-яё]*|учебн[а-яё]*|ученик[а-яё]*|образован[а-яё]*)[\s\S]{0,30}(открыл|построил|мест|класс)/gi, adjust: -20 },
+    { pattern: /(shkol[a-z]*|uchebn[a-z]*|uchenik[a-z]*|obrazovan[a-z]*)[\s\S]{0,30}(otkryl|postroil|mest|klass)/gi, adjust: -20 },
     // "Ледниковый период" + show context = Ice skating TV show (sports)
     { pattern: /ледниковый\s+период[\s\S]{0,30}(шоу|выпуск|канал|сезон|эфир|участник|звёзд)/gi, adjust: +10 },
     { pattern: /(шоу|выпуск|канал|сезон|эфир)[\s\S]{0,30}ледниковый\s+период/gi, adjust: +10 },
@@ -1381,8 +1383,8 @@ const DISAMBIGUATION_RULES = {
     { pattern: /sovet\s*federacii|совет\s*федерации/gi, adjust: +5 },
     // Politicians making statements - boost politics (headline pattern "Лавров:")
     { pattern: /^(лавров|путин|песков|захарова|мид)[а-яё]*\s*:/gi, adjust: +15 },
-    { pattern: /(лавров|путин|мишустин|песков|захарова|матвиенко|володин)[а-яё]*[\s\S]{0,30}(заявил|сказал|сообщил|отметил|подчеркнул)/gi, adjust: +10 },
-    { pattern: /(lavrov|putin|mishustin|peskov|zakharova|matvienko|volodin)[a-z]*[\s\S]{0,30}(zayavil|skazal|soobshchil|otmetil|podcherknul)/gi, adjust: +10 },
+    { pattern: /(лавров|путин|мишустин|песков|захарова|матвиенко|володин|медведев)[а-яё]*[\s\S]{0,30}(заявил|сказал|сообщил|отметил|подчеркнул|высказал|призвал|предупредил|раскритиковал)/gi, adjust: +10 },
+    { pattern: /(lavrov|putin|mishustin|peskov|zakharova|matvienko|volodin|medvedev)[a-z]*[\s\S]{0,30}(zayavil|skazal|soobshchil|otmetil|podcherknul|vyskazal|prizval|predupredil|raskritikoval)/gi, adjust: +10 },
     // Official statements about Europe/NATO/West - this is diplomacy
     { pattern: /(европ|нато|запад|сша|америк)[а-яё]*[\s\S]{0,30}(заявлен|позици|требован|угроз|ответ)/gi, adjust: +8 },
     { pattern: /(evrop|nato|zapad|ssha|amerika)[a-z]*[\s\S]{0,30}(zayavlen|pozici|trebovan|ugroz|otvet)/gi, adjust: +8 },
@@ -1395,11 +1397,16 @@ const DISAMBIGUATION_RULES = {
     { pattern: /(temperatur|pogod|metel|uragan|shtorm|morozy|pokholodan|poteplen|snegopad)[a-z]*/gi, adjust: -20 },
   ],
   economy: [
+    // Crime context - money amounts in crime stories are NOT economy news
+    { pattern: /(мошенник|мошенничеств|украли|похитили|обманули|аферист)[а-яё]*/gi, adjust: -25 },
+    { pattern: /(moshennik|moshennichestvo|ukrali|pokhitili|obmanuli|aferist)[a-z]*/gi, adjust: -25 },
+    { pattern: /(кража|ограблен|хищен|растрат|взятк|вымогательств)[а-яё]*/gi, adjust: -20 },
+    { pattern: /(krazha|ograblen|khishchen|rastrat|vzyatk|vymogatelstv)[a-z]*/gi, adjust: -20 },
     // Reduce score when politicians making statements (not economy news)
     // Pattern: "Лавров:" at start of headline, or "Lavrov заявил/сказал"
     { pattern: /^(лавров|путин|песков|захарова|мид|министр)[а-яё]*\s*:/gi, adjust: -20 },
-    { pattern: /(лавров|путин|мид|министр иностран)[а-яё]*[\s\S]{0,30}(заявил|сказал|отметил)/gi, adjust: -15 },
-    { pattern: /(lavrov|putin|mid|ministr inostran)[a-z]*[\s\S]{0,30}(zayavil|skazal|otmetil)/gi, adjust: -15 },
+    { pattern: /(лавров|путин|медведев|мид|министр иностран)[а-яё]*[\s\S]{0,30}(заявил|сказал|отметил|высказал|призвал|раскритиковал)/gi, adjust: -15 },
+    { pattern: /(lavrov|putin|medvedev|mid|ministr inostran)[a-z]*[\s\S]{0,30}(zayavil|skazal|otmetil|vyskazal|prizval|raskritikoval)/gi, adjust: -15 },
     // Military terms in economy context - this is geopolitics, not economy
     { pattern: /(нападен|военн|армия|атак|удар)[а-яё]*[\s\S]{0,20}(европ|нато|россия)/gi, adjust: -20 },
     { pattern: /(napaden|voenn|armiya|atak|udar)[a-z]*[\s\S]{0,20}(evrop|nato|rossiya)/gi, adjust: -20 },
@@ -1411,9 +1418,23 @@ const DISAMBIGUATION_RULES = {
     // "военный ответ" - military response - definitely not economy
     { pattern: /военн[а-яё]*\s*(ответ|угроз|действ|операц)/gi, adjust: -25 },
     { pattern: /voenn[a-z]*\s*(otvet|ugroz|deystviy|operac)/gi, adjust: -25 },
-    // Boost for actual economy reporting
-    { pattern: /(курс|рубл|доллар|евро|биржа|акци|индекс)[а-яё]*/gi, adjust: +5 },
-    { pattern: /(kurs|rubl|dollar|evro|birzha|akci|indeks)[a-z]*/gi, adjust: +5 },
+    // "Европа/Европе/европейский" is NOT the Euro currency — penalize when "евро" matches only via "Европ"
+    { pattern: /европ[а-яё]/gi, adjust: -15 },
+    { pattern: /evrop[a-z]/gi, adjust: -15 },
+    // Boost for actual economy reporting (true "евро" currency, not "Европа")
+    { pattern: /(курс|рубл|доллар|биржа|акци|индекс)[а-яё]*/gi, adjust: +5 },
+    { pattern: /(kurs|rubl|dollar|birzha|akci|indeks)[a-z]*/gi, adjust: +5 },
+    // Boost when "евро" appears near financial context (actual Euro currency)
+    { pattern: /евро[\s\S]{0,10}(курс|валют|обмен|стоимост|цен)/gi, adjust: +10 },
+    { pattern: /evro[\s\S]{0,10}(kurs|valyut|obmen|stoimost|cen)/gi, adjust: +10 },
+  ],
+  crime: [
+    // Military operations context — actual combat reporting is NOT crime
+    { pattern: /(наступлен|оборон|обстрел|артиллер|бомбардировк|авиаудар)[а-яё]*/gi, adjust: -20 },
+    { pattern: /(nastuplen|oboron|obstrel|artiller|bombardirovk|aviaudar)[a-z]*/gi, adjust: -20 },
+    // But fraud/theft AGAINST military personnel IS crime — boost
+    { pattern: /(мошенник|украли|обманули|похитили)[а-яё]*[\s\S]{0,30}(участник|военнослужащ|ветеран|сво)/gi, adjust: +15 },
+    { pattern: /(moshennik|ukrali|obmanuli|pokhitili)[a-z]*[\s\S]{0,30}(uchastnik|voennosluzhashch|veteran|svo)/gi, adjust: +15 },
   ],
   // world disambiguation removed - world category eliminated
   science: [
@@ -4517,6 +4538,111 @@ async function extractMchs(url) {
 }
 
 // ============================================================================
+// EURONEWS EXTRACTION
+// ============================================================================
+
+async function extractEuronews(url) {
+  log('Extracting Euronews video:', url);
+
+  const response = await fetchWithHeaders(url, {
+    headers: { 'Accept': 'text/html' }
+  });
+
+  if (!response.ok) throw new Error(`Euronews page fetch failed: ${response.status}`);
+  const html = await response.text();
+
+  // Extract metadata from og tags
+  const title = (html.match(/<meta\s+(?:property|name)="og:title"\s+content="([^"]+)"/i) ||
+                 html.match(/<meta\s+content="([^"]+)"\s+(?:property|name)="og:title"/i))?.[1] || null;
+  const description = (html.match(/<meta\s+(?:property|name)="og:description"\s+content="([^"]+)"/i) ||
+                       html.match(/<meta\s+content="([^"]+)"\s+(?:property|name)="og:description"/i))?.[1] || null;
+  const thumbnail = (html.match(/<meta\s+(?:property|name)="og:image"\s+content="([^"]+)"/i) ||
+                     html.match(/<meta\s+content="([^"]+)"\s+(?:property|name)="og:image"/i))?.[1] || null;
+
+  // Extract video URL from og:video, JSON-LD VideoObject, or data attributes
+  let mp4Url = null;
+  let m3u8Url = null;
+
+  // Try og:video meta tag
+  const ogVideo = (html.match(/<meta\s+(?:property|name)="og:video(?::url)?"\s+content="([^"]+)"/i) ||
+                   html.match(/<meta\s+content="([^"]+)"\s+(?:property|name)="og:video(?::url)?"/i))?.[1];
+  if (ogVideo) {
+    if (ogVideo.includes('.mp4')) mp4Url = ogVideo;
+    else if (ogVideo.includes('.m3u8')) m3u8Url = ogVideo;
+  }
+
+  // Try JSON-LD VideoObject
+  if (!mp4Url && !m3u8Url) {
+    const videoObjectMatch = html.match(/"@type"\s*:\s*"VideoObject"[\s\S]*?"contentUrl"\s*:\s*"([^"]+)"/);
+    if (videoObjectMatch) {
+      const contentUrl = videoObjectMatch[1];
+      if (contentUrl.includes('.mp4')) mp4Url = contentUrl;
+      else if (contentUrl.includes('.m3u8')) m3u8Url = contentUrl;
+    }
+  }
+
+  // Try embedUrl from JSON-LD
+  if (!mp4Url && !m3u8Url) {
+    const embedMatch = html.match(/"@type"\s*:\s*"VideoObject"[\s\S]*?"embedUrl"\s*:\s*"([^"]+)"/);
+    if (embedMatch) {
+      const embedUrl = embedMatch[1];
+      // Euronews often uses Dailymotion embeds
+      if (embedUrl.includes('dailymotion.com')) {
+        // Extract Dailymotion video ID and get stream URL
+        const dmId = embedUrl.match(/video\/([a-z0-9]+)/i)?.[1];
+        if (dmId) {
+          try {
+            const dmResponse = await fetchWithHeaders(`https://www.dailymotion.com/player/metadata/video/${dmId}`, {
+              headers: { 'Accept': 'application/json' }
+            });
+            if (dmResponse.ok) {
+              const dmData = await dmResponse.json();
+              // Dailymotion provides HLS stream
+              const hlsUrl = dmData?.qualities?.auto?.[0]?.url;
+              if (hlsUrl) m3u8Url = hlsUrl;
+            }
+          } catch (e) {
+            log('Dailymotion metadata fetch failed:', e.message);
+          }
+        }
+      }
+    }
+  }
+
+  // Try finding video source in HTML directly
+  if (!mp4Url && !m3u8Url) {
+    const srcMatch = html.match(/(?:src|source)\s*[=:]\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)/i);
+    if (srcMatch) {
+      if (srcMatch[1].includes('.mp4')) mp4Url = srcMatch[1];
+      else if (srcMatch[1].includes('.m3u8')) m3u8Url = srcMatch[1];
+    }
+  }
+
+  // Extract duration from JSON-LD
+  let duration = null;
+  const durationMatch = html.match(/"@type"\s*:\s*"VideoObject"[\s\S]*?"duration"\s*:\s*"(PT[^"]+)"/);
+  if (durationMatch) {
+    duration = parseIsoDuration(durationMatch[1]);
+  }
+
+  // Extract publish date
+  const publishDate = (html.match(/<meta\s+(?:property|name)="article:published_time"\s+content="([^"]+)"/i) ||
+                       html.match(/<meta\s+content="([^"]+)"\s+(?:property|name)="article:published_time"/i))?.[1] || null;
+
+  return {
+    title: title ? decodeHtmlEntities(title) : null,
+    description: description ? decodeHtmlEntities(description) : null,
+    thumbnail,
+    duration,
+    publishDate,
+    source: 'euronews',
+    url,
+    mp4Url,
+    m3u8Url,
+  };
+}
+
+// ============================================================================
 // UNIFIED EXTRACTION
 // ============================================================================
 
@@ -4531,6 +4657,8 @@ function detectSite(url) {
   if (urlLower.includes('ria.ru')) return 'ria';
   if (urlLower.includes('tass.ru') || urlLower.includes('tass.com')) return 'tass';
   if (urlLower.includes('kommersant.ru')) return 'kommersant';
+  if (urlLower.includes('euronews.com')) return 'euronews';
+  if (urlLower.includes('bbc.com') || urlLower.includes('bbc.co.uk')) return 'bbc';
   return null;
 }
 
@@ -4554,6 +4682,8 @@ async function extractMetadata(url) {
     case 'tass':
       return extractTass(url);
     // case 'kommersant' removed
+    case 'euronews':
+      return extractEuronews(url);
     default:
       throw new Error(`Unsupported site: ${url}`);
   }
@@ -6346,6 +6476,20 @@ async function handleDiscover(url, request) {
       return false;
     }
 
+    // --- Known full-broadcast program names (>8 min = full episode, not a clip) ---
+    if (dur > 480) {
+      const fullBroadcastPrograms = /^(?:сегодня|новости дня|новости|вести|время|итоги дня|итоги недели|60 минут|вечер|утро россии|доброе утро|информбюро)/i;
+      if (fullBroadcastPrograms.test(title)) {
+        log('Filtering known broadcast program:', title.substring(0, 60), `(${dur}s)`);
+        return false;
+      }
+      // Also catch "Program | date" format like "Новости дня | 20 февраля 2026 г."
+      if (/(?:новости|вести|сегодня|итоги)\s*[\|—–]\s*\d{1,2}/i.test(title)) {
+        log('Filtering program+date broadcast:', title.substring(0, 60), `(${dur}s)`);
+        return false;
+      }
+    }
+
     // --- Title is just a date (e.g., "15 февраля 2026 года") = full broadcast ---
     if (/^\d{1,2}\s+(?:январ|феврал|март|апрел|ма[яй]|июн|июл|август|сентябр|октябр|ноябр|декабр)[а-яё]*\s+\d{4}/i.test(title) && !title.includes(':')) {
       log('Filtering date-only title:', title.substring(0, 60));
@@ -6506,12 +6650,13 @@ async function handleDiscover(url, request) {
         categoryBuckets[cat] = [];
       }
 
-      // Sort items into category buckets - check primary category and categories array
+      // Sort items into category buckets - prefer inferred category over fallback
       for (const item of filtered) {
         const itemCat = (item.category || '').toLowerCase();
         if (itemCat && categoryBuckets[itemCat] !== undefined) {
           categoryBuckets[itemCat].push(item);
-        } else if (item.categories && Array.isArray(item.categories)) {
+        } else if (!itemCat && item.categories && Array.isArray(item.categories)) {
+          // Only use fallback categories when no inferred category exists
           for (const cat of item.categories) {
             const lowerCat = (cat || '').toLowerCase();
             if (categoryBuckets[lowerCat] !== undefined) {
@@ -6564,11 +6709,14 @@ async function handleDiscover(url, request) {
 
     } else {
       // Single category or weighted distribution - simple filter
+      // Prefer inferred category (r.category) over fallback categories array
       finalResults = filtered.filter(r => {
         const itemCat = (r.category || '').toLowerCase();
-        if (itemCat && requestedCategories.includes(itemCat)) {
-          return true;
+        if (itemCat) {
+          // Has a specifically inferred category — use it exclusively
+          return requestedCategories.includes(itemCat);
         }
+        // No inferred category — check fallback categories array
         if (r.categories && Array.isArray(r.categories)) {
           return r.categories.some(cat => requestedCategories.includes((cat || '').toLowerCase()));
         }
