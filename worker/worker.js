@@ -5073,6 +5073,89 @@ function countDiscourseMarkers(text) {
 }
 
 /**
+ * Compute RKI/TORFL lexical coverage using frequency band data.
+ * Maps existing frequency bands to CEFR levels via RKI minimums:
+ *   Band1 (1K) ≈ A1-A2, Bands1+2 (3K) ≈ B1, Bands1+2+3 (5K) ≈ B2, All bands (10K) ≈ C1
+ * Returns the lowest CEFR level where cumulative coverage ≥ 95%.
+ *
+ * @param {number[]} bandCounts - Array of [band1, band2, band3, band4, outOfBand] counts
+ * @param {number} totalWords - Total stemmed words analyzed
+ * @returns {{level: string, coverage: object}}
+ */
+function computeRkiCoverage(bandCounts, totalWords) {
+  if (totalWords === 0) return { level: 'A1', coverage: { A1: 1, B1: 1, B2: 1, C1: 1 } };
+  const cum1 = bandCounts[0] / totalWords;
+  const cum2 = (bandCounts[0] + bandCounts[1]) / totalWords;
+  const cum3 = (bandCounts[0] + bandCounts[1] + bandCounts[2]) / totalWords;
+  const cum4 = (bandCounts[0] + bandCounts[1] + bandCounts[2] + bandCounts[3]) / totalWords;
+  const coverage = {
+    A1: +cum1.toFixed(3),
+    B1: +cum2.toFixed(3),
+    B2: +cum3.toFixed(3),
+    C1: +cum4.toFixed(3)
+  };
+  if (cum1 >= 0.95) return { level: 'A1', coverage };
+  if (cum2 >= 0.95) return { level: 'B1', coverage };
+  if (cum3 >= 0.95) return { level: 'B2', coverage };
+  if (cum4 >= 0.95) return { level: 'C1', coverage };
+  return { level: 'C2', coverage };
+}
+
+/**
+ * Compute Russian-adapted Flesch readability (Matskovskiy/Oborneva formula).
+ * Score interpretation: 90-100 very easy, 70-90 easy, 50-70 moderate, 30-50 difficult, 0-30 very difficult.
+ *
+ * @param {number} avgSentenceLength - Average words per sentence
+ * @param {number} avgSyllablesPerWord - Average syllables (Cyrillic vowels) per word
+ * @returns {number} Readability score clamped to 0-100
+ */
+function computeReadability(avgSentenceLength, avgSyllablesPerWord) {
+  const score = 206.835 - (1.3 * avgSentenceLength) - (60.1 * avgSyllablesPerWord);
+  return +Math.max(0, Math.min(100, score)).toFixed(1);
+}
+
+/**
+ * Map ILR level to CEFR equivalent per interagency roundtable standards.
+ * @param {number} ilr - ILR level (1, 1.5, 2, 2.5, 3, 3.5, 4)
+ * @returns {string} CEFR level (A2, B1, B2, C1, C2)
+ */
+function ilrToCefr(ilr) {
+  if (ilr <= 1) return 'A2';
+  if (ilr <= 1.5) return 'B1';
+  if (ilr <= 2) return 'B1';
+  if (ilr <= 2.5) return 'B2';
+  if (ilr <= 3) return 'C1';
+  if (ilr <= 3.5) return 'C1';
+  return 'C2';
+}
+
+/**
+ * Split Russian text into sentences, handling abbreviations correctly.
+ * Naive split on [.!?] breaks on В.Д., г.(год), ст.(статья), п.(пункт),
+ * С.(страница), см.(смотри), т.д./т.п., № NNN-XX, etc.
+ * Protects abbreviation periods before splitting.
+ */
+function splitRussianSentences(text) {
+  if (!text || !text.trim()) return [];
+  let t = text;
+  // 1. Protect single uppercase letter + period (initials: В.Д., К.В., Г.А.)
+  t = t.replace(/([А-ЯA-Z])\.(?=[А-ЯA-Z\s,;—–\-(])/g, '$1\u0000');
+  // 2. Protect common Russian abbreviations + period before whitespace/colon
+  //    Aggressive: protects even before uppercase (legal texts have "ст. Конституции")
+  t = t.replace(/([\s\d(,;:—–\-])(г|ст|п|ч|др|руб|тыс|млн|млрд|проф|акад|гл|изд|рис|табл|абз|вып|ул|пр|корп|стр|обл|д|р|с|С)\.([\s:])/g, '$1$2\u0000$3');
+  // 3. Protect "см.", "ср.", "напр." (cross-references, often before colon)
+  t = t.replace(/([\s(,;:—–\-])(см|ср|напр)\.([\s:])/g, '$1$2\u0000$3');
+  // 4. Protect "т.д.", "т.п.", "т.е." (contractions)
+  t = t.replace(/([\s(,;:—–\-])т\.([дпеДПЕ])\./g, '$1т\u0000$2\u0000');
+  // 5. Protect legal document numbers: "№ NNN-XX." and "№ NNN."
+  t = t.replace(/(№\s*[\d]+(?:-[А-ЯA-Za-z\/]+)?)\./g, '$1\u0000');
+  // 6. Protect year references in parenthetical citations: "2022."
+  t = t.replace(/(\d{4})\.([\s,;)\]])/g, '$1\u0000$2');
+  // Split on remaining sentence-ending punctuation
+  return t.split(/[.!?]+/).filter(s => s.trim().length > 0);
+}
+
+/**
  * Analyze transcript text using corpus-backed linguistic features.
  * Uses Snowball stemmer, University of Leeds frequency bands, MTLD,
  * and enhanced discourse markers for defensible ILR estimation.
@@ -5083,7 +5166,7 @@ function countDiscourseMarkers(text) {
  */
 function analyzeTranscript(text, durationSeconds) {
   const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 0);
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const sentences = splitRussianSentences(text);
   const cyrillicWords = words.filter(w => /^[а-яё-]+$/i.test(w) && w.length >= 2);
 
   // --- Stemming & frequency band analysis ---
@@ -5126,8 +5209,13 @@ function analyzeTranscript(text, durationSeconds) {
     ? +(polysyllabicCount / cyrillicWords.length * 100).toFixed(1) : 0;
 
   // --- Enhanced clause complexity (expanded subordinators) ---
-  const subordinators = /(?:^|\s)(?:который|которая|которое|которые|которых|которому|которой|потому что|так как|если|хотя|несмотря на то что|несмотря на|когда|пока|чтобы|где|куда|откуда|поскольку|причём|притом|ибо|ведь|в то время как|после того как|до того как|при условии что|в случае если|благодаря тому что|ввиду того что)(?:\s|$|,)/gi;
-  const clauseCount = (text.match(subordinators) || []).length;
+  const subordinators = /(?:^|\s)(?:который|которая|которое|которые|которых|которому|которой|которым|которого|которую|которыми|котором|потому что|так как|если|хотя|несмотря на то что|несмотря на|когда|пока|чтобы|где|куда|откуда|поскольку|причём|притом|ибо|ведь|в то время как|после того как|до того как|при условии что|в случае если|благодаря тому что|ввиду того что)(?:\s|$|,)/gi;
+  const conjunctionCount = (text.match(subordinators) || []).length;
+  // Comma+что subordination: most frequent clause marker in formal/legal Russian
+  const chtoSubordination = (text.match(/,\s*что(?=\s)/g) || []).length;
+  // Formal prepositional subordination (legal/specialized register markers)
+  const prepositionalSub = (text.match(/(?:в соответствии с|на основании|в отношении|в силу|в связи с|с учётом|с учетом|в порядке|в рамках|в целях|в части)(?=\s)/gi) || []).length;
+  const clauseCount = conjunctionCount + chtoSubordination + prepositionalSub;
   const clauseComplexity = sentences.length > 0 ? +(clauseCount / sentences.length).toFixed(2) : 0;
 
   // --- Discourse markers ---
@@ -5137,6 +5225,20 @@ function analyzeTranscript(text, durationSeconds) {
 
   // --- Legacy vocab matching (supplementary domain signal) ---
   const domainAdvancedPercent = vocabMatchPercent(words, ILR_ADVANCED_VOCAB);
+
+  // --- Average syllables per word (Cyrillic vowels) ---
+  const totalSyllables = cyrillicWords.reduce((sum, w) => {
+    return sum + (w.match(russianVowels) || []).length;
+  }, 0);
+  const avgSyllablesPerWord = cyrillicWords.length > 0
+    ? +(totalSyllables / cyrillicWords.length).toFixed(2) : 0;
+
+  // --- Russian Flesch readability (Matskovskiy/Oborneva) ---
+  const avgSentLen = sentences.length > 0 ? words.length / sentences.length : 0;
+  const readability = computeReadability(avgSentLen, avgSyllablesPerWord);
+
+  // --- RKI/TORFL lexical coverage ---
+  const rkiCoverage = computeRkiCoverage(bandCounts, totalStemmed);
 
   return {
     wordCount: words.length,
@@ -5156,6 +5258,9 @@ function analyzeTranscript(text, durationSeconds) {
     discourseHedging: discourse.hedging,
     discourseModality: discourse.modality,
     domainAdvancedPercent,
+    avgSyllablesPerWord,
+    readability,
+    rkiCoverage,
   };
 }
 
@@ -5170,71 +5275,155 @@ function analyzeTranscript(text, durationSeconds) {
  */
 function estimateIlrFromMetrics(metrics) {
   let score = 0;
+  const components = {};
+
+  // Frequency confidence: frequency-based metrics are less reliable for shorter
+  // texts where a small sample inflates out-of-band percentages. Scale scores
+  // proportionally up to 100 words where frequency data becomes reliable.
+  const freqConfidence = Math.min(1, (metrics.wordCount || 0) / 100);
 
   // --- Speech rate (0-3 points) ---
+  let speechRateScore = 0;
   if (metrics.speechRate !== null) {
-    if (metrics.speechRate < 90) score += 0;
-    else if (metrics.speechRate < 120) score += 1;
-    else if (metrics.speechRate < 150) score += 2;
-    else score += 3;
+    if (metrics.speechRate >= 150) speechRateScore = 3;
+    else if (metrics.speechRate >= 120) speechRateScore = 2;
+    else if (metrics.speechRate >= 90) speechRateScore = 1;
   }
+  score += speechRateScore;
+  components.speechRate = speechRateScore;
 
-  // --- MTLD: lexical diversity (0-3 points) ---
-  if (metrics.mtld < 20) score += 0;
-  else if (metrics.mtld < 40) score += 1;
-  else if (metrics.mtld < 70) score += 2;
-  else score += 3;
+  // --- MTLD: lexical diversity (0-2 points) ---
+  let mtldScore = 0;
+  if (metrics.mtld >= 80) mtldScore = 2;
+  else if (metrics.mtld >= 30) mtldScore = 1;
+  score += mtldScore;
+  components.mtld = mtldScore;
 
-  // --- Average sentence length (0-3 points) ---
-  if (metrics.avgSentenceLength < 8) score += 0;
-  else if (metrics.avgSentenceLength < 14) score += 1;
-  else if (metrics.avgSentenceLength < 20) score += 2;
-  else score += 3;
+  // --- Average sentence length (0-7 points) ---
+  // Strongest single differentiator across all ILR levels
+  let sentLenScore = 0;
+  if (metrics.avgSentenceLength >= 55) sentLenScore = 7;
+  else if (metrics.avgSentenceLength >= 40) sentLenScore = 6;
+  else if (metrics.avgSentenceLength >= 30) sentLenScore = 5;
+  else if (metrics.avgSentenceLength >= 22) sentLenScore = 4;
+  else if (metrics.avgSentenceLength >= 17) sentLenScore = 3;
+  else if (metrics.avgSentenceLength >= 12) sentLenScore = 2;
+  else if (metrics.avgSentenceLength >= 7) sentLenScore = 1;
+  score += sentLenScore;
+  components.sentLen = sentLenScore;
 
-  // --- Lexical sophistication: frequency band analysis (0-5 points) ---
+  // --- Lexical sophistication: frequency band analysis (0-4 points) ---
   const lowFreqPercent = metrics.freqBand3Percent + metrics.freqBand4Percent + metrics.outOfBandPercent;
-  if (lowFreqPercent > 20) score += 5;
-  else if (lowFreqPercent > 12) score += 3;
-  else if (lowFreqPercent > 5) score += 2;
-  else if (lowFreqPercent > 2) score += 1;
+  let lexSophScore = 0;
+  if (lowFreqPercent > 35) lexSophScore = 4;
+  else if (lowFreqPercent > 25) lexSophScore = 3;
+  else if (lowFreqPercent > 18) lexSophScore = 2;
+  else if (lowFreqPercent > 10) lexSophScore = 1;
+  lexSophScore = Math.round(lexSophScore * freqConfidence * 2) / 2;
+  score += lexSophScore;
+  components.lexSoph = lexSophScore;
 
   // --- Lexical density (0-2 points) ---
-  if (metrics.lexicalDensity > 65) score += 2;
-  else if (metrics.lexicalDensity > 55) score += 1;
+  let lexDensScore = 0;
+  if (metrics.lexicalDensity > 65) lexDensScore = 2;
+  else if (metrics.lexicalDensity > 55) lexDensScore = 1;
+  lexDensScore = Math.round(lexDensScore * freqConfidence * 2) / 2;
+  score += lexDensScore;
+  components.lexDens = lexDensScore;
 
-  // --- Average word length (0-2 points) ---
-  if (metrics.avgWordLength >= 7) score += 2;
-  else if (metrics.avgWordLength >= 5.5) score += 1;
+  // --- Average word length (0-5 points) ---
+  let wordLenScore = 0;
+  if (metrics.avgWordLength >= 9.5) wordLenScore = 5;
+  else if (metrics.avgWordLength >= 8.8) wordLenScore = 4;
+  else if (metrics.avgWordLength >= 8.0) wordLenScore = 3;
+  else if (metrics.avgWordLength >= 6.8) wordLenScore = 2;
+  else if (metrics.avgWordLength >= 5.5) wordLenScore = 1;
+  score += wordLenScore;
+  components.wordLen = wordLenScore;
 
-  // --- Polysyllabic ratio (0-3 points) ---
-  if (metrics.polysyllabicRatio > 20) score += 3;
-  else if (metrics.polysyllabicRatio > 12) score += 2;
-  else if (metrics.polysyllabicRatio > 5) score += 1;
+  // --- Polysyllabic ratio (0-5 points) ---
+  let polysylScore = 0;
+  if (metrics.polysyllabicRatio >= 60) polysylScore = 5;
+  else if (metrics.polysyllabicRatio >= 50) polysylScore = 4;
+  else if (metrics.polysyllabicRatio >= 40) polysylScore = 3;
+  else if (metrics.polysyllabicRatio >= 25) polysylScore = 2;
+  else if (metrics.polysyllabicRatio >= 12) polysylScore = 1;
+  score += polysylScore;
+  components.polysyl = polysylScore;
 
-  // --- Clause complexity (0-3 points) ---
-  if (metrics.clauseComplexity > 2.0) score += 3;
-  else if (metrics.clauseComplexity > 1.0) score += 2;
-  else if (metrics.clauseComplexity > 0.3) score += 1;
+  // --- Clause complexity (0-4 points) ---
+  // Finer granularity to differentiate ILR 3 (policy, avg cl=0.42) from 3.5 (legal, avg cl=0.95)
+  let clauseScore = 0;
+  if (metrics.clauseComplexity > 2.0) clauseScore = 4;
+  else if (metrics.clauseComplexity > 1.2) clauseScore = 3;
+  else if (metrics.clauseComplexity > 0.7) clauseScore = 2;
+  else if (metrics.clauseComplexity > 0.2) clauseScore = 1;
+  score += clauseScore;
+  components.clause = clauseScore;
 
   // --- Discourse complexity (0-3 points) ---
-  if (metrics.discoursePerSentence > 1.0) score += 3;
-  else if (metrics.discoursePerSentence > 0.4) score += 2;
-  else if (metrics.discoursePerSentence > 0.1) score += 1;
+  let discScore = 0;
+  if (metrics.discoursePerSentence > 1.0) discScore = 3;
+  else if (metrics.discoursePerSentence > 0.4) discScore = 2;
+  else if (metrics.discoursePerSentence > 0.1) discScore = 1;
+  score += discScore;
+  components.disc = discScore;
 
   // --- Supplementary domain signal (+1 bonus) ---
-  if (metrics.domainAdvancedPercent > 2) score += 1;
+  let domainScore = 0;
+  if (metrics.domainAdvancedPercent > 2) domainScore = 1;
+  score += domainScore;
+  components.domain = domainScore;
 
-  // Map score to ILR level (max ~28 points)
+  // --- RKI coverage level (0-2 points) ---
+  let rkiScore = 0;
+  if (metrics.rkiCoverage && (metrics.wordCount || 0) >= 100) {
+    const rkiLevel = metrics.rkiCoverage.level;
+    if (rkiLevel === 'C2') rkiScore = 2;
+    else if (rkiLevel === 'C1') rkiScore = 1.5;
+    else if (rkiLevel === 'B2') rkiScore = 1;
+    else if (rkiLevel === 'B1') rkiScore = 0.5;
+  }
+  score += rkiScore;
+  components.rki = rkiScore;
+
+  // --- Readability score (0-2 points) ---
+  let readScore = 0;
+  if (metrics.readability !== undefined) {
+    if (metrics.readability < 20) readScore = 2;
+    else if (metrics.readability < 35) readScore = 1.5;
+    else if (metrics.readability < 50) readScore = 1;
+  }
+  score += readScore;
+  components.read = readScore;
+
+  // --- Out-of-band vocabulary density (0-3 points) ---
+  // Words outside the top-10K frequency list indicate specialized/academic
+  // vocabulary. Gated behind avgWordLength >= 7.5 because simple texts also
+  // show 15% OOB due to proper nouns, informal words, and list coverage gaps.
+  // Only professional/academic texts with long words benefit from this boost.
+  const outOfBandPct = metrics.outOfBandPercent || 0;
+  let oobScore = 0;
+  if (metrics.avgWordLength >= 7.5) {
+    if (outOfBandPct > 25) oobScore = 3;
+    else if (outOfBandPct > 20) oobScore = 2;
+    else if (outOfBandPct > 16) oobScore = 1;
+    oobScore = Math.round(oobScore * freqConfidence * 2) / 2;
+  }
+  score += oobScore;
+  components.oob = oobScore;
+
+  // Map score to ILR level (max ~43 points)
   let level;
-  if (score <= 3) level = 1;
-  else if (score <= 6) level = 1.5;
-  else if (score <= 9) level = 2;
-  else if (score <= 12) level = 2.5;
-  else if (score <= 16) level = 3;
-  else if (score <= 20) level = 3.5;
+  if (score <= 7) level = 1;
+  else if (score <= 14) level = 1.5;
+  else if (score <= 21) level = 2;
+  else if (score <= 26) level = 2.5;
+  else if (score <= 30) level = 3;
+  else if (score <= 33) level = 3.5;
   else level = 4;
 
-  return { level, label: ilrLevelLabel(level), method: 'transcript-analysis' };
+  return { level, score, components, label: ilrLevelLabel(level), method: 'transcript-analysis' };
 }
 
 /**
@@ -5313,11 +5502,13 @@ async function handleAnalyze(url, request) {
     const ilrResult = estimateIlrFromMetrics(metrics);
 
     // Build response
+    const cefrLevel = ilrToCefr(ilrResult.level);
     const result = {
       success: true,
       url: targetUrl,
       ilrLevel: ilrResult.level,
       ilrLabel: ilrResult.label,
+      cefrLevel,
       ilrMethod: ilrResult.method || 'transcript-analysis',
       ilrError: ilrResult.error || null,
       transcript: {
@@ -5340,6 +5531,9 @@ async function handleAnalyze(url, request) {
         outOfBandPercent: metrics.outOfBandPercent,
         discoursePerSentence: metrics.discoursePerSentence,
         domainAdvancedPercent: metrics.domainAdvancedPercent,
+        readability: metrics.readability,
+        avgSyllablesPerWord: metrics.avgSyllablesPerWord,
+        rkiCoverage: metrics.rkiCoverage,
       },
       cached: false
     };

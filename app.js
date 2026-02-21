@@ -154,6 +154,9 @@ const TRANSLATIONS = {
     avgWordLength: 'Avg Word Length',
     polysyllabicRatio: 'Polysyllabic %',
     clauseComplexity: 'Clause Complexity',
+    readability: 'Readability',
+    rkiLevel: 'RKI Level',
+    cefrLevel: 'CEFR',
     showTranscript: 'Show transcript',
     hideTranscript: 'Hide transcript',
     cachedResult: 'Cached result',
@@ -303,6 +306,9 @@ const TRANSLATIONS = {
     avgWordLength: 'Ср. длина слова',
     polysyllabicRatio: 'Многосложные %',
     clauseComplexity: 'Сложность предл.',
+    readability: 'Читаемость',
+    rkiLevel: 'Уровень РКИ',
+    cefrLevel: 'CEFR',
     showTranscript: 'Показать текст',
     hideTranscript: 'Скрыть текст',
     cachedResult: 'Из кэша',
@@ -952,8 +958,12 @@ function renderAnalysisResults(data) {
     ? (ilrLevel % 1 === 0.5 ? Math.floor(ilrLevel) + '+' : ilrLevel)
     : null;
 
+  const cefrLevel = data.cefrLevel || '';
+  const cefrBadge = cefrLevel ? `<span class="cefr-badge">${t('cefrLevel')}: ${cefrLevel}</span>` : '';
+
   const ilrDisplay = ilrLevelDisplay !== null
     ? `<span class="ilr-badge ${badgeClass}">ILR ${ilrLevelDisplay}</span>
+       ${cefrBadge}
        <span class="ilr-label">${escapeHtml(ilrLabel)}</span>`
     : `<span class="ilr-badge ilr-na">—</span>
        <span class="ilr-label">${escapeHtml(data.ilrError || t('transcriptTooShort'))}</span>`;
@@ -999,6 +1009,14 @@ function renderAnalysisResults(data) {
       <div class="metric-card">
         <div class="metric-value">${metrics.clauseComplexity ?? '—'}</div>
         <div class="metric-label">${t('clauseComplexity')}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.readability ?? '—'}</div>
+        <div class="metric-label">${t('readability')}<br><small>Flesch 0-100</small></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">${metrics.rkiCoverage?.level ?? '—'}</div>
+        <div class="metric-label">${t('rkiLevel')}<br><small>TORFL/РКИ</small></div>
       </div>
     </div>
     ${transcriptText ? `

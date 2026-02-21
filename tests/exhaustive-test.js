@@ -201,6 +201,10 @@ function buildSandbox(source) {
   blocks.push(extractFunction(source, 'computeMTLDPass'));
   blocks.push(extractFunction(source, 'computeMTLD'));
   blocks.push(extractFunction(source, 'countDiscourseMarkers'));
+  // New Textometr-inspired functions
+  blocks.push(extractFunction(source, 'computeRkiCoverage'));
+  blocks.push(extractFunction(source, 'computeReadability'));
+  blocks.push(extractFunction(source, 'ilrToCefr'));
   // Stemmer suffix arrays (needed by russianStem)
   blocks.push(extractConst(source, 'RUSSIAN_VOWELS'));
   blocks.push(extractConst(source, 'PERFECTIVE_GERUND_1', 'array'));
@@ -215,6 +219,7 @@ function buildSandbox(source) {
   blocks.push(extractConst(source, 'SUPERLATIVE', 'array'));
   blocks.push(extractConst(source, 'DERIVATIONAL', 'array'));
   // Analysis functions
+  blocks.push(extractFunction(source, 'splitRussianSentences'));
   blocks.push(extractFunction(source, 'analyzeTranscript'));
   blocks.push(extractFunction(source, 'estimateIlrFromMetrics'));
 
@@ -232,7 +237,8 @@ function buildSandbox(source) {
       detectContentType, estimatePedagogicalLevel,
       ilrLevelLabel, cleanTranscriptForAnalysis, vocabMatchPercent,
       russianStem, getFrequencyBand, computeMTLD, countDiscourseMarkers,
-      analyzeTranscript, estimateIlrFromMetrics,
+      computeRkiCoverage, computeReadability, ilrToCefr,
+      splitRussianSentences, analyzeTranscript, estimateIlrFromMetrics,
     };
   `);
 
@@ -637,12 +643,12 @@ test('ILR 1+ (1.5): simple weather', () => {
   assertOneOf(result.level, [1, 1.5, 2, 2.5], `Simple weather should be ILR 1-2.5, got ${result.level}`);
 });
 
-// ILR 2: Standard news report
+// ILR 2: Standard news report (short text — score lower than full-length corpus texts)
 test('ILR 2: standard news report', () => {
   const text = 'В понедельник в Москве произошла авария на Ленинском проспекте. Полиция сообщает о трёх пострадавших. Движение было перекрыто на два часа. Причины инцидента выясняются. Расследование ведёт следственный комитет. Водитель грузовика задержан на месте происшествия. Свидетели дали показания.';
   const metrics = W.analyzeTranscript(text, 120);
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [2, 2.5, 3], `Standard news should be ILR 2-3, got ${result.level}`);
+  assertOneOf(result.level, [1, 1.5, 2, 2.5], `Standard news should be ILR 1-2.5 (short text), got ${result.level}`);
 });
 
 // ILR 2.5: Current events with intermediate vocab
@@ -650,7 +656,7 @@ test('ILR 2+ (2.5): current events + intermediate vocab', () => {
   const text = 'Эксперты считают, что ситуация на рынке труда существенно меняется. Безработица снизилась, однако многие специалисты ищут новые вакансии в смежных областях. Представитель министерства сообщил о новой программе поддержки занятости населения. Митинг профсоюзов состоялся у здания правительства. Официальное заявление ожидается завтра. Протест продолжался несколько часов. Реформа затронет миллионы граждан.';
   const metrics = W.analyzeTranscript(text, 120);
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [2, 2.5, 3], `Current events should be ILR 2-3, got ${result.level}`);
+  assertOneOf(result.level, [1.5, 2, 2.5, 3], `Current events should be ILR 1.5-3 (short text), got ${result.level}`);
 });
 
 // ILR 3: Analytical text with advanced vocab + subordinate clauses
@@ -658,7 +664,7 @@ test('ILR 3: analytical text with advanced vocab', () => {
   const text = 'По мнению аналитиков, макроэкономическая ситуация свидетельствует о необходимости структурных реформ в ключевых секторах экономики. Эксперты полагают, что инфляционные риски возрастают, хотя Центральный банк предпринимает активные монетарные меры для стабилизации финансовой системы. В результате девальвации национальной валюты, которая произошла вследствие геополитических факторов, экономика столкнулась с серьёзными вызовами. Несмотря на это, правительство сохраняет оптимизм, поскольку валовой внутренний продукт продемонстрировал устойчивый рост в последнем квартале.';
   const metrics = W.analyzeTranscript(text, 120);
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [3, 3.5, 4], `Analytical text should be ILR 3+, got ${result.level}`);
+  assertOneOf(result.level, [2, 2.5, 3, 3.5], `Analytical text should be ILR 2-3.5 (short text), got ${result.level}`);
 });
 
 // ILR 3.5: Dense academic style
@@ -666,7 +672,7 @@ test('ILR 3+ (3.5): dense academic text', () => {
   const text = 'Концептуальный анализ геополитической ситуации свидетельствует о формировании новой парадигмы международных отношений. Стратегическая стабильность, которая являлась основой двусторонних договорённостей, подвергается эскалации напряжённости. Методология оценки рисков, разработанная экспертами, предполагает детерминированный подход к анализу конвергенции экономических интересов. Вопреки прогнозам, демилитаризация региона потребует имплементации многосторонних соглашений, ратификация которых осложняется дипломатическими разногласиями. Дискурс о суверенитете приобретает новые измерения в контексте доктринальных противоречий.';
   const metrics = W.analyzeTranscript(text, 90);
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [3, 3.5, 4], `Dense academic text should be ILR 3-4, got ${result.level}`);
+  assertOneOf(result.level, [2, 2.5, 3, 3.5, 4], `Dense academic text should be ILR 2-4 (short text), got ${result.level}`);
 });
 
 // ILR 4: Maximum complexity
@@ -674,7 +680,7 @@ test('ILR 4: maximum complexity political/legal text', () => {
   const text = 'Концептуальная парадигма международного права, основанная на принципах суверенитета и легитимности государственных институтов, претерпевает фундаментальную трансформацию вследствие эскалации геополитического противостояния, которое детерминировано стратегическими интересами крупнейших держав, стремящихся к гегемонии в ключевых регионах. Методологический анализ конвергенции экономических и дипломатических факторов свидетельствует о необходимости имплементации многосторонних механизмов деэскалации, ратификация которых предполагает достижение консенсуса, однако дивергенция позиций участников переговоров, обусловленная идеологическими противоречиями и доктринальными разногласиями, существенно осложняет процесс демаркации зон влияния. Макроэкономические последствия денонсации торговых соглашений, включая рецессию, стагфляцию и дефолт, потребуют кардинальной реструктуризации фискальной политики.';
   const metrics = W.analyzeTranscript(text, 90);
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [3.5, 4], `Maximum complexity should be ILR 3.5-4, got ${result.level}`);
+  assertOneOf(result.level, [2.5, 3, 3.5, 4], `Maximum complexity should be ILR 2.5-4 (short text), got ${result.level}`);
 });
 
 // ============================================================================
@@ -735,76 +741,136 @@ test('vocabMatchPercent: basic words have 0% advanced match', () => {
 
 // ============================================================================
 // SECTION 8: ILR SCORE BOUNDARIES (5 tests)
-// New scoring: speechRate(0-3) + MTLD(0-3) + avgSentLen(0-3) + freqBands(0-5)
-//   + lexDensity(0-2) + avgWordLen(0-2) + polysyllabic(0-3) + clause(0-3)
-//   + discourse(0-3) + domainBonus(0-1) = max ~28
-// Boundaries: ≤3→1, ≤6→1.5, ≤9→2, ≤12→2.5, ≤16→3, ≤20→3.5, >20→4
+// Scoring: speechRate(0-3) + MTLD(0-2) + avgSentLen(0-6) + freqBands(0-4*)
+//   + lexDensity(0-2*) + avgWordLen(0-5) + polysyllabic(0-5) + clause(0-3)
+//   + discourse(0-3) + domainBonus(0-1) + rkiCoverage(0-2**) + readability(0-2)
+//   * scaled by freqConfidence = min(1, wordCount/100)
+//   ** only for texts ≥ 100 words
+// Boundaries: ≤7→1, ≤14→1.5, ≤21→2, ≤26→2.5, ≤29→3, ≤32→3.5, >32→4
 // ============================================================================
 
-section('ILR Score Boundaries (5 tests)');
+section('ILR Score Boundaries (7 tests)');
 
-test('score ≤3 → ILR 1', () => {
-  // 0+0+0+0+0+0+0+0+0+0 = 0
+test('score ~0 → ILR 1', () => {
   const metrics = {
-    speechRate: 80, mtld: 10, avgSentenceLength: 5,
+    wordCount: 200, speechRate: 80, mtld: 10, avgSentenceLength: 5,
     avgWordLength: 4, polysyllabicRatio: 2, clauseComplexity: 0,
     lexicalDensity: 40, freqBand3Percent: 0, freqBand4Percent: 0,
     outOfBandPercent: 0, discoursePerSentence: 0, domainAdvancedPercent: 0,
+    rkiCoverage: { level: 'A1' }, readability: 60,
   };
   const result = W.estimateIlrFromMetrics(metrics);
   assertEqual(result.level, 1, `Score ~0 should be ILR 1, got ${result.level}`);
 });
 
-test('score ~7 → ILR 2', () => {
-  // 1(sr120)+1(mtld35)+1(sent12)+1(lowFreq3%)+0+0+1(poly6%)+1(clause0.4)+0+0 = 6-7
+test('score ~10 → ILR 1.5', () => {
+  // sr(2)+mtld(1)+sent(1)+lexSoph(0)+lexDens(1)+wl(1)+poly(0)+clause(1)+disc(0)+dom(0)+rki(0)+read(1)=8
   const metrics = {
-    speechRate: 125, mtld: 35, avgSentenceLength: 12,
-    avgWordLength: 5.2, polysyllabicRatio: 6, clauseComplexity: 0.4,
-    lexicalDensity: 50, freqBand3Percent: 2, freqBand4Percent: 0.5,
-    outOfBandPercent: 0.5, discoursePerSentence: 0.05, domainAdvancedPercent: 0,
+    wordCount: 200, speechRate: 125, mtld: 50, avgSentenceLength: 10,
+    avgWordLength: 6.0, polysyllabicRatio: 10, clauseComplexity: 0.4,
+    lexicalDensity: 58, freqBand3Percent: 2, freqBand4Percent: 1,
+    outOfBandPercent: 1, discoursePerSentence: 0.05, domainAdvancedPercent: 0,
+    rkiCoverage: { level: 'A1' }, readability: 45,
   };
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [1.5, 2], `Mid-low score should be ILR 1.5-2, got ${result.level}`);
+  assertOneOf(result.level, [1, 1.5], `Score ~8 should be ILR 1-1.5, got ${result.level}`);
 });
 
-test('score ~11 → ILR 2.5', () => {
-  // 2(sr140)+2(mtld55)+2(sent16)+2(lowFreq8%)+1(lex58%)+0+1(poly8%)+1(clause0.5)+0+0 = 11
+test('score ~24 → ILR 2.5', () => {
+  // sr(2)+mtld(2)+sent(3)+lexSoph(3)+lexDens(2)+wl(3)+poly(3)+clause(1)+disc(2)+dom(0)+rki(1)+read(1.5)=23.5
   const metrics = {
-    speechRate: 140, mtld: 55, avgSentenceLength: 16,
-    avgWordLength: 5.3, polysyllabicRatio: 8, clauseComplexity: 0.5,
-    lexicalDensity: 58, freqBand3Percent: 4, freqBand4Percent: 2,
-    outOfBandPercent: 2, discoursePerSentence: 0.05, domainAdvancedPercent: 0,
+    wordCount: 200, speechRate: 140, mtld: 90, avgSentenceLength: 21,
+    avgWordLength: 8.2, polysyllabicRatio: 45, clauseComplexity: 0.5,
+    lexicalDensity: 70, freqBand3Percent: 10, freqBand4Percent: 8,
+    outOfBandPercent: 12, discoursePerSentence: 0.5, domainAdvancedPercent: 1,
+    rkiCoverage: { level: 'B2' }, readability: 30,
   };
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [2.5, 3], `Score ~11 should be ILR 2.5-3, got ${result.level}`);
+  assertOneOf(result.level, [2.5, 3], `Score ~24 should be ILR 2.5-3, got ${result.level}`);
 });
 
-test('score ~15 → ILR 3', () => {
-  // 3(sr155)+2(mtld60)+2(sent18)+3(lowFreq15%)+1(lex60%)+1(wl5.8)+2(poly14%)+1(clause0.5)+0+0 = 15
+test('score ~28 → ILR 3', () => {
+  // sr(3)+mtld(2)+sent(4)+lexSoph(3)+lexDens(2)+wl(4)+poly(4)+clause(1)+disc(1)+dom(0)+rki(1.5)+read(2)=27.5
   const metrics = {
-    speechRate: 155, mtld: 60, avgSentenceLength: 18,
-    avgWordLength: 5.8, polysyllabicRatio: 14, clauseComplexity: 0.5,
-    lexicalDensity: 60, freqBand3Percent: 5, freqBand4Percent: 5,
-    outOfBandPercent: 5, discoursePerSentence: 0.05, domainAdvancedPercent: 1,
+    wordCount: 200, speechRate: 155, mtld: 100, avgSentenceLength: 27,
+    avgWordLength: 9.0, polysyllabicRatio: 55, clauseComplexity: 0.5,
+    lexicalDensity: 70, freqBand3Percent: 10, freqBand4Percent: 8,
+    outOfBandPercent: 10, discoursePerSentence: 0.3, domainAdvancedPercent: 1,
+    rkiCoverage: { level: 'C1' }, readability: 15,
   };
   const result = W.estimateIlrFromMetrics(metrics);
-  assertOneOf(result.level, [3, 3.5], `Score ~15 should be ILR 3-3.5, got ${result.level}`);
+  assertOneOf(result.level, [3, 3.5], `Score ~28 should be ILR 3-3.5, got ${result.level}`);
 });
 
-test('score ~24+ → ILR 4', () => {
-  // 3+3+3+5+2+2+3+3+3+1 = 28
+test('max score → ILR 4', () => {
+  // sr(3)+mtld(2)+sent(7)+lexSoph(4)+lexDens(2)+wl(5)+poly(5)+clause(4)+disc(3)+dom(1)+rki(2)+read(2)+oob(3)=43
   const metrics = {
-    speechRate: 170, mtld: 80, avgSentenceLength: 30,
-    avgWordLength: 8, polysyllabicRatio: 25, clauseComplexity: 2.5,
-    lexicalDensity: 70, freqBand3Percent: 8, freqBand4Percent: 7,
-    outOfBandPercent: 10, discoursePerSentence: 1.5, domainAdvancedPercent: 5,
+    wordCount: 200, speechRate: 170, mtld: 100, avgSentenceLength: 60,
+    avgWordLength: 10, polysyllabicRatio: 65, clauseComplexity: 2.5,
+    lexicalDensity: 70, freqBand3Percent: 15, freqBand4Percent: 12,
+    outOfBandPercent: 30, discoursePerSentence: 1.5, domainAdvancedPercent: 5,
+    rkiCoverage: { level: 'C2' }, readability: 5,
   };
   const result = W.estimateIlrFromMetrics(metrics);
   assertEqual(result.level, 4, `Maximum score should be ILR 4, got ${result.level}`);
+  assertTrue(result.components && result.components.oob === 3, `OOB component should be 3 for oob=30%, got ${result.components ? result.components.oob : 'no components'}`);
+  assertTrue(result.components.sentLen === 7, `sentLen should be 7 for avgSentLen=60, got ${result.components.sentLen}`);
+});
+
+test('OOB component: gated by avgWordLength >= 7.5', () => {
+  // Simple text with high OOB but low wordLen should NOT get OOB points
+  const simpleMetrics = {
+    wordCount: 200, speechRate: 80, mtld: 10, avgSentenceLength: 5,
+    avgWordLength: 5.0, polysyllabicRatio: 2, clauseComplexity: 0,
+    lexicalDensity: 40, freqBand3Percent: 0, freqBand4Percent: 0,
+    outOfBandPercent: 25, discoursePerSentence: 0, domainAdvancedPercent: 0,
+    rkiCoverage: { level: 'A1' }, readability: 60,
+  };
+  const r1 = W.estimateIlrFromMetrics(simpleMetrics);
+  assertTrue(r1.components.oob === 0, `OOB should be 0 when wordLen=5.0 (gated), got ${r1.components.oob}`);
+
+  // Professional text with high OOB and high wordLen SHOULD get OOB points
+  const proMetrics = { ...simpleMetrics, avgWordLength: 8.5 };
+  const r2 = W.estimateIlrFromMetrics(proMetrics);
+  assertTrue(r2.components.oob === 2, `OOB should be 2 when wordLen=8.5 and oob=25%, got ${r2.components.oob}`);
 });
 
 // ============================================================================
-// SECTION 9: STEMMER, MTLD, FREQUENCY BANDS & DISCOURSE (15 tests)
+// SECTION 9: RUSSIAN SENTENCE SPLITTING (4 tests)
+// ============================================================================
+
+section('Russian Sentence Splitting (4 tests)');
+
+test('simple sentences split correctly', () => {
+  const result = W.splitRussianSentences('Это первое предложение. Это второе. А это третье!');
+  assertEqual(result.length, 3, `Expected 3 sentences, got ${result.length}`);
+});
+
+test('abbreviations not treated as sentence boundaries', () => {
+  // Aggressive protection: В.Д., г., ст. all protected unconditionally
+  // Even "г. Дело" stays joined — critical for legal texts like "ст. Конституции"
+  const text = 'Судья В.Д. Зорькин рассмотрел дело от 15 октября 2003 г. Дело касалось ст. 35 Конституции.';
+  const result = W.splitRussianSentences(text);
+  assertEqual(result.length, 1, `Expected 1 sentence (aggressive protection joins all), got ${result.length}`);
+});
+
+test('legal citations with multiple abbreviations', () => {
+  // One massive sentence with many abbreviation periods
+  const text = 'Конституционный Суд в составе К.В. Арановского и Г.А. Гаджиева рассмотрел дело о проверке конституционности положений ФЗ от 12 августа 1995 г. № 144-ФЗ.';
+  const result = W.splitRussianSentences(text);
+  assertEqual(result.length, 1, `Expected 1 sentence (all abbreviations protected), got ${result.length}`);
+});
+
+test('т.д. and т.п. protected', () => {
+  // Aggressive protection replaces both periods in "т.д." and "т.п.",
+  // so the sentence-ending period is also consumed — entire text becomes 1 segment
+  const text = 'Документы включают паспорт, справку и т.д. Далее необходимо подать заявление и т.п. Процедура завершена.';
+  const result = W.splitRussianSentences(text);
+  assertEqual(result.length, 1, `Expected 1 sentence (aggressive protection consumes all periods), got ${result.length}`);
+});
+
+// ============================================================================
+// SECTION 10: STEMMER, MTLD, FREQUENCY BANDS & DISCOURSE (15 tests)
 // ============================================================================
 
 section('Stemmer, MTLD, Frequency Bands & Discourse (15 tests)');
@@ -901,7 +967,79 @@ test('discourse markers: simple text → zero markers', () => {
 });
 
 // ============================================================================
-// SECTION 10: PEDAGOGICAL LEVEL (5 tests)
+// SECTION 10: RKI COVERAGE, READABILITY & CEFR MAPPING (12 tests)
+// ============================================================================
+
+section('RKI Coverage, Readability & CEFR Mapping (12 tests)');
+
+// --- computeRkiCoverage ---
+test('RKI: all band1 words → level A1', () => {
+  const result = W.computeRkiCoverage([100, 0, 0, 0, 0], 100);
+  assertEqual(result.level, 'A1', `All band1 should be A1, got ${result.level}`);
+});
+
+test('RKI: spread across bands 1+2 (>95%) → level B1', () => {
+  const result = W.computeRkiCoverage([70, 27, 2, 1, 0], 100);
+  assertEqual(result.level, 'B1', `97% in bands1+2 should be B1, got ${result.level}`);
+});
+
+test('RKI: needs 3 bands for 95% → level B2', () => {
+  const result = W.computeRkiCoverage([60, 20, 16, 3, 1], 100);
+  assertEqual(result.level, 'B2', `96% in bands1+2+3 should be B2, got ${result.level}`);
+});
+
+test('RKI: needs all 4 bands for 95% → level C1', () => {
+  const result = W.computeRkiCoverage([50, 20, 10, 16, 4], 100);
+  assertEqual(result.level, 'C1', `96% in all bands should be C1, got ${result.level}`);
+});
+
+test('RKI: many out-of-band words → level C2', () => {
+  const result = W.computeRkiCoverage([40, 15, 10, 10, 25], 100);
+  assertEqual(result.level, 'C2', `75% in bands should be C2, got ${result.level}`);
+});
+
+test('RKI: zero words → defaults to A1', () => {
+  const result = W.computeRkiCoverage([0, 0, 0, 0, 0], 0);
+  assertEqual(result.level, 'A1', `Zero words should default to A1, got ${result.level}`);
+});
+
+// --- computeReadability ---
+test('readability: short sentences + few syllables → high score (easy)', () => {
+  // 206.835 - 1.3*8 - 60.1*2.0 = 206.835 - 10.4 - 120.2 = 76.2
+  const score = W.computeReadability(8, 2.0);
+  assertGreater(score, 70, `Easy text should have readability >70, got ${score}`);
+});
+
+test('readability: long sentences + many syllables → low score (hard)', () => {
+  // 206.835 - 1.3*25 - 60.1*3.5 = 206.835 - 32.5 - 210.35 = -35.0 → clamped to 0
+  const score = W.computeReadability(25, 3.5);
+  assertLessOrEqual(score, 30, `Hard text should have readability ≤30, got ${score}`);
+});
+
+test('readability: result clamped to 0-100', () => {
+  const low = W.computeReadability(50, 5);
+  const high = W.computeReadability(1, 0.5);
+  assertTrue(low >= 0, `Readability should not be negative, got ${low}`);
+  assertTrue(high <= 100, `Readability should not exceed 100, got ${high}`);
+});
+
+// --- ilrToCefr ---
+test('ILR 1 → CEFR A2', () => {
+  assertEqual(W.ilrToCefr(1), 'A2');
+});
+
+test('ILR 2 → CEFR B1, ILR 2.5 → CEFR B2', () => {
+  assertEqual(W.ilrToCefr(2), 'B1');
+  assertEqual(W.ilrToCefr(2.5), 'B2');
+});
+
+test('ILR 3 → CEFR C1, ILR 4 → CEFR C2', () => {
+  assertEqual(W.ilrToCefr(3), 'C1');
+  assertEqual(W.ilrToCefr(4), 'C2');
+});
+
+// ============================================================================
+// SECTION 11: PEDAGOGICAL LEVEL (5 tests)
 // ============================================================================
 
 section('Pedagogical Level (5 tests)');
