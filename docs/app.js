@@ -457,7 +457,23 @@ async function apiDownloadAudio(videoUrl) {
   if (!response.ok) {
     throw new Error(`Audio download failed: ${response.status}`);
   }
-  return response.blob();
+
+  const contentType = response.headers.get('content-type') || '';
+
+  // MP4 sources return JSON with a streamUrl for direct download
+  if (contentType.includes('application/json')) {
+    const data = await response.json();
+    if (data.streamUrl) {
+      log('MP4 source, fetching stream URL:', data.streamUrl);
+      const streamResp = await fetch(data.streamUrl);
+      if (!streamResp.ok) throw new Error('Stream download failed');
+      return { blob: await streamResp.blob(), ext: 'mp4' };
+    }
+    throw new Error(data.error || 'Unexpected API response');
+  }
+
+  // HLS sources return raw AAC audio
+  return { blob: await response.blob(), ext: 'aac' };
 }
 
 // =============================================================================
@@ -1392,9 +1408,9 @@ async function handleDownloadAudio() {
   }
 
   const btn = document.getElementById('downloadAudioBtn');
-  const originalText = btn?.textContent;
+  const originalHTML = btn?.innerHTML;
   if (btn) {
-    btn.textContent = t('downloading');
+    btn.innerHTML = `<span class="spinner-small"></span> ${t('downloading')}`;
     btn.disabled = true;
   }
 
@@ -1403,13 +1419,13 @@ async function handleDownloadAudio() {
   for (const item of selected) {
     try {
       log('Downloading audio:', item.title);
-      const blob = await apiDownloadAudio(item.url);
+      const result = await apiDownloadAudio(item.url);
 
-      // Create download link
-      const downloadUrl = URL.createObjectURL(blob);
+      // Create download link with correct extension
+      const downloadUrl = URL.createObjectURL(result.blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = `${sanitizeFilename(item.title)}.aac`;
+      link.download = `${sanitizeFilename(item.title)}.${result.ext}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1422,7 +1438,7 @@ async function handleDownloadAudio() {
   }
 
   if (btn) {
-    btn.textContent = originalText;
+    btn.innerHTML = originalHTML;
     btn.disabled = false;
   }
 

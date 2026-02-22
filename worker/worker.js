@@ -645,6 +645,12 @@ const CATEGORY_DETECTION = {
       // Political processes
       { keywords: ['коалиц', 'коррупц', 'импичмент', 'отставк', 'назначен'], weight: 3 },
       { keywords: ['ратификац', 'вето', 'резолюц', 'мандат'], weight: 3 },
+      // Foreign leaders / Ukraine political context
+      { keywords: ['зеленск', 'зеленского', 'байден', 'трамп', 'макрон', 'шольц'], weight: 4 },
+      { keywords: ['азаров', 'порошенко', 'тимошенко', 'кличко'], weight: 4 },
+      { keywords: ['украин', 'киев', 'верховная рада', 'рада'], weight: 3 },
+      { keywords: ['управлен', 'внешнее управлен'], weight: 2 },
+      { keywords: ['дипломати', 'геополитик', 'геополитическ'], weight: 4 },
       // Latin transliterations
       { keywords: ['politik', 'politichesk'], weight: 4 },
       { keywords: ['duma', 'parlament', 'deputat', 'frakc', 'zakonoproekt', 'zakon'], weight: 4 },
@@ -661,6 +667,12 @@ const CATEGORY_DETECTION = {
       { keywords: ['briks', 'shos', 'bolshaya semerka'], weight: 3 },
       { keywords: ['koalic', 'korrupci', 'impichment', 'otstavk', 'naznachen'], weight: 3 },
       { keywords: ['ratifikac', 'veto', 'rezolyuc', 'mandat'], weight: 3 },
+      // Foreign leaders / Ukraine political context - Latin
+      { keywords: ['zelensk', 'zelenskogo', 'bayden', 'tramp', 'makron', 'sholc'], weight: 4 },
+      { keywords: ['azarov', 'poroshenko', 'timoshenko', 'klichko'], weight: 4 },
+      { keywords: ['ukrain', 'kiev', 'verkhovnaya rada', 'rada'], weight: 3 },
+      { keywords: ['upravlen', 'vneshnee upravlen'], weight: 2 },
+      { keywords: ['diplomati', 'geopolitik', 'geopolitichesk'], weight: 4 },
     ],
     // Exclude military operations, sports, pure society stories, and health/medical content
     negative: ['спорт', 'футбол', 'хоккей', 'матч', 'турнир', 'чемпион', 'фигурист',
@@ -687,7 +699,10 @@ const CATEGORY_DETECTION = {
       { keywords: ['бизнес', 'предпринимател', 'компани'], weight: 2 },
       { keywords: ['акци', 'биржа', 'инвест', 'фонд', 'активы'], weight: 3 },
       { keywords: ['бюджет', 'налог', 'пошлин', 'тариф'], weight: 2 },
-      { keywords: ['импорт', 'экспорт', 'торговл', 'санкци'], weight: 2 },
+      { keywords: ['импорт', 'экспорт', 'торговл'], weight: 3 },
+      // Energy / resources
+      { keywords: ['нефт', 'газпром', 'газ', 'трубопровод', 'транзит'], weight: 4 },
+      { keywords: ['энергетик', 'энергоносител', 'опек', 'баррел'], weight: 3 },
       // Tech economy
       { keywords: ['стартап', 'венчур', 'финтех', 'it-компани'], weight: 3 },
       { keywords: ['крипто', 'биткоин', 'блокчейн', 'криптовалют'], weight: 3 },
@@ -727,12 +742,15 @@ const CATEGORY_DETECTION = {
       { keywords: ['общество', 'социальн', 'социум'], weight: 4 },
       { keywords: ['граждан', 'население', 'жител', 'народ'], weight: 2 },
       { keywords: ['пенси', 'пенсионер', 'пособи', 'выплат', 'льгот'], weight: 3 },
-      { keywords: ['здоровь', 'медицин', 'больниц', 'врач', 'лечен', 'пациент', 'клиник'], weight: 4 },
+      { keywords: ['здоровь', 'медицин', 'медик', 'больниц', 'врач', 'лечен', 'пациент', 'клиник', 'инсульт'], weight: 4 },
       { keywords: ['семья', 'семей', 'родител', 'брак', 'развод', 'свадьб'], weight: 3 },
       { keywords: ['ребенок', 'дети', 'детей', 'детск', 'младенец', 'новорожден'], weight: 3 },
       { keywords: ['волонтер', 'благотвор', 'помощь', 'донор'], weight: 3 },
       { keywords: ['голод', 'бездомн', 'сирот', 'инвалид', 'нищет'], weight: 3 },
       { keywords: ['праздник', 'юбилей', 'годовщин', 'торжеств'], weight: 2 },
+      // Emergency services / professions (not weather/military, but society/human interest)
+      { keywords: ['пожарн', 'огнеборц', 'спасател'], weight: 3 },
+      { keywords: ['десантирован', 'отработк', 'отработали'], weight: 2 },
       // Mental health
       { keywords: ['психолог', 'депресс', 'тревожност', 'стресс', 'ментальн'], weight: 3 },
       // Social movements
@@ -773,17 +791,20 @@ const CATEGORY_DETECTION = {
       // Animals / nature stories
       { keywords: ['животн', 'зоопарк', 'питомец', 'собак', 'кошк', 'кот '], weight: 3 },
       { keywords: ['пингвин', 'медведь', 'волк', 'лис', 'тигр', 'леопард'], weight: 3 },
-      { keywords: ['птиц', 'рыб', 'дельфин', 'кит', 'акул'], weight: 3 },
+      { keywords: ['птиц', 'рыб', 'дельфин', 'китов', 'акул'], weight: 3 },
       // Latin transliterations
       { keywords: ['obschestvo', 'socialn', 'socium'], weight: 4 },
       { keywords: ['grazhdan', 'naselen', 'zhitel', 'narod'], weight: 2 },
       { keywords: ['pensi', 'pensioner', 'posobi', 'vyplat', 'lgot'], weight: 3 },
-      { keywords: ['zdorov', 'medicin', 'bolnic', 'vrach', 'lechen', 'pacient', 'klinik'], weight: 4 },
+      { keywords: ['zdorov', 'medicin', 'medik', 'bolnic', 'vrach', 'lechen', 'pacient', 'klinik', 'insult'], weight: 4 },
       { keywords: ['semya', 'semey', 'roditel', 'brak', 'razvod', 'svadyb'], weight: 3 },
       { keywords: ['rebenok', 'deti', 'detey', 'detsk', 'mladenec', 'novorozhden'], weight: 3 },
       { keywords: ['volonter', 'blagotvor', 'pomosch', 'donor'], weight: 3 },
       { keywords: ['golod', 'bezdomn', 'sirot', 'invalid', 'nischet'], weight: 3 },
       { keywords: ['prazdnik', 'yubiley', 'godovshin', 'torzhestvo'], weight: 2 },
+      // Emergency services / professions - Latin
+      { keywords: ['pozharn', 'ogneborec', 'spasatel'], weight: 3 },
+      { keywords: ['desantirovan', 'otrabotk', 'otrabotali'], weight: 2 },
       // Mental health/movements/demographics - Latin
       { keywords: ['psikholog', 'depress', 'trevozhnost', 'stress', 'mentaln'], weight: 3 },
       { keywords: ['protest', 'miting', 'demonstrac', 'petici'], weight: 3 },
@@ -878,6 +899,8 @@ const CATEGORY_DETECTION = {
       { keywords: ['музей', 'выставк', 'галере', 'экспозиц'], weight: 3 },
       { keywords: ['концерт', 'фестивал', 'музык', 'песн', 'певец', 'певиц'], weight: 3 },
       { keywords: ['карнавал', 'масленица', 'маскарад'], weight: 4 },
+      { keywords: ['проводы зимы', 'провожать зиму', 'провожали зиму', 'проводили зиму'], weight: 5 },
+      { keywords: ['чучело', 'блинн', 'народн гулян'], weight: 3 },
       { keywords: ['праздник', 'праздничн', 'празднован', 'торжеств'], weight: 3 },
       { keywords: ['шествие', 'процессия'], weight: 3 },
       { keywords: ['традиц', 'обычай', 'обряд', 'ритуал', 'фольклор'], weight: 3 },
@@ -900,6 +923,8 @@ const CATEGORY_DETECTION = {
       { keywords: ['muzey', 'vystavk', 'galere', 'ekspozic'], weight: 3 },
       { keywords: ['koncert', 'festival', 'muzyk', 'pesn', 'pevec', 'pevic'], weight: 3 },
       { keywords: ['karnaval', 'maslenitsa', 'maskarad'], weight: 4 },
+      { keywords: ['provody zimy', 'provozhat zimu', 'provozhali zimu', 'provodili zimu'], weight: 5 },
+      { keywords: ['chuchelo', 'blinn', 'narodn gulyan'], weight: 3 },
       { keywords: ['prazdnik', 'prazdnichn', 'prazdnovan', 'torzhestvo'], weight: 3 },
       { keywords: ['shestvie', 'protsessiya'], weight: 3 },
       { keywords: ['tradits', 'obychay', 'obryad', 'ritual', 'folklor'], weight: 3 },
@@ -1037,7 +1062,8 @@ const CATEGORY_DETECTION = {
       { keywords: ['oblachn', 'serverny', 'data-centr'], weight: 2 },
       { keywords: ['startap', 'tekhnogigant', 'skolkovo', 'innopolis'], weight: 3 },
     ],
-    negative: ['спорт', 'культур', 'sport', 'kultur'],
+    negative: ['спорт', 'культур', 'военн', 'армия', 'всу', 'артиллер', 'бпла', 'сво', 'боев', 'фронт',
+               'sport', 'kultur', 'voenn', 'armiya', 'vsu', 'artiller', 'bpla', 'svo', 'boev', 'front'],
     requiredScore: 3,
   },
   military: {
@@ -1045,7 +1071,7 @@ const CATEGORY_DETECTION = {
       // Cyrillic (enhanced from RT/Smotrim agent analysis)
       { keywords: ['военн', 'армия', 'армейск', 'вооружен', 'оружи', 'оружей'], weight: 4 },
       { keywords: ['минобороны', 'министерство обороны', 'генштаб'], weight: 4 },
-      { keywords: ['бпла', 'пво', 'уничтожи', 'бригад', 'himars'], weight: 4 },
+      { keywords: ['бпла', 'пво', 'уничтожи', 'бригад', 'himars', 'дрон'], weight: 4 },
       { keywords: ['солдат', 'офицер', 'генерал', 'военнослужащ', 'бойц'], weight: 3 },
       { keywords: ['танк', 'ракет', 'артиллер', 'авиац', 'флот', 'подводн'], weight: 3 },
       { keywords: ['сво', 'спецоперац', 'боев', 'фронт', 'наступлен', 'оборон'], weight: 4 },
@@ -1053,6 +1079,10 @@ const CATEGORY_DETECTION = {
       { keywords: ['штурм', 'освобожд', 'потер', 'взрыв', 'атак', 'контрол'], weight: 3 },
       { keywords: ['учения', 'маневр', 'полигон', 'войск', 'позици'], weight: 3 },
       { keywords: ['пехот', 'десант', 'морпех', 'спецназ', 'снайпер', 'диверсант'], weight: 3 },
+      // Military verbs / operations
+      { keywords: ['ликвидац', 'ликвидирова', 'уничтожен', 'разгром'], weight: 4 },
+      { keywords: ['воевать', 'воюют', 'воевал', 'воюет'], weight: 4 },
+      { keywords: ['агент', 'шпион', 'разведк', 'разведчик', 'контрразвед'], weight: 3 },
       // Military history
       { keywords: ['великая отечественная', 'вторая мировая', 'победа 1945', 'ветеран вов'], weight: 3 },
       // Weapons technology
@@ -1064,7 +1094,7 @@ const CATEGORY_DETECTION = {
       // Latin transliterations (from 1tv agent)
       { keywords: ['voenn', 'armiya', 'armeysk', 'vooruzhen', 'oruzhi', 'oruzhey'], weight: 4 },
       { keywords: ['minoborony', 'ministerstvo oborony', 'genshtab'], weight: 4 },
-      { keywords: ['bpla', 'pvo', 'unichtozhi', 'brigad', 'himars'], weight: 4 },
+      { keywords: ['bpla', 'pvo', 'unichtozhi', 'brigad', 'himars', 'dron'], weight: 4 },
       { keywords: ['soldat', 'oficer', 'general', 'voennosluzhasch', 'boytsy'], weight: 3 },
       { keywords: ['tank', 'raket', 'artiller', 'aviac', 'flot', 'podvodn'], weight: 3 },
       { keywords: ['svo', 'specoperac', 'boev', 'front', 'nastuplen', 'oboron'], weight: 4 },
@@ -1072,6 +1102,10 @@ const CATEGORY_DETECTION = {
       { keywords: ['shturm', 'osvobozh', 'poter', 'vzryv', 'atak', 'udar', 'kontrol'], weight: 3 },
       { keywords: ['ucheniya', 'manevr', 'poligon', 'voysk', 'pozici', 'peredovoy'], weight: 3 },
       { keywords: ['pekhot', 'desant', 'morpekh', 'specnaz', 'snayper', 'diversant'], weight: 3 },
+      // Military verbs / operations - Latin
+      { keywords: ['likvidac', 'likvidirova', 'unichtozhen', 'razgrom'], weight: 4 },
+      { keywords: ['voevat', 'voyuyut', 'voeval', 'voyuyet'], weight: 4 },
+      { keywords: ['agent', 'shpion', 'razvedk', 'razvedchik', 'kontrrazved'], weight: 3 },
       // History/weapons/veterans - Latin
       { keywords: ['velikaya otechestvennaya', 'vtoraya mirovaya', 'pobeda 1945', 'veteran vov'], weight: 3 },
       { keywords: ['giperzvuk', 's-400', 's-500', 'iskander', 'kalibr', 'kinzhal'], weight: 4 },
@@ -1318,6 +1352,18 @@ const DISAMBIGUATION_RULES = {
     // Hurricanes with names - always weather
     { pattern: /ураган[а-яё]*\s*["«]?[А-ЯЁA-Z]/gi, adjust: +15 },
     { pattern: /uragan[a-z]*\s*["«]?[A-Z]/gi, adjust: +15 },
+    // Political figures in title — weather reports don't mention politicians by name
+    { pattern: /(путин|лавров|мишустин|песков|захарова|медведев|зеленск|байден|трамп|макрон)[а-яё]*/gi, adjust: -8 },
+    { pattern: /(putin|lavrov|mishustin|peskov|zakharova|medvedev|zelensk|bayden|tramp|makron)[a-z]*/gi, adjust: -8 },
+    // News digest/compilation — weather is just one topic among many
+    { pattern: /дайджест|главное за день|итоги дня/gi, adjust: -5 },
+    { pattern: /daydzhest|glavnoe za den|itogi dnya/gi, adjust: -5 },
+    // Firefighter training/exercises context — society, not weather
+    { pattern: /пожарн[а-яё]*[\s\S]{0,20}(отработ|учени|тренировк|десантирован|подготовк)/gi, adjust: -15 },
+    { pattern: /pozharn[a-z]*[\s\S]{0,20}(otrabotk|ucheni|trenirovk|desantirovan|podgotovk)/gi, adjust: -15 },
+    // "лесные пожарные" = forest firefighters — society/profession context
+    { pattern: /лесн[а-яё]*\s*пожарн/gi, adjust: -10 },
+    { pattern: /lesn[a-z]*\s*pozharn/gi, adjust: -10 },
   ],
   military: [
     // "veteran" contains "veter" (wind) but is military
@@ -1335,6 +1381,11 @@ const DISAMBIGUATION_RULES = {
     { pattern: /десант[а-яё]*[\s\S]{0,20}(больниц|госпитал|дет[а-яё]*|ребенок|ребят|пациент)/gi, adjust: -15 },
     { pattern: /desant[a-z]*[\s\S]{0,20}(bolnic|gospital|det[a-z]*|rebenok|rebyat|pacient)/gi, adjust: -15 },
     { pattern: /(больниц|госпитал)[а-яё]*[\s\S]{0,20}десант/gi, adjust: -15 },
+    // Firefighter "десантирование" = rappelling/deployment, NOT military airborne
+    { pattern: /пожарн[а-яё]*[\s\S]{0,20}десант/gi, adjust: -20 },
+    { pattern: /pozharn[a-z]*[\s\S]{0,20}desant/gi, adjust: -20 },
+    { pattern: /десантирован[а-яё]*[\s\S]{0,20}(вертолёт|вертолет|пожарн)/gi, adjust: -20 },
+    { pattern: /desantirovan[a-z]*[\s\S]{0,20}(vertolyot|vertolet|pozharn)/gi, adjust: -20 },
 
     // === DOMESTIC CRIME - NOT MILITARY ===
     // School attacks/shootings - crime news, not military operations
@@ -1363,6 +1414,19 @@ const DISAMBIGUATION_RULES = {
     { pattern: /(полиц|мвд|следствие|следователь|прокуратур)[а-яё]*/gi, adjust: -15 },
     { pattern: /(polic|mvd|sledstvie|sledovatel|prokuratur)[a-z]*/gi, adjust: -15 },
 
+    // Diplomatic/political context — demote military when political vocabulary dominates
+    { pattern: /(дипломат|дипломати|геополитик)[а-яё]*/gi, adjust: -10 },
+    { pattern: /(diplomat|diplomati|geopolitik)[a-z]*/gi, adjust: -10 },
+    // "Зеленский" + political verbs = politics, not military
+    { pattern: /(зеленск|азаров|порошенко)[а-яё]*[\s\S]{0,30}(назвал|заявил|планирует|предложил|пытается)/gi, adjust: -15 },
+    { pattern: /(zelensk|azarov|poroshenko)[a-z]*[\s\S]{0,30}(nazval|zayavil|planiruet|predlozhil|pytaetsya)/gi, adjust: -15 },
+    // "готовят на смену" = succession, not combat
+    { pattern: /готовят[\s\S]{0,15}на смену/gi, adjust: -15 },
+    { pattern: /gotovyat[\s\S]{0,15}na smenu/gi, adjust: -15 },
+    // "внешнее управление" = governance, not military
+    { pattern: /внешне[а-яё]*\s*управлен/gi, adjust: -10 },
+    { pattern: /vneshne[a-z]*\s*upravlen/gi, adjust: -10 },
+
     // Boost for ACTUAL military context (to compensate for crime penalties when military is present)
     { pattern: /(сво|всу|минобороны|генштаб|донецк|харьков|запорож|херсон|днр|лнр)/gi, adjust: +10 },
     { pattern: /(svo|vsu|minoborony|genshtab|doneck|kharkov|zaporozh|kherson|dnr|lnr)/gi, adjust: +10 },
@@ -1385,6 +1449,14 @@ const DISAMBIGUATION_RULES = {
     { pattern: /^(лавров|путин|песков|захарова|мид)[а-яё]*\s*:/gi, adjust: +15 },
     { pattern: /(лавров|путин|мишустин|песков|захарова|матвиенко|володин|медведев)[а-яё]*[\s\S]{0,30}(заявил|сказал|сообщил|отметил|подчеркнул|высказал|призвал|предупредил|раскритиковал)/gi, adjust: +10 },
     { pattern: /(lavrov|putin|mishustin|peskov|zakharova|matvienko|volodin|medvedev)[a-z]*[\s\S]{0,30}(zayavil|skazal|soobshchil|otmetil|podcherknul|vyskazal|prizval|predupredil|raskritikoval)/gi, adjust: +10 },
+    // Foreign politicians making statements or in political context
+    { pattern: /(зеленск|азаров|порошенко|байден|трамп|макрон|шольц)[а-яё]*[\s\S]{0,30}(заявил|сказал|назвал|призвал|предложил|планирует|пытается|готовят)/gi, adjust: +10 },
+    { pattern: /(zelensk|azarov|poroshenko|bayden|tramp|makron|sholc)[a-z]*[\s\S]{0,30}(zayavil|skazal|nazval|prizval|predlozhil|planiruet|pytaetsya|gotovyat)/gi, adjust: +10 },
+    // "Зеленский" + diplomatic/political words = politics, not military
+    { pattern: /(зеленск|zelensk)[а-яёa-z]*[\s\S]{0,30}(дипломат|оружи|выпросит|смен|управлен)/gi, adjust: +10 },
+    // "кого готовят на смену" = leadership succession = politics
+    { pattern: /готовят[\s\S]{0,15}на смену/gi, adjust: +10 },
+    { pattern: /gotovyat[\s\S]{0,15}na smenu/gi, adjust: +10 },
     // Official statements about Europe/NATO/West - this is diplomacy
     { pattern: /(европ|нато|запад|сша|америк)[а-яё]*[\s\S]{0,30}(заявлен|позици|требован|угроз|ответ)/gi, adjust: +8 },
     { pattern: /(evrop|nato|zapad|ssha|amerika)[a-z]*[\s\S]{0,30}(zayavlen|pozici|trebovan|ugroz|otvet)/gi, adjust: +8 },
@@ -1435,6 +1507,12 @@ const DISAMBIGUATION_RULES = {
     // But fraud/theft AGAINST military personnel IS crime — boost
     { pattern: /(мошенник|украли|обманули|похитили)[а-яё]*[\s\S]{0,30}(участник|военнослужащ|ветеран|сво)/gi, adjust: +15 },
     { pattern: /(moshennik|ukrali|obmanuli|pokhitili)[a-z]*[\s\S]{0,30}(uchastnik|voennosluzhashch|veteran|svo)/gi, adjust: +15 },
+    // Political context — "грызня" (infighting), "смена" (succession) are politics, not crime
+    { pattern: /(зеленск|азаров|путин|политик|дипломат|управлен)[а-яё]*/gi, adjust: -15 },
+    { pattern: /(zelensk|azarov|putin|politik|diplomat|upravlen)[a-z]*/gi, adjust: -15 },
+    // "готовят на смену" = succession, not crime
+    { pattern: /готовят[\s\S]{0,15}на смену/gi, adjust: -15 },
+    { pattern: /gotovyat[\s\S]{0,15}na smenu/gi, adjust: -15 },
   ],
   // world disambiguation removed - world category eliminated
   science: [
@@ -1563,6 +1641,48 @@ function inferCategory(text, url) {
   }
 
   return null;
+}
+
+// ============================================================================
+// NEWS DIGEST / GENERIC BROADCAST FILTER
+// ============================================================================
+// Filters out multi-topic compilations, date-stamped news roundups, and
+// generic broadcasts that only briefly mention several unrelated topics.
+// These are not useful for focused language study.
+
+function isNewsDigest(title, description, duration) {
+  if (!title) return false;
+  const t = title.toLowerCase();
+  const d = (description || '').toLowerCase();
+
+  // 1. Explicit digest/roundup markers in title
+  if (/дайджест|daydzhest/i.test(title)) return true;
+  if (/главное за день|glavnoe za den/i.test(title)) return true;
+  if (/итоги дня|itogi dnya/i.test(title)) return true;
+  if (/обзор за день|obzor za den/i.test(title)) return true;
+
+  // 2. "Новости [date/time]" pattern — generic news for a date
+  //    e.g., "Новости 21 февраля", "Новости за 60 секунд", "Новости дня"
+  if (/^новости\s+(\d|за\s|дня|от\s|на\s)/i.test(title.trim())) return true;
+  if (/^novosti\s+(\d|za\s|dnya|ot\s|na\s)/i.test(title.trim())) return true;
+
+  // 3. "Вести [time/date]" or "Время [time/date]" — timestamped show episodes
+  //    e.g., "Вести. 22 февраля 2026", "Вести в 20:00"
+  if (/^вести[\s.]+(\d|в\s*\d)/i.test(title.trim())) return true;
+  if (/^время[\s.]+(\d|в\s*\d)/i.test(title.trim())) return true;
+
+  // 4. Multi-topic titles: 3+ "/" separators = listing unrelated stories
+  //    e.g., "Topic A / Topic B / Topic C / Show Name"
+  const slashCount = (title.match(/\s\/\s/g) || []).length;
+  if (slashCount >= 2) return true;
+
+  // 5. Short clips (under 90s) with 2 "/" — condensed roundups
+  if (slashCount >= 1 && duration && duration <= 90) return true;
+
+  // 6. Description-only digest markers (title may be vague)
+  if (/смотрите в выпуске|smotrite v vypuske/i.test(d) && slashCount >= 1) return true;
+
+  return false;
 }
 
 // ============================================================================
@@ -6818,6 +6938,13 @@ async function handleDiscover(url, request) {
     );
   }
 
+  // Filter out news digests, roundups, and generic broadcasts
+  // These are multi-topic compilations not useful for focused language study
+  const beforeDigestFilter = filtered.length;
+  filtered = filtered.filter(r => !isNewsDigest(r.title, r.description, r.duration));
+  if (filtered.length < beforeDigestFilter) {
+    log(`Filtered ${beforeDigestFilter - filtered.length} news digests/roundups (${beforeDigestFilter} → ${filtered.length})`);
+  }
 
   // Sort by publish date (newest first) before category distribution
   filtered.sort((a, b) => {
