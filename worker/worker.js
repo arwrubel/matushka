@@ -3000,14 +3000,17 @@ async function discover1tv(sourceKey, maxItems = 20) {
   const results = [];
 
   // Category-specific search keywords for 1TV search API
+  // IMPORTANT: Avoid generic terms like "новости" or "время" — they return
+  // full broadcast episodes ("Выпуск новостей в 18:00") instead of individual stories.
+  // Use specific topical keywords to get individual news segments.
   const SEARCH_KEYWORDS = {
-    'news': ['новости', 'сегодня', 'россия'],
+    'news': ['россия', 'москва', 'репортаж', 'корреспондент'],
     'politics': ['политика', 'путин', 'правительство', 'госдума'],
     'economy': ['экономика', 'рубль', 'инфляция', 'бизнес'],
     'society': ['общество', 'социальный', 'люди', 'образование'],
     'sports': ['спорт', 'футбол', 'хоккей', 'олимпиада', 'чемпионат'],
     'culture': ['культура', 'театр', 'кино', 'музей', 'искусство'],
-    'vremya': ['время', 'новости'],
+    'vremya': ['репортаж', 'сюжет'],
   };
 
   // Strategy 1: Use 1TV search.js API (returns fresh content with Russian titles)
@@ -3082,10 +3085,22 @@ async function discover1tv(sourceKey, maxItems = 20) {
     const resolvedItems = await Promise.all(metadataPromises);
     for (const item of resolvedItems) {
       if (item && results.length < maxItems) {
+        // Skip full broadcast episodes — these are not individual stories
+        // e.g., "Выпуск новостей в 18:00 от 24.02.2026"
+        const t = (item.title || '').toLowerCase();
+        if (/выпуск\s+новост/i.test(t) || /^новости\s+\d/i.test(t) || /^время\s+\d/i.test(t)) {
+          log('Skipping 1tv broadcast episode:', item.title?.substring(0, 60));
+          continue;
+        }
+        // Skip digest/roundup titles
+        if (isNewsDigest(item.title, item.description, item.duration)) {
+          log('Skipping 1tv digest:', item.title?.substring(0, 60));
+          continue;
+        }
         results.push(item);
       }
     }
-    log('Found', results.length, 'items from 1tv search.js');
+    log('Found', results.length, 'items from 1tv search.js (after filtering broadcasts)');
   } catch (e) {
     log('1tv search.js error:', e.message);
   }
