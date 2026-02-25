@@ -619,7 +619,9 @@ const CATEGORY_DETECTION = {
     ],
     negative: ['министр спорта', 'минспорт', 'правительств', 'дума', 'закон о спорте', 'голод', 'sim boks',
                'ministr sporta', 'minsport', 'pravitelstv', 'golod', 'goloda', 'moshennik',
-               'школ', 'учебн', 'ученик', 'образован', 'shkol', 'uchebn', 'uchenik', 'obrazovan'],
+               'школ', 'учебн', 'ученик', 'образован', 'shkol', 'uchebn', 'uchenik', 'obrazovan',
+               'терроризм', 'террорист', 'фсб', 'безопасност', 'террор',
+               'terrorizm', 'terrorist', 'fsb', 'bezopasnost', 'terror'],
     requiredScore: 3,
   },
   // POLITICS: Government actions, legislation, elections, diplomacy, official statements
@@ -635,7 +637,7 @@ const CATEGORY_DETECTION = {
       { keywords: ['министр', 'министерств', 'ведомств', 'губернатор'], weight: 3 },
       { keywords: ['выбор', 'голосован', 'референдум', 'избиратель', 'кандидат'], weight: 4 },
       { keywords: ['указ', 'постановлен', 'распоряжен', 'декрет'], weight: 3 },
-      { keywords: ['санкци', 'дипломат', 'посол', 'мид', 'лавров'], weight: 4 },
+      { keywords: ['санкци', 'дипломат', 'посол', 'мид', 'лавров', 'захарова'], weight: 4 },
       { keywords: ['переговор', 'саммит', 'визит', 'встреча лидеров'], weight: 3 },
       { keywords: ['оппозиц', 'партия', 'единая россия', 'кпрф', 'лдпр'], weight: 3 },
       // Regional politics
@@ -659,7 +661,7 @@ const CATEGORY_DETECTION = {
       { keywords: ['ministr', 'ministerst', 'vedomstv', 'gubernator'], weight: 3 },
       { keywords: ['vybor', 'golosovan', 'referendum', 'izbiratel', 'kandidat'], weight: 4 },
       { keywords: ['ukaz', 'postanovlen', 'rasporyazhen', 'dekret'], weight: 3 },
-      { keywords: ['sankci', 'diplomat', 'posol', 'mid', 'lavrov'], weight: 4 },
+      { keywords: ['sankci', 'diplomat', 'posol', 'mid', 'lavrov', 'zakharova'], weight: 4 },
       { keywords: ['peregovor', 'sammit', 'vizit', 'vstrecha liderov'], weight: 3 },
       { keywords: ['oppozic', 'partiya', 'edinaya rossiya', 'kprf', 'ldpr'], weight: 3 },
       // Regional/Intl/Processes - Latin
@@ -748,6 +750,9 @@ const CATEGORY_DETECTION = {
       { keywords: ['волонтер', 'благотвор', 'помощь', 'донор'], weight: 3 },
       { keywords: ['голод', 'бездомн', 'сирот', 'инвалид', 'нищет'], weight: 3 },
       { keywords: ['праздник', 'юбилей', 'годовщин', 'торжеств'], weight: 2 },
+      // Incidents / accidents / emergencies
+      { keywords: ['гибел', 'погиб', 'трагед', 'происшеств', 'несчастн'], weight: 3 },
+      { keywords: ['чп', 'авари', 'катастроф', 'эвакуац'], weight: 3 },
       // Emergency services / professions (not weather/military, but society/human interest)
       { keywords: ['пожарн', 'огнеборц', 'спасател'], weight: 3 },
       { keywords: ['десантирован', 'отработк', 'отработали'], weight: 2 },
@@ -755,8 +760,9 @@ const CATEGORY_DETECTION = {
       { keywords: ['психолог', 'депресс', 'тревожност', 'стресс', 'ментальн'], weight: 3 },
       // Social movements
       { keywords: ['протест', 'митинг', 'демонстрац', 'петиц', 'акция протест'], weight: 3 },
-      // Demographics
+      // Demographics / migration
       { keywords: ['рождаемост', 'смертност', 'миграц', 'демограф'], weight: 3 },
+      { keywords: ['беженц', 'мигрант', 'переселенц', 'эмигрант', 'иммигрант'], weight: 4 },
       // Disability and inclusion
       { keywords: ['инклюзи', 'доступная сред', 'ограничен возможност'], weight: 3 },
       // Diet, nutrition, health lifestyle
@@ -791,7 +797,7 @@ const CATEGORY_DETECTION = {
       // Animals / nature stories
       { keywords: ['животн', 'зоопарк', 'питомец', 'собак', 'кошк', 'кот '], weight: 3 },
       { keywords: ['пингвин', 'медведь', 'волк', 'лис', 'тигр', 'леопард'], weight: 3 },
-      { keywords: ['птиц', 'рыб', 'дельфин', 'китов', 'акул'], weight: 3 },
+      { keywords: ['птиц', 'рыб', 'дельфин', 'китов', 'акул', 'воробь', 'голуб', 'ворон', 'синиц'], weight: 3 },
       // Latin transliterations
       { keywords: ['obschestvo', 'socialn', 'socium'], weight: 4 },
       { keywords: ['grazhdan', 'naselen', 'zhitel', 'narod'], weight: 2 },
@@ -802,6 +808,9 @@ const CATEGORY_DETECTION = {
       { keywords: ['volonter', 'blagotvor', 'pomosch', 'donor'], weight: 3 },
       { keywords: ['golod', 'bezdomn', 'sirot', 'invalid', 'nischet'], weight: 3 },
       { keywords: ['prazdnik', 'yubiley', 'godovshin', 'torzhestvo'], weight: 2 },
+      // Incidents / accidents - Latin
+      { keywords: ['gibel', 'pogib', 'traged', 'proisshestvie', 'neschastnyy'], weight: 3 },
+      { keywords: ['chp', 'avari', 'katastrofa', 'evakuac'], weight: 3 },
       // Emergency services / professions - Latin
       { keywords: ['pozharn', 'ogneborec', 'spasatel'], weight: 3 },
       { keywords: ['desantirovan', 'otrabotk', 'otrabotali'], weight: 2 },
@@ -809,6 +818,7 @@ const CATEGORY_DETECTION = {
       { keywords: ['psikholog', 'depress', 'trevozhnost', 'stress', 'mentaln'], weight: 3 },
       { keywords: ['protest', 'miting', 'demonstrac', 'petici'], weight: 3 },
       { keywords: ['rozhdaemost', 'smertnost', 'migrac', 'demograf'], weight: 3 },
+      { keywords: ['bezhenec', 'bezhencev', 'migrant', 'pereselenec', 'emigrant', 'immigrant'], weight: 4 },
       { keywords: ['inklyuzi', 'dostupnaya sred'], weight: 3 },
       // Diet/nutrition - Latin
       { keywords: ['dietolog', 'dietichesk', 'dieta'], weight: 5 },
@@ -832,6 +842,7 @@ const CATEGORY_DETECTION = {
       // Animals/nature - Latin
       { keywords: ['zhivotn', 'zoopark', 'pitomec', 'sobak', 'koshk'], weight: 3 },
       { keywords: ['pingvin', 'medved', 'volk', 'lis', 'tigr', 'leopard'], weight: 3 },
+      { keywords: ['ptic', 'ryb', 'delfin', 'kitov', 'akul', 'vorob', 'golub', 'voron', 'sinic'], weight: 3 },
     ],
     negative: ['спорт', 'дума', 'законопроект', 'военн', 'армия', 'министр',
                'sport', 'duma', 'zakonoproekt', 'voenn', 'armiya', 'ministr'],
@@ -1307,6 +1318,12 @@ function wordBoundaryMatch(text, word) {
 // These patterns, when matched, adjust the score for a category
 const DISAMBIGUATION_RULES = {
   sports: [
+    // "борьбу с терроризмом/преступностью/коррупцией" = fight against X, NOT combat sports
+    { pattern: /борьб[а-яё]*[\s\S]{0,15}(терроризм|преступност|коррупц|наркотик|безопасност|бедност|болезн)/gi, adjust: -20 },
+    { pattern: /borb[a-z]*[\s\S]{0,15}(terrorizm|prestupnost|korrupc|narkotik|bezopasnost|bednost|bolezn)/gi, adjust: -20 },
+    // "ФСБ/полиция/безопасность" context = security, NOT sports
+    { pattern: /(фсб|полиц|безопасност|спецслужб)[а-яё]*[\s\S]{0,30}борьб/gi, adjust: -20 },
+    { pattern: /(fsb|polic|bezopasnost|specsluzh)[a-z]*[\s\S]{0,30}borb/gi, adjust: -20 },
     // School/education context - NOT sports even if "мест" or "открылась" appears
     { pattern: /(школ[а-яё]*|учебн[а-яё]*|ученик[а-яё]*|образован[а-яё]*)[\s\S]{0,30}(открыл|построил|мест|класс)/gi, adjust: -20 },
     { pattern: /(shkol[a-z]*|uchebn[a-z]*|uchenik[a-z]*|obrazovan[a-z]*)[\s\S]{0,30}(otkryl|postroil|mest|klass)/gi, adjust: -20 },
@@ -1447,8 +1464,8 @@ const DISAMBIGUATION_RULES = {
     { pattern: /sovet\s*federacii|совет\s*федерации/gi, adjust: +5 },
     // Politicians making statements - boost politics (headline pattern "Лавров:")
     { pattern: /^(лавров|путин|песков|захарова|мид)[а-яё]*\s*:/gi, adjust: +15 },
-    { pattern: /(лавров|путин|мишустин|песков|захарова|матвиенко|володин|медведев)[а-яё]*[\s\S]{0,30}(заявил|сказал|сообщил|отметил|подчеркнул|высказал|призвал|предупредил|раскритиковал)/gi, adjust: +10 },
-    { pattern: /(lavrov|putin|mishustin|peskov|zakharova|matvienko|volodin|medvedev)[a-z]*[\s\S]{0,30}(zayavil|skazal|soobshchil|otmetil|podcherknul|vyskazal|prizval|predupredil|raskritikoval)/gi, adjust: +10 },
+    { pattern: /(лавров|путин|мишустин|песков|захарова|матвиенко|володин|медведев)[а-яё]*[\s\S]{0,30}(заявил|сказал|сообщил|отметил|подчеркнул|высказал|призвал|предупредил|раскритиковал|ответил|уличил|жестко)/gi, adjust: +10 },
+    { pattern: /(lavrov|putin|mishustin|peskov|zakharova|matvienko|volodin|medvedev)[a-z]*[\s\S]{0,30}(zayavil|skazal|soobshchil|otmetil|podcherknul|vyskazal|prizval|predupredil|raskritikoval|otvetil|ulichil|zhestko)/gi, adjust: +10 },
     // Foreign politicians making statements or in political context
     { pattern: /(зеленск|азаров|порошенко|байден|трамп|макрон|шольц)[а-яё]*[\s\S]{0,30}(заявил|сказал|назвал|призвал|предложил|планирует|пытается|готовят)/gi, adjust: +10 },
     { pattern: /(zelensk|azarov|poroshenko|bayden|tramp|makron|sholc)[a-z]*[\s\S]{0,30}(zayavil|skazal|nazval|prizval|predlozhil|planiruet|pytaetsya|gotovyat)/gi, adjust: +10 },
@@ -1469,6 +1486,14 @@ const DISAMBIGUATION_RULES = {
     { pattern: /(temperatur|pogod|metel|uragan|shtorm|morozy|pokholodan|poteplen|snegopad)[a-z]*/gi, adjust: -20 },
   ],
   economy: [
+    // Domestic gas incidents (leak, explosion, poisoning) - NOT gas industry news
+    { pattern: /(утечк|отравлен|угорел|взрыв)[а-яё]*[\s\S]{0,20}газ/gi, adjust: -25 },
+    { pattern: /газ[а-яё]*[\s\S]{0,20}(утечк|отравлен|угорел|взрыв|жилой|жилом|дом[еуа]?|квартир)/gi, adjust: -25 },
+    { pattern: /(utechk|otravlen|ugorel|vzryv)[a-z]*[\s\S]{0,20}gaz/gi, adjust: -25 },
+    { pattern: /gaz[a-z]*[\s\S]{0,20}(utechk|otravlen|ugorel|vzryv|zhiloy|zhilom|dom[eua]?|kvartir)/gi, adjust: -25 },
+    // "гибели ... газа" = death from gas = domestic incident
+    { pattern: /(гибел|погиб|смерт)[а-яё]*[\s\S]{0,30}газ/gi, adjust: -25 },
+    { pattern: /(gibel|pogib|smert)[a-z]*[\s\S]{0,30}gaz/gi, adjust: -25 },
     // Crime context - money amounts in crime stories are NOT economy news
     { pattern: /(мошенник|мошенничеств|украли|похитили|обманули|аферист)[а-яё]*/gi, adjust: -25 },
     { pattern: /(moshennik|moshennichestvo|ukrali|pokhitili|obmanuli|aferist)[a-z]*/gi, adjust: -25 },
@@ -6740,6 +6765,14 @@ async function handleDiscover(url, request) {
       log(`Discovery error for ${source}:`, e.message);
       errors.push({ source, error: e.message });
     }
+  }
+
+  // Re-run category inference on all items so updated rules always apply
+  // (cached items may have stale categories from older detection logic)
+  for (const item of results) {
+    const text = (item.title || '') + ' ' + (item.description || '');
+    const freshCat = inferCategory(text, item.url || '');
+    if (freshCat) item.category = freshCat;
   }
 
   // Track total items found before filtering
